@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/YagoServiceCaller/YagoServiceCaller.iml" filepath="$PROJECT_DIR$/YagoServiceCaller/YagoServiceCaller.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/componentsCAVS.iml" filepath="$PROJECT_DIR$/.idea/componentsCAVS.iml" />
+      <module fileurl="file://$PROJECT_DIR$/textProcessingService/textProcessingService.iml" filepath="$PROJECT_DIR$/textProcessingService/textProcessingService.iml" />
+    </modules>
+  </component>
+</project>

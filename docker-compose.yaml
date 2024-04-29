@@ -1,0 +1,15 @@
+services:
+  YagoSC:
+    image: yagoservice
+    ports:
+      - "13000:13000"
+  KeyBertService:
+    image: keybertservice
+    ports:
+      - "5003:5003"
+  KeyLLMService:
+    image: keyllmservice
+    ports:
+      - "5002:5002"
+
+

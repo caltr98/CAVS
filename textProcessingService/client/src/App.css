@@ -1,0 +1,118 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 25px;
+    margin-bottom: 20px; /* Add margin bottom */
+    background-color: #f0f0f0; /* Pleasurable background color */
+}
+
+.input {
+    padding: 15px;
+    width: 80%;
+    height: 100px; /* Adjust the height as needed */
+    margin: auto;
+    border: 1px solid lightgray;
+    border-radius: 6px;
+    font-size: 16px;
+    background-color: #ffffff; /* Add background color */
+    overflow-y: auto; /* Enable vertical scrollbar */
+    resize: vertical; /* Allow resizing vertically */
+}
+
+.input:focus {
+    outline: none;
+}
+.process-button {
+    padding: 10px 20px;
+    margin-top: 10px;
+    background-color: #526b83; /* Button background color */
+    color: #fff; /* Button text color */
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.keywords-data {
+    background-color: #f4f4f4;
+    border-radius: 12px;
+    padding: 5vw;
+    margin-top: 5vh;
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+}
+
+.title-keywords-data {
+    font-size: 3vw;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 3vh;
+}
+
+.keywords-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.keywords-list-item {
+    background-color: #e0e0e0;
+    color: #333;
+    border-radius: 6px;
+    padding: 2vw 4vw;
+    margin-bottom: 2vh;
+    display: inline-block;
+    margin-right: 2vw;
+    font-size: 2vw;
+}
+
+.keywords-list-item:hover {
+    background-color: #c0c0c0;
+    cursor: pointer;
+}
+
+.title-extractor-engines-data {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    background-color: #f0f0f0; /* Pleasurable background color */
+
+
+}
+
+/* Add margin bottom for space below extractor engines */
+.extractor-engines-data {
+    margin-bottom: 50px;
+    background-color: #f0f0f0; /* Pleasurable background color */
+}
+
+/* Select dropdown container */
+.extractor-engines-select-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Select dropdown for extractor engines */
+.extractor-engines-select {
+    width: 50vw; /* Adjust the width as needed */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+    background-color: #ffffff; /* Add background color */
+}
+
+/* Style for options inside the select dropdown */
+.extractor-engines-select option {
+    padding: 10px;
+    font-size: 16px;
+    color: #333;
+    cursor: pointer;
+}
+
+/* Hover effect for options */
+.extractor-engines-select option:hover {
+    background-color: #f0f0f0;
+}

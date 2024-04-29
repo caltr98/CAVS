@@ -1,0 +1,76 @@
+###
+//send request
+GET http://localhost:13000
+
+###
+//send request
+POST http://localhost:13000
+Content-Type: application/json
+
+{
+  "name": "james",
+  "location": "Pisa"
+}
+
+###
+//REQUEST TO YAGO
+//send request upper hierarchy
+GET http://localhost:13000/queryUpperHierarchy
+Content-Type: application/json
+
+{
+ "element": "Red Bull"
+}
+
+###
+
+//REQUEST TO YAGO
+//send request same level hierarchy
+GET http://localhost:13000/querySameLevelHierarchy
+Content-Type: application/json
+
+{
+  "element": "Coca Cola"
+}
+
+
+###
+// Request to keyBertService
+
+GET http://localhost:13001/keywords
+Content-Type: application/json
+
+{
+  "doc": "Coca-Cola is the most popular and biggest-selling soft drink as well as one of the most recognizable brands in the world. It the only brand that is found in my fridge for my weekend parties"
+}
+
+###
+
+GET http://172.17.0.1:5055/keywords
+Content-Type: application/json
+
+{
+  "doc": "Coca Cola is the most popular and biggest-selling soft drink as well as one of the most recognizable brands in the world. It the only brand that is found in my fridge for my weekend parties. Supervised learning is the machine learning task of learning a function that maps an input to an output based on example input-output pairs. It infers a function from labeled training data consisting of a set of training examples. In supervised learning, each example is a pair consisting of an input object (typically a vector) and a desired output value (also called the supervisory signal). A supervised learning algorithm analyzes the training data and produces an inferred function, which can be used for mapping new examples. An optimal scenario will allow for the algorithm to correctly determine the class labels for unseen instances. This requires the learning algorithm to generalize from the training data to unseen situations in a 'reasonable' way (see inductive bias). "
+}
+
+
+###
+
+// keyLMMService test
+GET http://localhost:5080/keywords_only_LMM
+Content-Type: application/json
+
+{
+  "doc": "Pepsi Cola and Coca Cola, versus Machine Learning Algorithms and Extractors. An optimal scenario will allow for the algorithm to correctly determine the class labels for unseen instances "
+}
+
+
+### keyLMMService BERT+LMM test
+GET http://localhost:5080/keywords_both
+Content-Type: application/json
+
+{
+  "doc": "Pepsi Cola and Coca Cola, versus Machine Learning Algorithms and Extractors. An optimal scenario will allow for the algorithm to correctly determine the class labels for unseen instances. Hello, sayonara "
+}
+
+
