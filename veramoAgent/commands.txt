@@ -1,0 +1,28 @@
+
+TO RUN:
+node --loader ts-node/esm ./src/list-identifiers.ts
+
+yarn add express
+yarn add @types/express --dev
+
+yarn add axios
+
+yarn add cors
+
+yarn add axios-typescript
+
+yarn add qrcode-terminal --dev
+
+ npm install jsonwebtoken
+yarn add jsonwebtoken
+
+
+go there for key for jwt sign
+https://jwt-keys.21no.de/ HS256
+
+Secret:tu8ZE2CLSBAaArt1JxKMrKNR3q63r1WM23cn4fQfD78=
+
+yarn add /qrcode --dev
+yarn add @types/qrcode --dev
+
+yarn add @nuintun/qrcode
