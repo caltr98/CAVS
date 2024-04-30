@@ -11,5 +11,8 @@ services:
     image: keyllmservice
     ports:
       - "5002:5002"
-
+  Ojd_service:
+    image: ojddapsservice
+    ports:
+      - "5005:5005"
 

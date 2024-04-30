@@ -1,0 +1,4 @@
+{
+  "textprocessor": "http://localhost:4500",
+  "skillprocessor": "http://localhost:4501"
+}

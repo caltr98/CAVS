@@ -66,11 +66,31 @@ Content-Type: application/json
 
 
 ### keyLMMService BERT+LMM test
-GET http://localhost:5080/keywords_both
+GET http://locìalhost:5080/keywords_both
 Content-Type: application/json
 
 {
   "doc": "Pepsi Cola and Coca Cola, versus Machine Learning Algorithms and Extractors. An optimal scenario will allow for the algorithm to correctly determine the class labels for unseen instances. Hello, sayonara "
 }
 
+
+
+###
+//test keywords to skill
+GET http://localhost:5005/keyword_to_skills
+Content-Type: application/json
+
+{
+  "keywords": ["Blockchain", "Blockchain consensus mechanism", "working with computers","playing the piano","playing the violin play"]
+}
+
+
+###
+//test keywords to skill
+GET http://localhost:5005/text_to_skills
+Content-Type: application/json
+
+{
+  "doc": "Dario was playing the piano"
+}
 
