@@ -16,11 +16,11 @@ import { BrowserQRCodeReader } from '@zxing/browser';
 import {PNG} from 'pngjs'
 import jpeg from 'jpeg-js'
 import { jwtDecode } from "jwt-decode";
-
+import bodyParser from "body-parser"
 const app = express();
 
 // Enable CORS
-app.use(cors());
+app.use(cors(),bodyParser.json());
 
 // Define a type for the user object
 interface User {
@@ -50,7 +50,7 @@ app.get('/get_own_did', async (req: Request, res: Response) => {
             list.push(id.did)
         })
     }
-    res.send(list);
+    res.send({"dids":list});
 });
 
 
@@ -78,11 +78,64 @@ app.get('/get_did_doc', async (req: Request, res: Response) => {
 
 // Define a route that returns a did document from the wallet
 app.get('/issue_verifiable_credential', async (req: Request, res: Response) => {
+
     let issuer_did:string = <string>req.query.issuer
     let holder_did:string=<string>req.query.holder
+    let type_cred:string=<string>req.query.type
+
+    console.log(req.query.attributes)
     const attributes: JSON = JSON.parse(<string>req.query.attributes);
     const toStore: boolean | undefined = req.query.store === 'true';
     let credential_subject_full= { ...{id:holder_did}, ...attributes };
+    let typeToPut:string[] = ["VerifiableCredential"]
+    if(type_cred){
+        typeToPut.push(type_cred)
+    }
+    try {
+        let verifiableCredential = await agent.createVerifiableCredential({
+            credential: {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1"
+                ],
+                issuer: {id: issuer_did},
+                type:typeToPut,
+                credentialSubject: credential_subject_full,
+            },
+            proofFormat: 'jwt',
+            fetchRemoteContexts: true
+        })
+        console.log(verifiableCredential)
+
+        if(toStore){
+            const hash = await agent.dataStoreSaveVerifiableCredential({ verifiableCredential })
+            console.log("stored: "+hash)
+        }
+        res.send({res:"OK",cred_hash:verifiableCredential});
+    } catch (error){
+        // we'll proceed, but let's report it
+        res.status(500).send({
+            message: `credential issuer must be a DID managed by this agent`
+        });
+
+    }
+});
+// Define a route that returns a did document from the wallet
+app.post('/issue_big_verifiable_credential', async (req: Request, res: Response) => {
+
+    console.log(req.body)
+    let issuer_did:string = <string>req.body.issuer
+
+    let holder_did:string=<string>req.body.holder
+    let type_cred:string=<string>req.body.type
+
+    const attributes: JSON= req.body.attributes
+    const toStore: boolean | undefined = req.body.store === true;
+    let credential_subject_full= { ...{id:holder_did}, ...attributes };
+    let typeToPut:string[] = ["VerifiableCredential"]
+    if(type_cred){
+        typeToPut.push(type_cred)
+    }
 
     try {
         let verifiableCredential = await agent.createVerifiableCredential({
@@ -92,16 +145,23 @@ app.get('/issue_verifiable_credential', async (req: Request, res: Response) => {
                     "https://www.w3.org/2018/credentials/examples/v1"
                 ],
                 issuer: {id: issuer_did},
+                type:typeToPut,
                 credentialSubject: credential_subject_full,
             },
             proofFormat: 'jwt',
             fetchRemoteContexts: true
         })
+        console.log(verifiableCredential)
+
         if(toStore){
             const hash = await agent.dataStoreSaveVerifiableCredential({ verifiableCredential })
             console.log("stored: "+hash)
+            res.send({res:"OK",cred_hash:hash});
+
         }
-        res.send(verifiableCredential);
+        else {
+            res.send({res: "OK", cred_hash: verifiableCredential});
+        }
     } catch (error){
         // we'll proceed, but let's report it
         res.status(500).send({
@@ -112,75 +172,98 @@ app.get('/issue_verifiable_credential', async (req: Request, res: Response) => {
 });
 
 
+
 // Define a route that returns a list of verifiable credentials from wallet
 app.get('/list_verifiable_credentials', async (req: Request, res: Response) => {
     const respose = await agent.dataStoreORMGetVerifiableCredentials()
     res.send(respose);
 });
 
+// Define a route that returns ONE verifiable credentials from wallet given an HASH
+app.get('/get_verifiable_credential', async (req: Request, res: Response) => {
+    let hash:string = <string>req.query.hash_cred
+    const respose = await agent.dataStoreGetVerifiableCredential({hash})
+    res.send(respose);
+});
+
 // Define a route that returns a qr-code for a verifiable credential
 app.get('/get_qr_code', async (req: Request, res: Response) => {
     let hash:string = <string>req.query.hash
-    const loaded_credential = await agent.dataStoreGetVerifiableCredential({  hash:hash })
-    console.log(loaded_credential.proof['jwt'])
+    let loaded_credential;
+    //loaded_credential = await agent.dataStoreGetVerifiableCredential({hash: hash})
 
-    qrcode.toFile('./filename.png', (loaded_credential.proof['jwt']), {
-        color: {
-            dark: '#000000',  // Blue dots
-            light: '#ffffff' // White background
+    try {
+        loaded_credential = await agent.dataStoreGetVerifiableCredential({hash: hash})
+        console.log(loaded_credential.proof['jwt'])
+
+        qrcode.toFile('./filename.png', (loaded_credential.proof['jwt']), {
+            color: {
+                dark: '#000000',  // Blue dots
+                light: '#ffffff' // White background
+            }
+        }, function (err) {
+            if (err) throw err
+            console.log('done')
+        })
+
+
+        // reading of qr code from file and obtain the jwt
+        // code obtained from https://stackoverflow.com/questions/51948472/image-base64-string-to-uint8clampedarray
+        // mixed with https://github.com/pngjs/pngjs/blob/c565210c602527eb459f857eeb78183997482d5b/README.md?plain=1#L258
+        let data = fs.readFileSync('filename.png');
+
+
+        const png = PNG.sync.read(data);
+        const code = decode(Uint8ClampedArray.from(png.data), png.width, png.height);
+        let code_jwt: string = <string>code?.data
+        //remove initial and final " as the string seems double stringified
+        if (code_jwt.startsWith('"') && code_jwt.endsWith('"')) {
+            code_jwt = code_jwt.substring(1, code_jwt.length - 1);
         }
-    }, function (err) {
-        if (err) throw err
-        console.log('done')
-    })
 
-
-    // reading of qr code from file and obtain the jwt
-    // code obtained from https://stackoverflow.com/questions/51948472/image-base64-string-to-uint8clampedarray
-    // mixed with https://github.com/pngjs/pngjs/blob/c565210c602527eb459f857eeb78183997482d5b/README.md?plain=1#L258
-    let data = fs.readFileSync('filename.png');
-
-
-
-    const png = PNG.sync.read(data);
-    const code = decode(Uint8ClampedArray.from(png.data), png.width, png.height);
-    let code_jwt:string= <string>code?.data
-    //remove initial and final " as the string seems double stringified
-    if (code_jwt.startsWith('"') && code_jwt.endsWith('"')) {
-        code_jwt = code_jwt.substring(1, code_jwt.length - 1);
-    }
-
-    //var rawImageData = jpeg.decode(jpegData);
+        //var rawImageData = jpeg.decode(jpegData);
 //It follows an alternative way to decode a png, It seems to work but I have no source for it
 // Read the PNG image file
-    /*
-        fs.createReadStream('filename.png')
-            .pipe(new PNG())
-            .on('parsed', function () {
-                // Convert the image data into a Uint8Array
-                const imageData = new Uint8ClampedArray(this.width * this.height * 4);
-                for (let y = 0; y < this.height; y++) {
-                    for (let x = 0; x < this.width; x++) {
-                        const idx = (this.width * y + x) << 2;
-                        imageData[idx] = this.data[idx];
-                        imageData[idx + 1] = this.data[idx + 1];
-                        imageData[idx + 2] = this.data[idx + 2];
-                        imageData[idx + 3] = this.data[idx + 3];
+        /*
+            fs.createReadStream('filename.png')
+                .pipe(new PNG())
+                .on('parsed', function () {
+                    // Convert the image data into a Uint8Array
+                    const imageData = new Uint8ClampedArray(this.width * this.height * 4);
+                    for (let y = 0; y < this.height; y++) {
+                        for (let x = 0; x < this.width; x++) {
+                            const idx = (this.width * y + x) << 2;
+                            imageData[idx] = this.data[idx];
+                            imageData[idx + 1] = this.data[idx + 1];
+                            imageData[idx + 2] = this.data[idx + 2];
+                            imageData[idx + 3] = this.data[idx + 3];
+                        }
                     }
-                }
 
-                // Use jsQR to decode the QR code
-                const code = decode(imageData, this.width, this.height);
-                if (code) {
-                    console.log('Decoded QR code:', code.data);
-                } else {
-                    console.log('No QR code found in the image.');
-                }
-            });    });
+                    // Use jsQR to decode the QR code
+                    const code = decode(imageData, this.width, this.height);
+                    if (code) {
+                        console.log('Decoded QR code:', code.data);
+                    } else {
+                        console.log('No QR code found in the image.');
+                    }
+                });    });
 
-     */
-    let decoded_jwt=jwtDecode(code_jwt)
-    res.send({encoded_jwt:code_jwt,decoded_jwt:decoded_jwt,origin:format_jwt_decoded(code_jwt,decoded_jwt)})
+         */
+        let decoded_jwt = jwtDecode(code_jwt)
+
+        // Set the appropriate content type in the response headers
+
+        res.setHeader('Content-Type', 'image/png');
+        res.send(data);
+    }
+    catch (Error){
+        res.status(500).send({
+            message: `Response: unsupported engine}`
+    });
+}
+
+//res.send({encoded_jwt:code_jwt,decoded_jwt:decoded_jwt,origin:format_jwt_decoded(code_jwt,decoded_jwt)})
 });
 
 
@@ -313,6 +396,6 @@ app.get('/verify', async (req: Request, res: Response) => {
 
 
 // Listen on port 3000
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
+app.listen(3001, () => {
+    console.log('Server is running on port 3001');
 });

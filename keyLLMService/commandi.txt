@@ -3,3 +3,5 @@ docker buildx build -t keybertservice . --network host
 
 export DOCKER_BUILDKIT=1
 assicura uso di cache di docker1
+
+docker buildx build -t keylmmservice . --network host

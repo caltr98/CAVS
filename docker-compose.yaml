@@ -1,18 +1,18 @@
 services:
   YagoSC:
-    image: yagoservice
+    image: yagoservice:latest
     ports:
       - "13000:13000"
   KeyBertService:
-    image: keybertservice
+    image: keybertservice:latest
     ports:
       - "5003:5003"
   KeyLLMService:
-    image: keyllmservice
+    image: keyllmservice:latest
     ports:
       - "5002:5002"
-  Ojd_service:
-    image: ojddapsservice
+  Ojd_service1:
+    image: ojddapsservice1:latest
     ports:
       - "5005:5005"
 

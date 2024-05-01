@@ -101,24 +101,24 @@ GET http://localhost:3000/create_did_by_alias?alias="ciao"
 
 ###
 // test evramo
-GET http://localhost:3000/get_own_did
+GET http://localhost:3001/get_own_did
 
 ###
-GET http://localhost:3000/get_did_doc?did=did:ethr:goerli:0x034e4ecfb60a1a922c027c356480eab896c21f9eb95feabdb6e8408492c81c3f84
+GET http://localhost:3001/get_did_doc?did=did:ethr:goerli:0x034e4ecfb60a1a922c027c356480eab896c21f9eb95feabdb6e8408492c81c3f84
 Content-Type: application/json
 
 
 ###
-GET http://localhost:3000/issue_verifiable_credential?issuer=did:ethr:sepolia:0x03a29a90b56b9b40d5ef2720149bac4ef812878b52c86ac0da20a40c2383e826c7&holder=did:ethr:sepolia:0x03a29a90b56b9b40d5ef2720149bac4ef812878b52c86ac0da20a40c2383e826c7&attributes={"hi":"hello"}&store=true
+GET http://localhost:3001/issue_verifiable_credential?issuer=did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1&holder=did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1&attributes={"hi":"hello"}&store=true
 Content-Type: application/json
 
 
 
 ###
-GET http://localhost:3000/list_verifiable_credentials
+GET http://localhost:3001/list_verifiable_credentials
 
 ###
-GET http://localhost:3000/get_qr_code?hash=QmQYJWqmf672SxbGoCYVwBdwmB1f2dn5nLL4X3ZCHxaY1H
+GET http://localhost:3001/get_qr_code?hash=QmXvBCqkEFw6Tc14ct8TRReAZ7UkruJzFwPaSi8RFKj7rR
 
 ###
-GET http://localhost:3000/verify
+GET http://localhost:3001/verify

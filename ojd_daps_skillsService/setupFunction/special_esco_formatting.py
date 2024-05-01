@@ -1,11 +1,3 @@
-
-"""
-Modified version from ojd_daps to extract from the ESCO dataset the
-skills in the model needed format.
-Modified so that files are taken locally and unaccessible files can be obtained.
-"""
-
-
 """
 ESCO- specific formating function to get ESCO data in the format needed for skill_ner_mapper.py
 
@@ -245,8 +237,8 @@ if __name__ == "__main__":
 
     output_file_dir = "./outputs/data/skill_ner_mapping/"
 
-    output_mapper_file_name = output_file_dir + "esco_hier_mapper.json"
-    output_file_name = output_file_dir + "esco_data_formatted.csv"
+    output_mapper_file_name = output_file_dir + "esco_hier_mapper1.json"
+    output_file_name = output_file_dir + "esco_data_formatted1.csv"
 
     # Load ESCO skills and hierarchy data
 

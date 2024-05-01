@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const axios = require('axios')
-const outPort = 4501;
+const outPort = 4502;
 const app = express();
 const skillsEngines = ["OJD_DAPS","GPT3.5"]
 
@@ -70,7 +70,7 @@ app.get("/keyword_to_skills", async (req, res) => {
             // Convert the JSON object to a string
             const jsonString = JSON.stringify(jsonObject, null, 2);
             const response = await axios.get( ojdServiceEndpoint +"/keyword_to_skills", {
-                timeout: 25000,
+                timeout: 250000,
                 params: {
                     keywords: jsonString
                 }
@@ -81,6 +81,24 @@ app.get("/keyword_to_skills", async (req, res) => {
             let skilled = collection['SKILL']
             //key=generating keyword, value= (skill, skill code) parsing!
 
+            //GENERATE URI FOR EACH SKILL
+
+            //console.log(skilled)
+            let uri =  ""
+            skilled.forEach((skill, i) => {
+                if (Array.isArray(skill) && skill.length > 1) {
+                    let integratedCode = skill[1][1]
+                    if(integratedCode[0] === 'K'){
+                        uri = "http://data.europa.eu/esco/isced-f/"+integratedCode.substring(1)
+                    }
+                    else {
+                        uri = "http://data.europa.eu/esco/skill/"+integratedCode
+                    }
+                    skill[1].push(uri)
+                    console.log(skill[1]); // Print the second element of the current skill array
+
+                }
+            });
             res.json({ "skills": skilled });
 
         } catch (err) {
@@ -118,51 +136,6 @@ app.get("/keyword_to_skills", async (req, res) => {
 });
 
 
-//ROUTE 4 ->  Keyword enrichment, upper level, eg Bitcoin to Blockchain
-app.get("/enrich_upper_level", async (req, res) => {
-    console.log(req.query)
-    const document = req.query.document;
-    const engine = req.query.engine;
-    console.log(engine)
-    console.log(keywords)
-
-    if(!skillsEngines.includes(engine)){
-        console.log("Unsupported engine");
-        res.status(500).send({
-            message: `Response: unsupported engine}`
-        });
-    }
-    if(engine === "OJD_DAPS") {
-        try {
-            console.log(keyBertServiceCallerEndpoint)
-            // Create a new instance of Axios for each request
-
-            const response = await axios.get( ojdServiceEndpoint +"/keyword_to_skills", {
-                timeout: 25000,
-                params: {
-                    keywords: document
-                }
-            });
-            let skills = response.data.skills;
-
-            console.log("received result"+document)
-            res.json({ "skills": skills });
-        } catch (err) {
-            if (err.code === 'ECONNABORTED') {
-                console.log("Request timed out");
-                res.status(502).send({
-                    message: `Response: service endpoint timed out}`
-                });
-            } else {
-                console.log(err.message);
-                res.status(500).send({
-                    message: `Unknown error in sending request to service endpoint`
-                });
-            }
-        }
-
-    }
-});
 
 
 app.listen(outPort, () => console.log(`Server running on port: ${outPort}`));

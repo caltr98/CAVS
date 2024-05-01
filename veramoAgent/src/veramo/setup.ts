@@ -38,7 +38,7 @@ import { DataSource } from 'typeorm'
 
 
 // This will be the name for the local sqlite database for demo purposes
-const DATABASE_FILE = 'database.sqlite'
+const DATABASE_FILE = 'database.sqlite1'
 
 // You will need to get a project ID from infura https://www.infura.io I DID PUT THERE THE API KEY
 const INFURA_PROJECT_ID = '05dfd704449d432ead7fdc7a2ee1fc4f'

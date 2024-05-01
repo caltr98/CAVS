@@ -26,3 +26,7 @@ yarn add /qrcode --dev
 yarn add @types/qrcode --dev
 
 yarn add @nuintun/qrcode
+
+
+SU Client
+import fs from 'fs'

@@ -6,7 +6,7 @@ es = None
 
 def initialize_es_model():
     global es
-    es = ExtractSkills(config_name="extract_skills_esco", local=True) #instantiate with toy taxonomy configuration file
+    es = ExtractSkills(config_name="extract_skills_esco_special", local=True) #instantiate with toy taxonomy configuration file
     es.load() #load necessary models
 
 
@@ -20,7 +20,9 @@ def get_skills_from_keywords():
 
     request_data = request.args
 
-
+    print("request data")
+    print(request_data)
+    print("end request data")
     # Check if 'keywords' key exists in the JSON argument
     if 'keywords' not in request_data:
         return jsonify(error="Keywords not provided"), 400

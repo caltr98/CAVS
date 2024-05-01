@@ -301,7 +301,16 @@ function App() {
                                     style={{color: 'blue', backgroundColor: 'lightgrey'}}>Skill: </span> {skill[1][0]}
                                 </li>
                                 <li><span
-                                    style={{color: 'blue', backgroundColor: 'lightgrey'}}>Skill Code: </span> {skill[1][1]}
+                                    style={{
+                                        color: 'blue',
+                                        backgroundColor: 'lightgrey'
+                                    }}>Skill Code: </span> {skill[1][1]}
+                                </li>
+                                <li>
+                                    <span style={{color: 'blue', backgroundColor: 'lightgrey'}}>Skill URI: </span>
+                                    <a href={skill[1][2]} target="_blank" rel="noopener noreferrer">
+                                        {skill[1][2]}
+                                    </a>
                                 </li>
 
                             </ul>
@@ -315,7 +324,7 @@ function App() {
                 </div>
             ) : (
                 <div className="keywords-data">
-                    <p className="title-keywords-data">
+                <p className="title-keywords-data">
                         Skills extracted for synonymous:
                     </p>
                     <ul className="keywords-list">
@@ -328,7 +337,16 @@ function App() {
                                     style={{color: 'blue', backgroundColor: 'lightgrey'}}>Skill: </span> {skill[1][0]}
                                 </li>
                                 <li><span
-                                    style={{color: 'blue', backgroundColor: 'lightgrey'}}>Skill Code: </span> {skill[1][1]}
+                                    style={{
+                                        color: 'blue',
+                                        backgroundColor: 'lightgrey'
+                                    }}>Skill Code: </span> {skill[1][1]}
+                                </li>
+                                <li>
+                                    <span style={{color: 'blue', backgroundColor: 'lightgrey'}}>Skill URI: </span>
+                                    <a href={skill[1][2]} target="_blank" rel="noopener noreferrer">
+                                        {skill[1][2]}
+                                    </a>
                                 </li>
 
                             </ul>
@@ -343,7 +361,7 @@ function App() {
             ) : (
                 <div className="keywords-data">
                     <p className="title-keywords-data">
-                        Skills extracted for more general context:
+                    Skills extracted for more general context:
                     </p>
                     <ul className="keywords-list">
                         {upperLevelKeywordsskills.skills.map((skill, i) => (
@@ -355,7 +373,16 @@ function App() {
                                     style={{color: 'blue', backgroundColor: 'lightgrey'}}>Skill: </span> {skill[1][0]}
                                 </li>
                                 <li><span
-                                    style={{color: 'blue', backgroundColor: 'lightgrey'}}>Skill Code: </span> {skill[1][1]}
+                                    style={{
+                                        color: 'blue',
+                                        backgroundColor: 'lightgrey'
+                                    }}>Skill Code: </span> {skill[1][1]}
+                                </li>
+                                <li>
+                                    <span style={{color: 'blue', backgroundColor: 'lightgrey'}}>Skill URI: </span>
+                                    <a href={skill[1][2]} target="_blank" rel="noopener noreferrer">
+                                        {skill[1][2]}
+                                    </a>
                                 </li>
 
                             </ul>
