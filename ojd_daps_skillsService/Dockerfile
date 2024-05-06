@@ -8,8 +8,8 @@ RUN pip install flask
 RUN python -m spacy download en_core_web_sm
 
 # Copy data into container with complete formatting of skills from own processing
-COPY ./setupFunction/ojd_daps_skills_data /usr/local/lib/python3.10/site-packages/ojd_daps_skills_data
 COPY ./setupFunction/ojd_daps_skills /usr/local/lib/python3.10/site-packages/ojd_daps_skills
+COPY ./setupFunction/ojd_daps_skills_data /usr/local/lib/python3.10/site-packages/ojd_daps_skills_data
 
 
 # Set the working directory in the container

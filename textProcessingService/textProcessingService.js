@@ -10,7 +10,6 @@ const enricherEngines = ["YAGO"]
 app.use(cors());
 
 let yagoServiceCallerEndpoint,keyBertServiceCallerEndpoint,keyLLMServiceCallerEndpoint;
-
 // Function to read config.json and update yagoServiceCallerEndpoint
 function updateConfig() {
     fs.readFile('config.json', 'utf8', (err, data) => {
@@ -68,11 +67,11 @@ app.get("/extract", async (req, res) => {
     }
     if(engine === "BERT"){
         try {
-            console.log(keyBertServiceCallerEndpoint)
+            console.log("keybertendpoint"+keyBertServiceCallerEndpoint)
             // Create a new instance of Axios for each request
-
-            const response = await axios.get( keyBertServiceCallerEndpoint +"/keywords", {
-                timeout: 25000,
+            console.log("requested words"+document)
+            const response = await axios.get(`${keyBertServiceCallerEndpoint}/keywords`, {
+                timeout: 1125000,
                 params: {
                     doc: document
                 }
@@ -90,7 +89,7 @@ app.get("/extract", async (req, res) => {
             } else {
                 console.log(err.message);
                 res.status(500).send({
-                    message: `Unknown error in sending request to service endpoint`
+                    message: `Unknown error in sending request to service endpoint here the error mess`+err.message
                 });
             }
         }
@@ -99,8 +98,7 @@ app.get("/extract", async (req, res) => {
         try {
             console.log(keyLLMServiceCallerEndpoint)
             // Create a new instance of Axios for each request
-
-            const response = await axios.get( keyLLMServiceCallerEndpoint +"/keywords_only_LMM", {
+            const response = await axios.get(`${keyLLMServiceCallerEndpoint}/keywords_only_LMM`, {
                 timeout: 25000,
                 params: {
                     doc: document
@@ -129,7 +127,8 @@ app.get("/extract", async (req, res) => {
             console.log(keyLLMServiceCallerEndpoint)
             // Create a new instance of Axios for each request
 
-            const response = await axios.get( keyLLMServiceCallerEndpoint+"/keywords_both", {
+
+            const response = await axios.get( `${keyLLMServiceCallerEndpoint}/keywords_both`, {
                 timeout: 45000,
                 params: {
                     doc: document
@@ -176,7 +175,7 @@ app.get("/enrich_same_level", async (req, res) => {
             console.log(keyBertServiceCallerEndpoint)
             // Create a new instance of Axios for each request
             for(let i=0;i<keywords.length;i++) {
-                const response = await axios.get(yagoServiceCallerEndpoint + "/querySameLevelHierarchy", {
+                const response = await axios.get(`${yagoServiceCallerEndpoint}/querySameLevelHierarchy`, {
                     timeout: 25000,
                     params: {
                         element: keywords[i]
@@ -224,7 +223,7 @@ app.get("/enrich_upper_level", async (req, res) => {
             console.log(keyBertServiceCallerEndpoint)
             // Create a new instance of Axios for each request
             for(let i=0;i<keywords.length;i++) {
-                const response = await axios.get(yagoServiceCallerEndpoint + "/queryUpperHierarchy", {
+                const response = await axios.get(`${yagoServiceCallerEndpoint}/queryUpperHierarchy`, {
                     timeout: 25000,
                     params: {
                         element: keywords[i]

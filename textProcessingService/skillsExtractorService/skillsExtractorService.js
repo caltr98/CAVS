@@ -12,6 +12,7 @@ let ojdServiceEndpoint,gptServiceEndpoint
 
 // Function to read config.json and update yagoServiceCallerEndpoint
 function updateConfig() {
+
     fs.readFile('config.json', 'utf8', (err, data) => {
         if (err) {
             console.error('Error reading config.json:', err);
@@ -69,7 +70,7 @@ app.get("/keyword_to_skills", async (req, res) => {
             });
             // Convert the JSON object to a string
             const jsonString = JSON.stringify(jsonObject, null, 2);
-            const response = await axios.get( ojdServiceEndpoint +"/keyword_to_skills", {
+            const response = await axios.get( `${ojdServiceEndpoint}/keyword_to_skills`, {
                 timeout: 250000,
                 params: {
                     keywords: jsonString
@@ -85,22 +86,26 @@ app.get("/keyword_to_skills", async (req, res) => {
 
             //console.log(skilled)
             let uri =  ""
-            skilled.forEach((skill, i) => {
-                if (Array.isArray(skill) && skill.length > 1) {
-                    let integratedCode = skill[1][1]
-                    if(integratedCode[0] === 'K'){
-                        uri = "http://data.europa.eu/esco/isced-f/"+integratedCode.substring(1)
-                    }
-                    else {
-                        uri = "http://data.europa.eu/esco/skill/"+integratedCode
-                    }
-                    skill[1].push(uri)
-                    console.log(skill[1]); // Print the second element of the current skill array
+            if(skilled.length === 0) {
+                res.json({ "skills": [] });
 
-                }
-            });
-            res.json({ "skills": skilled });
+            }
+            else {
+                skilled.forEach((skill, i) => {
+                    if (Array.isArray(skill) && skill.length > 1) {
+                        let integratedCode = skill[1][1]
+                        if (integratedCode[0] === 'K') {
+                            uri = "http://data.europa.eu/esco/isced-f/" + integratedCode.substring(1)
+                        } else {
+                            uri = "http://data.europa.eu/esco/skill/" + integratedCode
+                        }
+                        skill[1][1] = (uri)
+                        console.log(skill[1]); // Print the second element of the current skill array
 
+                    }
+                });
+                res.json({"skills": skilled});
+            }
         } catch (err) {
             if (err.code === 'ECONNABORTED') {
                 console.log("Request timed out");

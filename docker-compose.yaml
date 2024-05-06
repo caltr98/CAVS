@@ -15,4 +15,23 @@ services:
     image: ojddapsservice1:latest
     ports:
       - "5005:5005"
-
+  TextProcessingService:
+    image: textprocessingservice1:latest
+    ports:
+      - "4500:4500"
+    depends_on:
+      - KeyBertService
+      - KeyLLMService
+  SkillsExtractorService:
+    image: skillextractorservice:latest
+    ports:
+      - "4502:4502"
+    depends_on:
+      - Ojd_service1
+  TextWebApp:
+    image: textwebapp:latest
+    ports:
+      - "13001:3000"
+    depends_on:
+      - SkillsExtractorService
+      - TextProcessingService

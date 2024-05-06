@@ -1,4 +1,4 @@
 {
-  "ojd_daps_ServiceEndpoint": "http://127.0.0.1:5005",
+  "ojd_daps_ServiceEndpoint": "http://Ojd_service1:5005",
   "gptSkillServiceEndpoint":"http://localhost:45001"
 }

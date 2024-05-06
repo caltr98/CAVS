@@ -1,6 +1,5 @@
 {
-  "yagoServiceCallerEndpoint": "http://localhost:13000",
-  "keyBertServiceEndpoint":"http://localhost:5003",
-  "keyLLMServiceEndpoint":"http://localhost:5002"
-
+  "yagoServiceCallerEndpoint": "http://YagoSC:13000",
+  "keyBertServiceEndpoint":"http://KeyBertService:5003",
+  "keyLLMServiceEndpoint":"http://KeyLLMService:5002"
 }

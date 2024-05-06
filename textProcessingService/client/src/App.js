@@ -139,10 +139,12 @@ function App() {
                 console.log(response.data)
 
                 setSkills({skills: response.data.skills})
+
+
                 if (upperLevelKeywords.keywords) {
                     console.log("upper level"+upperLevelKeywords.keywords)
                     let response = await axios.get(`${addressSkillProcessor}/keyword_to_skills`, {
-                        timeout: 65000 * upperLevelKeywords.keywords.length,
+                        timeout: 95000 * upperLevelKeywords.keywords.length,
                         params: {
                             keywords: upperLevelKeywords.keywords,
                             engine: selectedSkillExtractorEngine
@@ -155,9 +157,9 @@ function App() {
                 if (sameLevelKeywords.keywords) {
                     console.log("upper level"+sameLevelKeywords.keywords)
                     let response = await axios.get(`${addressSkillProcessor}/keyword_to_skills`, {
-                        timeout: 65000 * sameLevelKeywords.keywords.length,
+                        timeout: 95000 * sameLevelKeywords.keywords.length,
                         params: {
-                            keywords: upperLevelKeywords.keywords,
+                            keywords: sameLevelKeywords.keywords,
                             engine: selectedSkillExtractorEngine
                         }
                     });
