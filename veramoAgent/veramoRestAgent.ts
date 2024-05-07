@@ -11,7 +11,7 @@ import {
     IDataStoreSaveVerifiableCredentialArgs,
     IDIDManagerGetArgs,
     IIdentifier,
-    VerifiableCredential, FindArgs, TCredentialColumns, Where
+    VerifiableCredential, FindArgs, TCredentialColumns, Where, IVerifyResult
 } from "@veramo/core";
 import { Decoder } from '@nuintun/qrcode';
 import QrScanner from 'qr-scanner'; // if installed via package and bundling with a module bundler like webpack or rollup
@@ -200,6 +200,7 @@ app.post('/issue_verifiable_credential', async (req: Request, res: Response) => 
 
         }
         else {
+            console.log("sending"+verifiableCredential.proof.jwt)
             res.send({res: "OK", jwt: verifiableCredential.proof.jwt});
         }
     } catch (error){
@@ -230,7 +231,7 @@ app.get('/list_verifiable_credentials_with_type', async (req: Request, res: Resp
         where: [
             {
                 column: 'type',
-                value: ['VerifiableCredential,ESCO_type_VC'],
+                value: ['VerifiableCredential,'+queryParam],
                 op: 'Equal',}
         ],
         order: [{ column: 'issuanceDate', direction: 'ASC' }],
@@ -385,9 +386,9 @@ function format_jwt_decoded(jwt_encoded: string, jwt_decoded: any): VerifiableCr
 
 //verify_credential
 // Define a route that returns a qr-code for a verifiable credential
-app.get('/verify', async (req: Request, res: Response) => {
+app.post('/verify', async (req: Request, res: Response) => {
 
-    const credential = <string>req.query.credential
+    const credential = <VerifiableCredential>req.body.credential
     /*
     let credenziale = {
         "VerifiableCredential": {
@@ -452,11 +453,12 @@ app.get('/verify', async (req: Request, res: Response) => {
 
     console.log(`Credential verified err`,     result.error
     )*/
-    const result = await agent.verifyCredential({
+    const result:IVerifyResult = await agent.verifyCredential({
         credential: credential
     })
 
-    res.send(result)
+    console.log("result of verification"+result.verified)
+    res.send({res:result.verified})
 });
 
 

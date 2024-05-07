@@ -14,6 +14,7 @@ let skillExtractorEngines = []
 let selectedExtractorEngine = '';
 let selectedEnricherEngine = 'NONE';
 let selectedSkillExtractorEngine = '';
+const selectedDID = "did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1";
 
 const config = require('./config.json');
 
@@ -21,8 +22,7 @@ app.use(cors(),express.json());
 
 const serviceKeywordsEndpoint = config.serviceKeywordsEndpoint
 const serviceSkillsEndpoint = config.serviceSkillsEndpoint
-
-
+const veramoAgentEndpoint = config.veramoAgentEndpoint
 
 const configureApp = async () => {
     try {
@@ -302,6 +302,12 @@ const extractSkills = async (keywords, res) => {
 // Then it creates a Statement Verifiable credential
 app.post('/api/vc',bodyParser.json(), async (req, res) => {
     const document = req.body.document;
+    const credentials = req.body.credentials;
+    const typeStatement = req.body.typeStatement
+    const category = req.body.category
+    const hostURL = req.body.hostURL
+    const holderDID = req.body.holderDID
+
 
     // Call the extractKeywords function
     let result = await extractKeywords(document);
@@ -338,7 +344,7 @@ app.post('/api/vc',bodyParser.json(), async (req, res) => {
     if(result.status !==200){ //error
         res.send(result)
     }
-    let skillsKeywords = result.skills
+    let skillsKeywords = parseSkills(result.skills)
 
     console.log("here res"+skillsKeywords)
 
@@ -347,14 +353,14 @@ app.post('/api/vc',bodyParser.json(), async (req, res) => {
         res.send(result)
     }
 
-    let sameLevelKeywordsSkills = result.skills
+    let sameLevelKeywordsSkills = parseSkills(result.skills)
 
 
     result = await extractSkills(upperLevelKeywords)
     if(result.status !==200){ //error
         res.send(result)
     }
-    let upperLevelKeywordsSkills = result.skills
+    let upperLevelKeywordsSkills = parseSkills(result.skills)
 
     // Send the appropriate response based on the resultC
 
@@ -363,11 +369,142 @@ app.post('/api/vc',bodyParser.json(), async (req, res) => {
 
     console.log(upperLevelKeywordsSkills)
 
-    res.send(200, {skills: skillsKeywords} );
+    let keywordsCredentials = []
+    let sameLevelKeywordsCredentials = []
+    let upperLevelKeywordsCredentials = []
+    for(let i = 0; i < credentials.length; i++) {
+        let cred = credentials[i];
+        let skills = cred.credentialSubject.skills;
+        let put = false;
+        let put2 = false;
+        let put3 = false;
+        let j = 0;
+
+        while (j < skills.length && !put) {
+            let k = 0;
+            while (k < skillsKeywords.length && !put) {
+                if (skills[j][1] === skillsKeywords[k][1]) {
+                    console.log("match")
+                    put = true;
+                }
+                k++;
+            }
+            k = 0;
+            while (!put && k < sameLevelKeywordsSkills.length && !put2) {
+                if (skills[j][1] === sameLevelKeywordsSkills[k][1]) {
+                    put2 = true;
+                }
+                k++;
+            }
+            k = 0;
+            while (!put && !put2 && k < upperLevelKeywordsSkills.length && !put3) {
+                if (skills[j][1] === upperLevelKeywordsSkills[k][1]) {
+                    put3 = true;
+                }
+                k++;
+            }
+            j++;
+        }
+        if (put) {
+            if(verify_VC(cred)) { //put only if credential is verified
+                keywordsCredentials.push(cred);
+            }
+            else{
+                console.log("failed")
+            }
+
+        } else if (put2) {
+            if(verify_VC(cred)) { //put only if credential is verified
+                sameLevelKeywordsCredentials.push(cred);
+            }
+        } else if(put3) {
+            if (verify_VC(cred)) {
+                upperLevelKeywordsCredentials.push(cred);
+            }
+        }
+    }
 
 
+    console.log("issuing Statement Verifiable Credential");
+    try {
+        const response = await axios.post(
+            `${veramoAgentEndpoint}/issue_verifiable_credential`,
+            {
+                issuer: selectedDID,
+                holder: holderDID,
+                type: "StatementVerifiableCredential",
+                attributes: ({
+                    keywords: keywords,
+                    similar_concepts_keywords: sameLevelKeywords,
+                    general_concepts_keywords: upperLevelKeywords,
+                    statementType: typeStatement,
+                    statementCategory: category,
+                    statementHostURL: hostURL,
+                    credentials_for_skills: keywordsCredentials,
+                    credentials_for_similar_concepts_skills: sameLevelKeywordsCredentials,
+                    credentials_for_general_concepts_skills: upperLevelKeywordsCredentials
+                }),
+                store: false
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 65000
+            }
+        );
+        console.log("before ret");
+        let jwt = response.data.jwt
+        console.log("here is the jwt"+jwt)
+        res.status(200).send({ jwt: jwt });
+    } catch (error) {
+        console.log("before ret with error");
 
+        res.status(500).send("Failed to create Verifiable Credential");
+    }
 });
+
+const parseSkills = (skills) => {
+    // Create a map to store unique skills
+    const uniqueSkillsMap = new Map();
+
+    // Iterate over the skills array
+    skills.forEach(([skillTerm, [skillCategory, skillLink]]) => {
+        // Check if the skill category already exists in the map
+        if (uniqueSkillsMap.has(skillCategory)) {
+            // If exists, compare the current link with the existing one and keep the shortest link
+            const existingLink = uniqueSkillsMap.get(skillCategory)[1];
+            if (skillLink.length < existingLink.length) {
+                uniqueSkillsMap.set(skillCategory, [skillCategory, skillLink]);
+            }
+        } else {
+            // If not exists, add the skill category to the map
+            uniqueSkillsMap.set(skillCategory, [skillCategory, skillLink]);
+        }
+    });
+
+    // Convert the map values to an array of unique skills
+    const uniqueSkills = Array.from(uniqueSkillsMap.values());
+
+    return uniqueSkills;
+};
+
+const verify_VC = async (vc) => {
+
+    let response = await axios.post(
+        `${veramoAgentEndpoint}/verify`,
+        {
+            credential: vc,
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            timeout: 65000
+        }
+    );
+    return response.data.res
+}
 
 // Call configureApp before app.listen
 configureApp().then(() => {
