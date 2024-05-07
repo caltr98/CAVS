@@ -1,0 +1,4 @@
+{
+"serviceKeywordsEndpoint": "http://localhost:4500",
+"serviceSkillsEndpoint": "http://localhost:4502"
+}

@@ -107,6 +107,9 @@ GET http://localhost:3001/get_own_did
 GET http://localhost:3001/get_did_doc?did=did:ethr:goerli:0x034e4ecfb60a1a922c027c356480eab896c21f9eb95feabdb6e8408492c81c3f84
 Content-Type: application/json
 
+###
+GET http://localhost:3001/get_verifiable_credential?hash_cred=QmddTNfSuDoNDytXvagAad8bERKe2iTSZkucApuU1VgAXj
+
 
 ###
 GET http://localhost:3001/issue_verifiable_credential?issuer=did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1&holder=did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1&attributes={"hi":"hello"}&store=true
@@ -122,3 +125,14 @@ GET http://localhost:3001/get_qr_code?hash=QmXvBCqkEFw6Tc14ct8TRReAZ7UkruJzFwPaS
 
 ###
 GET http://localhost:3001/verify
+
+
+### Test extract API ###
+
+# POST request to /api/extract
+POST http://localhost:4200/api/extract
+Content-Type: application/json
+
+{
+  "document": "The study explores the impact of climate change on coral reef ecosystems."
+}

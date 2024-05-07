@@ -19,19 +19,19 @@ def get_keywords():
     doc = request_data['doc']
 
     kw_model = KeyBERT()
-    keywords_with_scores1 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None, threshold=0.3)
-    keywords_with_scores2 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words=None,threshold=0.3)
+    keywords_with_scores1 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None, nr_candidates = 100,top_n = 50)
+    keywords_with_scores2 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words=None,nr_candidates = 100,top_n = 50)
 
     # Combine the keyword lists
     combined_keywords = [keyword for keyword, _ in keywords_with_scores1]
     combined_keywords.extend([keyword for keyword, _ in keywords_with_scores2])
+    filtered_keywords = [keyword for keyword, score in combined_keywords if score >= 70]
 
-    print(combined_keywords)
     # Count the number of keywords
-    num_keywords = len(combined_keywords)
+    num_keywords = len(filtered_keywords)
 
     # Return JSON response with number of keywords and keywords array
-    return jsonify(num_keywords=num_keywords, keywords=combined_keywords)
+    return jsonify(num_keywords=num_keywords, keywords=filtered_keywords)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=int("5003"))

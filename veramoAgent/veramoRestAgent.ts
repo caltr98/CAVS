@@ -5,7 +5,14 @@ import cors from 'cors';
 import axios from 'axios';
 import qrcode from 'qrcode'
 import { agent } from './src/veramo/setup.js'
-import {CredentialSubject, ICredentialIssuer, IDIDManagerGetArgs, IIdentifier,VerifiableCredential} from "@veramo/core";
+import {
+    CredentialSubject,
+    ICredentialIssuer,
+    IDataStoreSaveVerifiableCredentialArgs,
+    IDIDManagerGetArgs,
+    IIdentifier,
+    VerifiableCredential, FindArgs, TCredentialColumns, Where
+} from "@veramo/core";
 import { Decoder } from '@nuintun/qrcode';
 import QrScanner from 'qr-scanner'; // if installed via package and bundling with a module bundler like webpack or rollup
 import fs from 'fs'
@@ -20,7 +27,8 @@ import bodyParser from "body-parser"
 const app = express();
 
 // Enable CORS
-app.use(cors(),bodyParser.json());
+app.use(cors());
+app.use(bodyParser.json());
 
 // Define a type for the user object
 interface User {
@@ -75,53 +83,85 @@ app.get('/get_did_doc', async (req: Request, res: Response) => {
 });
 
 
-
-// Define a route that returns a did document from the wallet
-app.get('/issue_verifiable_credential', async (req: Request, res: Response) => {
-
-    let issuer_did:string = <string>req.query.issuer
-    let holder_did:string=<string>req.query.holder
-    let type_cred:string=<string>req.query.type
-
-    console.log(req.query.attributes)
-    const attributes: JSON = JSON.parse(<string>req.query.attributes);
-    const toStore: boolean | undefined = req.query.store === 'true';
-    let credential_subject_full= { ...{id:holder_did}, ...attributes };
-    let typeToPut:string[] = ["VerifiableCredential"]
-    if(type_cred){
-        typeToPut.push(type_cred)
-    }
-    try {
-        let verifiableCredential = await agent.createVerifiableCredential({
-            credential: {
-                "@context": [
-                    "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/examples/v1"
-                ],
-                issuer: {id: issuer_did},
-                type:typeToPut,
-                credentialSubject: credential_subject_full,
-            },
-            proofFormat: 'jwt',
-            fetchRemoteContexts: true
-        })
-        console.log(verifiableCredential)
-
-        if(toStore){
-            const hash = await agent.dataStoreSaveVerifiableCredential({ verifiableCredential })
-            console.log("stored: "+hash)
+function parseNestedJSON(obj: any): any {
+    let parsed: any = {};
+    // Iterate over all keys in the object
+    for (let key in obj) {
+        // Check if the value corresponding to the key is an object
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+            // If it's an object, recursively parse it and assign the result to the key
+            parsed[key] = parseNestedJSON(obj[key]);
+        } else if (typeof obj[key] === 'string') {
+            // If it's a string, try to parse it as JSON
+            try {
+                // Attempt to parse as JSON object
+                parsed[key] = JSON.parse(obj[key]);
+            } catch (error) {
+                // If parsing as object fails, attempt to parse as JSON array
+                try {
+                    // Attempt to parse as JSON array
+                    parsed[key] = JSON.parse(`[${obj[key]}]`);
+                } catch (error) {
+                    // If parsing fails, assign the string value as is
+                    parsed[key] = obj[key];
+                }
+            }
+        } else {
+            // If it's not an object or a string, assign its value to the key
+            parsed[key] = obj[key];
         }
-        res.send({res:"OK",cred_hash:verifiableCredential});
-    } catch (error){
-        // we'll proceed, but let's report it
-        res.status(500).send({
-            message: `credential issuer must be a DID managed by this agent`
-        });
+    }
+    return parsed;
+}
+// Define an interface representing the structure of your JSON object
+interface VerifiableCredentialDecoded {
+    vc: any; // Define the type of vc accordingly
+    sub: string;
+    nbf: number;
+    iss: string;
+}
+// Define an interface representing the structure of your JSON object
+interface VerifiableCredentialDecoded {
+    vc: any; // Define the type of vc accordingly
+    sub: string;
+    nbf: number;
+    iss: string;
+}
 
+// Your route handler
+app.post('/store_vc', bodyParser.json(), async (req: Request, res: Response) => {
+    try {
+        console.log("here");
+        console.log(req.body.verifiableCredential); // This should work
+        // Log the keys of the JSON object
+        const decoded_jwt:VerifiableCredentialDecoded = jwtDecode(req.body.verifiableCredential)
+        const verifiable_credential = format_jwt_decoded(req.body.verifiableCredential,decoded_jwt) as VerifiableCredential
+        try{
+            console.log(req.body.verifiableCredential)
+            console.log(req.body.credentialSubject)
+
+            let vc:IDataStoreSaveVerifiableCredentialArgs = ({verifiableCredential:verifiable_credential}) as IDataStoreSaveVerifiableCredentialArgs
+            console.log("here is vc"+JSON.stringify(vc))
+            const hash = await agent.dataStoreSaveVerifiableCredential(vc);
+            res.send({res:"OK",hash: hash});
+
+        } catch (error){
+            console.log(error)
+            // we'll proceed, but let's report it
+            res.status(500).send({
+                message: `error in store`
+            });
+
+        }
+
+    } catch (error) {
+        console.log(error);
+        // Handle errors
     }
 });
-// Define a route that returns a did document from the wallet
-app.post('/issue_big_verifiable_credential', async (req: Request, res: Response) => {
+
+// Define a route that issues a credential
+app.post('/issue_verifiable_credential', async (req: Request, res: Response) => {
 
     console.log(req.body)
     let issuer_did:string = <string>req.body.issuer
@@ -132,7 +172,7 @@ app.post('/issue_big_verifiable_credential', async (req: Request, res: Response)
     const attributes: JSON= req.body.attributes
     const toStore: boolean | undefined = req.body.store === true;
     let credential_subject_full= { ...{id:holder_did}, ...attributes };
-    let typeToPut:string[] = ["VerifiableCredential"]
+    let typeToPut:string[] = []
     if(type_cred){
         typeToPut.push(type_cred)
     }
@@ -151,18 +191,19 @@ app.post('/issue_big_verifiable_credential', async (req: Request, res: Response)
             proofFormat: 'jwt',
             fetchRemoteContexts: true
         })
-        console.log(verifiableCredential)
 
         if(toStore){
+            console.log("before storing"+JSON.stringify(verifiableCredential,null,2))
             const hash = await agent.dataStoreSaveVerifiableCredential({ verifiableCredential })
             console.log("stored: "+hash)
-            res.send({res:"OK",cred_hash:hash});
+            res.send({res:"OK",jwt: verifiableCredential.proof.jwt});
 
         }
         else {
-            res.send({res: "OK", cred_hash: verifiableCredential});
+            res.send({res: "OK", jwt: verifiableCredential.proof.jwt});
         }
     } catch (error){
+        console.log(error)
         // we'll proceed, but let's report it
         res.status(500).send({
             message: `credential issuer must be a DID managed by this agent`
@@ -175,7 +216,31 @@ app.post('/issue_big_verifiable_credential', async (req: Request, res: Response)
 
 // Define a route that returns a list of verifiable credentials from wallet
 app.get('/list_verifiable_credentials', async (req: Request, res: Response) => {
+
+
     const respose = await agent.dataStoreORMGetVerifiableCredentials()
+    res.send(respose);
+});
+
+// Define a route that returns a list of verifiable credentials from wallet
+app.get('/list_verifiable_credentials_with_type', async (req: Request, res: Response) => {
+
+    let queryParam = req.query.type as string
+    const query: FindArgs<TCredentialColumns> = {
+        where: [
+            {
+                column: 'type',
+                value: ['VerifiableCredential,ESCO_type_VC'],
+                op: 'Equal',}
+        ],
+        order: [{ column: 'issuanceDate', direction: 'ASC' }],
+    }
+
+
+    let respose = await agent.dataStoreORMGetVerifiableCredentials(query)
+
+    console.log("respon"+respose.toString())
+
     res.send(respose);
 });
 
@@ -283,7 +348,7 @@ function convertTimestampToIssuanceDate(timestampInSeconds: number): string {
     return date.toISOString();
 }
 
-function format_jwt_decoded(jwt_encoded: string, jwt_decoded: any): string {
+function format_jwt_decoded(jwt_encoded: string, jwt_decoded: any): VerifiableCredential {
     // Create an empty object
     let obj: any = {};
     let credSubj: any = {};
@@ -291,13 +356,13 @@ function format_jwt_decoded(jwt_encoded: string, jwt_decoded: any): string {
     let issuerObj: any ={};
 
     // Example usage
+    console.log("date is"+jwt_decoded.nbf)
     const issuanceDate = convertTimestampToIssuanceDate(jwt_decoded.nbf);
-     console.log("Issuance Date:", issuanceDate);
+    console.log("Issuance Date:", issuanceDate);
 
     obj["issuanceDate"] = issuanceDate;
 
     obj["@context"] = jwt_decoded.vc["@context"];
-    console.log("contestoo"+jwt_decoded.vc.context+"\n\n")
     console.log("obj[\"@context\"] ="+obj["@context"]+"\n\n")
 
     obj.type = jwt_decoded.vc.type;

@@ -13,7 +13,7 @@ RUN npm install axios express cors
 
 # Copy the rest of the application code
 COPY ./textProcessingService.iml .
-COPY ./CAVSService.js .
+COPY CAVSService.js .
 COPY ./config.json .
 COPY ./config.json ./src
 
