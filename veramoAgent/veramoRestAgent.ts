@@ -11,7 +11,13 @@ import {
     IDataStoreSaveVerifiableCredentialArgs,
     IDIDManagerGetArgs,
     IIdentifier,
-    VerifiableCredential, FindArgs, TCredentialColumns, Where, IVerifyResult
+    VerifiableCredential,
+    FindArgs,
+    TCredentialColumns,
+    Where,
+    IVerifyResult,
+    VerifiablePresentation,
+    PresentationPayload, CredentialPayload, IssuerType, TPresentationColumns
 } from "@veramo/core";
 import { Decoder } from '@nuintun/qrcode';
 import QrScanner from 'qr-scanner'; // if installed via package and bundling with a module bundler like webpack or rollup
@@ -24,6 +30,7 @@ import {PNG} from 'pngjs'
 import jpeg from 'jpeg-js'
 import { jwtDecode } from "jwt-decode";
 import bodyParser from "body-parser"
+import {Presentation} from "@veramo/data-store";
 const app = express();
 
 // Enable CORS
@@ -181,8 +188,7 @@ app.post('/issue_verifiable_credential', async (req: Request, res: Response) => 
         let verifiableCredential = await agent.createVerifiableCredential({
             credential: {
                 "@context": [
-                    "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/examples/v1"
+                    "https://www.w3.org/ns/credentials/v2",
                 ],
                 issuer: {id: issuer_did},
                 type:typeToPut,
@@ -214,6 +220,34 @@ app.post('/issue_verifiable_credential', async (req: Request, res: Response) => 
 });
 
 
+// Define a route that issues a verifiable presentation
+app.post('/issue_verifiable_presentation/holder_claim', async (req: Request, res: Response) => {
+    const holderDid: string = req.body.holder;
+    const typeCred: string = req.body.type;
+    const attributes: JSON = req.body.attributes;
+    const assertion:string = req.body.assertion;
+    const toStore: boolean | undefined = req.body.store === true;
+
+    try {
+        const verifiablePresentation = await createVPwithHolderClaim(typeCred, assertion,holderDid, attributes);
+
+        if (verifiablePresentation) {
+            if (toStore) {
+                const hash = await agent.dataStoreSaveVerifiablePresentation({ verifiablePresentation });
+                console.log("Stored: " + hash);
+            }
+            res.send({ res: "OK", jwt: verifiablePresentation.proof.jwt });
+        } else {
+            res.status(500).send({ message: "Failed to create verifiable presentation" });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Internal server error" });
+    }
+});
+
+
+
 
 // Define a route that returns a list of verifiable credentials from wallet
 app.get('/list_verifiable_credentials', async (req: Request, res: Response) => {
@@ -222,6 +256,21 @@ app.get('/list_verifiable_credentials', async (req: Request, res: Response) => {
     const respose = await agent.dataStoreORMGetVerifiableCredentials()
     res.send(respose);
 });
+// Define a route that returns a list of verifiable presentations from the wallet
+app.get('/list_verifiable_presentations', async (req: Request, res: Response) => {
+    try {
+        // Retrieve the list of verifiable presentations from the wallet
+        const verifiablePresentations = await agent.dataStoreORMGetVerifiablePresentations();
+
+        // Send the list of verifiable presentations as the response
+        res.send(verifiablePresentations);
+    } catch (error) {
+        // If an error occurs, send an error response
+        console.error(error);
+        res.status(500).send({ message: "Internal server error" });
+    }
+});
+
 
 // Define a route that returns a list of verifiable credentials from wallet
 app.get('/list_verifiable_credentials_with_type', async (req: Request, res: Response) => {
@@ -244,6 +293,37 @@ app.get('/list_verifiable_credentials_with_type', async (req: Request, res: Resp
 
     res.send(respose);
 });
+
+// Define a route that returns a list of verifiable presentations from the wallet based on a specific type
+app.get('/list_verifiable_presentations_with_type', async (req: Request, res: Response) => {
+    try {
+        // Extract the type query parameter from the request
+        const queryParam: string = req.query.type as string;
+
+        // Define the query to filter verifiable presentations by type
+        const query: FindArgs<TPresentationColumns> = {
+            where: [
+                {
+                    column: 'type',
+                    value: ['VerifiablePresentation,'+queryParam],
+                    op: 'Equal',
+                }
+            ],
+            order: [{ column: 'issuanceDate', direction: 'ASC' }],
+        };
+
+        // Retrieve the list of verifiable presentations from the wallet based on the type query
+        const response = await agent.dataStoreORMGetVerifiablePresentations(query);
+
+        // Send the list of verifiable presentations as the response
+        res.send(response);
+    } catch (error) {
+        // If an error occurs, send an error response
+        console.error(error);
+        res.status(500).send({ message: "Internal server error" });
+    }
+});
+
 
 // Define a route that returns ONE verifiable credentials from wallet given an HASH
 app.get('/get_verifiable_credential', async (req: Request, res: Response) => {
@@ -383,6 +463,59 @@ function format_jwt_decoded(jwt_encoded: string, jwt_decoded: any): VerifiableCr
 
     return (obj);
 }
+
+
+    async function createVPwithHolderClaim(typeVP: string, assertion:string,holder: string, jsonVar: JSON): Promise<VerifiablePresentation|null> {
+
+        let presentationPayload: PresentationPayload = {} as PresentationPayload;
+
+
+        presentationPayload.type = ["VerifiablePresentation", typeVP]
+        presentationPayload["@context"] = ["https://www.w3.org/ns/credentials/v2"]
+        presentationPayload.holder = holder
+
+
+        //create a uuid for the VP
+        let uuid = crypto.randomUUID()
+        presentationPayload.id = uuid;
+
+
+        let vc_payload: CredentialPayload = {} as CredentialPayload;
+
+        let issuer_data: IssuerType = {id:holder} as IssuerType;
+        vc_payload.issuer = issuer_data
+        vc_payload["@context"]= ["https://www.w3.org/ns/credentials/v2"]
+        vc_payload.type = ['VerifiableCredential', 'VCPresentation',"VCfor"+typeVP]
+        let vc_cred_subj: CredentialSubject = jsonVar
+        //vc_cred_subj['assertion'] = 'This VP is submitted by the subject as evidence of  VC propagation'
+        vc_cred_subj['assertion'] = assertion
+
+        vc_cred_subj['id'] = uuid
+
+        vc_payload.credentialSubject = vc_cred_subj;
+
+        try {
+            let verifiableCredential = await agent.createVerifiableCredential({
+                credential:vc_payload,
+                proofFormat: 'jwt',
+                fetchRemoteContexts: true
+            })
+
+            presentationPayload.verifiableCredential = [verifiableCredential]
+
+
+            let verifiablePresentation = await agent.createVerifiablePresentation({
+                presentation:presentationPayload,
+                proofFormat: 'jwt'
+            })
+
+            return verifiablePresentation
+        } catch (error) {
+            console.log(error)
+            return  null
+        }
+        return null
+    }
 
 //verify_credential
 // Define a route that returns a qr-code for a verifiable credential

@@ -1,3 +1,5 @@
+
+
 ###
 //send request
 GET http://localhost:13000
@@ -145,7 +147,6 @@ POST http://localhost:4201/publish
 Content-Type: application/json
 
 {
-  "identityId": "Cal",
   "toStore": "hello12"
 }
 
@@ -162,19 +163,41 @@ POST http://localhost:4201/upload
 Content-Type: application/json
 
 {
-  "text": "Calogerp",
-  "identityId" : "Cal"
+  "text": "haaas<aeeaallaalloo"
 }
 
 ###
 
 # POST request to /publish
-GET http://localhost:4201/fetch?gotCID=bafkreiahnvzbzyvwoizrxprk7574gkgdg5uin72j2vt26knmiizswbstca
+GET http://localhost:4201/fetch?gotCID=bafkreidicqo66z47ytwi4zobwzxuckpenl7epmtm7yd37lkd53milfz2ni
 
 
 
 
 
+
+# testing
+### Issue Verifiable Presentation with Holder Claim
+
+POST http://localhost:3001/issue_verifiable_presentation/holder_claim
+Content-Type: application/json
+
+{
+  "holder": "did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1",
+  "type": "ExampleTypeVP",
+  "attributes": {
+    "attribute1": "value1",
+    "attribute2": "value2",
+    "attribute3": "value3"
+
+  },
+  "store": true
+}
+
+
+### List vp
+
+GET http://localhost:3001/list_verifiable_presentations
 
 
 
