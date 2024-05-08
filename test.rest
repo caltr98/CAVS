@@ -136,3 +136,45 @@ Content-Type: application/json
 {
   "document": "The study explores the impact of climate change on coral reef ecosystems."
 }
+
+
+### Test Helia API ###
+
+# POST request to /publish
+POST http://localhost:4201/publish
+Content-Type: application/json
+
+{
+  "identityId": "Cal",
+  "toStore": "hello12"
+}
+
+
+###
+# GET read from cit
+GET http://localhost:4201/read_cid?requestedCid=/bafkreifhe7tyc6aspx6oroqultlew6jjumh2ykgh5ajua5q672q4lgxobe
+
+
+###
+
+# POST request to /publish
+POST http://localhost:4201/upload
+Content-Type: application/json
+
+{
+  "text": "Calogerp",
+  "identityId" : "Cal"
+}
+
+###
+
+# POST request to /publish
+GET http://localhost:4201/fetch?gotCID=bafkreiahnvzbzyvwoizrxprk7574gkgdg5uin72j2vt26knmiizswbstca
+
+
+
+
+
+
+
+

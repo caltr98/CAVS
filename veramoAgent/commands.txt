@@ -30,3 +30,13 @@ yarn add @nuintun/qrcode
 
 SU Client
 import fs from 'fs'
+
+
+
+su client per ipfs
+
+npm install blockstore-fs
+
+npm install helia
+
+yarn add @helia/unixfs

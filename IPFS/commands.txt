@@ -1,0 +1,4 @@
+npm install (need to setup package.json)
+oppure
+yarn install (+ veloce)
+yarn add blockstore-fs
