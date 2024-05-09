@@ -40,3 +40,5 @@ npm install blockstore-fs
 npm install helia
 
 yarn add @helia/unixfs
+
+yarn add react-drag-drop-files

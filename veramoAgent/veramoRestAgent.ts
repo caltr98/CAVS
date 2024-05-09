@@ -17,8 +17,10 @@ import {
     Where,
     IVerifyResult,
     VerifiablePresentation,
-    PresentationPayload, CredentialPayload, IssuerType, TPresentationColumns
+    PresentationPayload, CredentialPayload, IssuerType, TPresentationColumns, W3CVerifiablePresentation
 } from "@veramo/core";
+
+import {ICredentialIssuerLD} from "@veramo/credential-ld"
 import { Decoder } from '@nuintun/qrcode';
 import QrScanner from 'qr-scanner'; // if installed via package and bundling with a module bundler like webpack or rollup
 import fs from 'fs'
@@ -142,7 +144,7 @@ app.post('/store_vc', bodyParser.json(), async (req: Request, res: Response) => 
         console.log(req.body.verifiableCredential); // This should work
         // Log the keys of the JSON object
         const decoded_jwt:VerifiableCredentialDecoded = jwtDecode(req.body.verifiableCredential)
-        const verifiable_credential = format_jwt_decoded(req.body.verifiableCredential,decoded_jwt) as VerifiableCredential
+        const verifiable_credential = format_jwt_decoded_to_VC(req.body.verifiableCredential,decoded_jwt) as VerifiableCredential
         try{
             console.log(req.body.verifiableCredential)
             console.log(req.body.credentialSubject)
@@ -314,7 +316,6 @@ app.get('/list_verifiable_presentations_with_type', async (req: Request, res: Re
 
         // Retrieve the list of verifiable presentations from the wallet based on the type query
         const response = await agent.dataStoreORMGetVerifiablePresentations(query);
-
         // Send the list of verifiable presentations as the response
         res.send(response);
     } catch (error) {
@@ -332,8 +333,47 @@ app.get('/get_verifiable_credential', async (req: Request, res: Response) => {
     res.send(respose);
 });
 
+
+
+//route to get a verifiable presentation from qr code
+app.post('/decode_jwt/image', async (req: Request, res: Response) => {
+    let png_data = req.body.img_data
+
+    const buffer:Buffer = Buffer.from(png_data,'base64')
+    console.log(buffer.length+"len of buf\n")
+    const png = PNG.sync.read(buffer);
+
+    const code = decode(Uint8ClampedArray.from(png.data), png.width, png.height);
+    console.log("after code decode")
+    let code_jwt: string = <string>code?.data
+    //remove initial and final " as the string seems double stringified
+    if (code_jwt.startsWith('"') && code_jwt.endsWith('"')) {
+        code_jwt = code_jwt.substring(1, code_jwt.length - 1);
+    }
+
+
+    let decoded = jwtDecode(code_jwt);
+    let result = decoded; //result can be any json if not in the following two categories
+    if(decoded.hasOwnProperty('vc')){
+        //if a veriable credential
+        let result:VerifiableCredential = format_jwt_decoded_to_VC(code_jwt,decoded)
+        res.send(result);
+        return;
+    }
+    else if(decoded.hasOwnProperty('vp')){
+        let result:VerifiablePresentation = format_jwt_decoded_to_VP(code_jwt,decoded)
+
+        res.send(result);
+
+        return;
+    }
+    res.send(result);
+});
+
+
 // Define a route that returns a qr-code for a verifiable credential
-app.get('/get_qr_code', async (req: Request, res: Response) => {
+app.get('/get_qr_code/wallet_hash', async (req: Request, res: Response) => {
+
     let hash:string = <string>req.query.hash
     let loaded_credential;
     //loaded_credential = await agent.dataStoreGetVerifiableCredential({hash: hash})
@@ -351,8 +391,6 @@ app.get('/get_qr_code', async (req: Request, res: Response) => {
             if (err) throw err
             console.log('done')
         })
-
-
         // reading of qr code from file and obtain the jwt
         // code obtained from https://stackoverflow.com/questions/51948472/image-base64-string-to-uint8clampedarray
         // mixed with https://github.com/pngjs/pngjs/blob/c565210c602527eb459f857eeb78183997482d5b/README.md?plain=1#L258
@@ -360,6 +398,8 @@ app.get('/get_qr_code', async (req: Request, res: Response) => {
 
 
         const png = PNG.sync.read(data);
+
+        console.log("this is png "+png)
         const code = decode(Uint8ClampedArray.from(png.data), png.width, png.height);
         let code_jwt: string = <string>code?.data
         //remove initial and final " as the string seems double stringified
@@ -409,9 +449,68 @@ app.get('/get_qr_code', async (req: Request, res: Response) => {
     });
 }
 
+
 //res.send({encoded_jwt:code_jwt,decoded_jwt:decoded_jwt,origin:format_jwt_decoded(code_jwt,decoded_jwt)})
 });
 
+// Define a route that returns a qr-code for a verifiable credential
+app.post('/get_qr_code/jwt', async (req: Request, res: Response) => {
+    let jwt: string = <string>req.body.jwt;
+    try {
+        qrcode.toFile('./filename.png', jwt, {
+            color: {
+                dark: '#000000',  // Blue dots
+                light: '#ffffff' // White background
+            }
+        }, async function (err) {
+            if (err) {
+                throw err;
+            } else {
+                try {
+                    // Wait for the file to be written before reading it
+                    let data = await fs.promises.readFile('./filename.png');
+                    console.log(data);
+                    res.setHeader('Content-Type', 'image/png');
+                    res.send(data);
+                } catch (error) {
+                    console.error('Error reading QR code file:', error);
+                    res.status(500).send({
+                        message: 'Error reading QR code file'
+                    });
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error generating QR code:', error);
+        res.status(500).send({
+            message: 'Error generating QR code'
+        });
+    }
+});
+
+
+//route to convert a jwt to VP or VC (or any other text)
+app.get("/decode_jwt", async (req: Request, res: Response) => {
+    let jwt:string = <string>req.query.jwt
+
+    let decoded = jwtDecode(jwt);
+    let result = decoded; //result can be any json if not in the following two categories
+    if(decoded.hasOwnProperty('vc')){
+        //if a veriable credential
+        let result:VerifiableCredential = format_jwt_decoded_to_VC(jwt,decoded)
+        res.send(result);
+        return;
+    }
+    else if(decoded.hasOwnProperty('vp')){
+        let result:VerifiablePresentation = format_jwt_decoded_to_VP(jwt,decoded)
+
+        res.send(result);
+
+        return;
+    }
+    console.log(result)
+    res.send(result);
+});
 
 function convertTimestampToIssuanceDate(timestampInSeconds: number): string {
     // Ensure timestamp is a valid number
@@ -429,7 +528,7 @@ function convertTimestampToIssuanceDate(timestampInSeconds: number): string {
     return date.toISOString();
 }
 
-function format_jwt_decoded(jwt_encoded: string, jwt_decoded: any): VerifiableCredential {
+function format_jwt_decoded_to_VC(jwt_encoded: string, jwt_decoded: any): VerifiableCredential {
     // Create an empty object
     let obj: any = {};
     let credSubj: any = {};
@@ -455,6 +554,48 @@ function format_jwt_decoded(jwt_encoded: string, jwt_decoded: any): VerifiableCr
 
     issuerObj.id = jwt_decoded.sub
     obj.issuer = issuerObj
+
+    proofObj.type = "JwtProof2020";
+    proofObj.jwt = jwt_encoded;
+
+    obj.proof = proofObj;
+
+    return (obj);
+}
+
+function format_jwt_decoded_to_VP(jwt_encoded: string, jwt_decoded: any): VerifiablePresentation {
+    // Create an empty object
+    let obj: any = {};
+    let credentials: any = {};
+    let proofObj: any = {};
+
+
+    console.log("the keys of deconded"+jwt_decoded.keys)
+    // Example usage
+    console.log("date is"+jwt_decoded.nbf)
+    const issuanceDate = convertTimestampToIssuanceDate(jwt_decoded.nbf);
+    console.log("Issuance Date:", issuanceDate);
+
+    obj["issuanceDate"] = issuanceDate;
+
+    obj["@context"] = jwt_decoded.vp["@context"];
+
+
+    obj.type = jwt_decoded.vp.type;
+    obj.holder = jwt_decoded.iss //iss corresponds to the holder, the one creating the vp
+    obj.id = jwt_decoded.jti;//jti corresponds to the id (Which can be a uuid) assigned to the claim
+
+
+    credentials = jwt_decoded.vp.verifiableCredential;
+    let jwt_cred;
+    for (let i = 0; i < credentials.length; i++) {
+        if(!credentials[i].hasOwnProperty('vc')){ // if already decoded vc, keep as it is
+            //if not then it is encoded as jwt, we decode and assign
+            jwt_cred = jwtDecode(credentials[i]);
+            credentials[i] = format_jwt_decoded_to_VC(credentials[i],jwt_cred); // assign decoded jwt
+        }
+    }
+    obj.verifiableCredential=credentials
 
     proofObj.type = "JwtProof2020";
     proofObj.jwt = jwt_encoded;
@@ -586,6 +727,8 @@ app.post('/verify', async (req: Request, res: Response) => {
 
     console.log(`Credential verified err`,     result.error
     )*/
+
+
     const result:IVerifyResult = await agent.verifyCredential({
         credential: credential
     })
@@ -594,6 +737,12 @@ app.post('/verify', async (req: Request, res: Response) => {
     res.send({res:result.verified})
 });
 
+
+ async function verifyPresentation(VP:W3CVerifiablePresentation): Promise<IVerifyResult> {
+     //simple verification call, you need to provide the internal content of VerifiablePresentation:
+    let ris:IVerifyResult = await agent.verifyPresentation({ presentation: VP });
+    return ris;
+}
 
 // Listen on port 3000
 app.listen(3001, () => {

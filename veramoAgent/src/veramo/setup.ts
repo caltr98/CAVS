@@ -9,6 +9,8 @@ import {
     ICredentialPlugin,
 } from '@veramo/core'
 
+import {ICredentialIssuerLD} from "@veramo/credential-ld";
+
 // Core identity manager plugin
 import { DIDManager } from '@veramo/did-manager'
 
@@ -61,7 +63,7 @@ const dbConnection = new DataSource({
 // Create the agent by using the createAgent method from @veramo/core
 
 export const agent = createAgent<
-    IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin
+    IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & ICredentialIssuerLD
 >({
     plugins: [
         new KeyManager({

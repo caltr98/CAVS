@@ -10,3 +10,5 @@ npm i axios
 -in server
 #to get requests from other service
 npm install cors
+
+// need: yarn add browserify-zlib

@@ -11,3 +11,6 @@ EXEC WITH
 node ipfsAgentService.js
 
 DO NOT MAKE package.json = module
+
+yarn add @orbitdb/quickstart // quick orbitdb usage
+

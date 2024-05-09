@@ -200,4 +200,39 @@ Content-Type: application/json
 GET http://localhost:3001/list_verifiable_presentations
 
 
+### List vp
+
+GET http://localhost:3001/get_qr_code
+
+
+
+### Test extract API ###
+
+# POST request to /upploa
+POST http://localhost:4201/upload/map
+Content-Type: application/json
+
+{
+  "text": "attir1ae"
+}
+
+
+
+### API
+
+GET http://localhost:4201/peer_id
+
+### API
+
+GET http://localhost:4201/set_secrets?name=hello&psw=aa
+
+### retrieve
+
+
+POST http://localhost:4201/ipns/append
+Content-Type: application/json
+
+{
+  "text": "{first:letter, second:number}"
+}
 
