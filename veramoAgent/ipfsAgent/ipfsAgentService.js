@@ -201,6 +201,7 @@ async function retrieveByCID(cid) {
     ])
         .then((text) => {
             //it won the fetch
+            console.log("text obtained"+text)
             return text
         })
         .catch((error) => {
@@ -208,6 +209,21 @@ async function retrieveByCID(cid) {
             return null
         });
 }
+
+
+
+app.get('/retrieve',async (req, res) => {
+    const cid = req.query.cid;
+
+    let result =  await retrieveByCID(cid);
+    if(result){
+        //returns {cid,path} json
+        res.send({result})
+    }
+    else{
+        res.status(500).send("Could not find in time(60sec)")
+    }
+});
 
 async function retrieveCIDByPeerID(peerID) {
     if (!fs) {
@@ -229,7 +245,11 @@ async function retrieveCIDByPeerID(peerID) {
     ])
         .then((cid) => {
             //it won the fetch
-            return cid.cid
+            let string = JSON.stringify(cid.cid)
+            // Remove escape sequences and non-alphanumeric characters
+            string = string.replace(/[^a-zA-Z0-9]/g, "")
+            console.log(string);
+            return string
         })
         .catch((error) => {
             //it won the timeout
@@ -254,48 +274,43 @@ app.post('/ipns/append', async (req, res) => {
     if(!fs) {
         await createNode();
     }
-    let json_data = JSON.parse(req.body.text); //wait for a pair {key,value} to put on a json array
-    //const force = req.body.force //this forces the node to upload the file again
+    let json_data = req.body.text; // Extracting the text from the request body
+    let cid = await retrieveCIDByPeerID(globalPeerId);
+    let json_array;
+    let retrieved;
+    console.log("cid before all "+ cid)
 
-    // resolve the name
-    //let cid = await retrieveCIDByPeerID(globalPeerId)
-    let cit;
-    let json_array
     if(cid){
-        let res = await retrieveByCID(cid);
-        json_array= JSON.parse(res)
-        json_array.data.push(json_data); // Add the new data to the existing JSON array
-    }else{
-        json_array = { data: [json_data] }; // Create a new JSON array if CID is not found
+        console.log("cid before retrieve "+ cid)
+        retrieved = await retrieveByCID(cid);
+        console.log("what is retrieved"+ retrieved)
+        if(retrieved) {
+            console.log("post insert" + JSON.stringify(retrieved,null,2));
+
+            json_array = JSON.parse(retrieved);
+            json_array.data.push(json_data); // Add the new data to the existing JSON array
+            console.log("post push" + JSON.stringify(json_array, null, 2));
+        }
     }
 
-    //upload data and make new match
+    if(!cid || (cid && !retrieved)){
+        json_array = { data: [] }; // Create a new JSON array if CID is not found or retrieved is falsy
+        json_array.data.push(json_data);
+        console.log("post init"+ JSON.stringify(json_array,null,2));
+    }
+
+    // Encode the JSON array into bytes
     const encoder = new TextEncoder();
-    //store the data on node and obtain a cid
-    cid = (await fs.addBytes(encoder.encode(json_array))).toString();
-    // publish the name
-    await definition.publish(globalPeerId,cid,{name:"my_name"});
+    const encodedData = encoder.encode(JSON.stringify(json_array));
 
-    res.status(201).send(cid)
-    /*
+    // Store the data on the node and obtain a CID
+    cid = (await fs.addBytes(encodedData)).toString();
 
+    // Publish the CID
+    await definition.publish(globalPeerId, cid);
 
-    //upload only if data was not already uploaded
-    const encoder = new TextEncoder();
-    //store the data on node and obtain a cid
-    const cid = (await fs.addBytes(encoder.encode(data))).toString();
-    // publish the name
-    await definition.publish(globalPeerId,cid,{name:"my_name"});
-    // resolve the name
-    const result = await definition.resolve(globalPeerId)
-    console.info(result.cid, result.path)
-    // Read the JSON indexing
-    // Add new storer with CID or add CID to existing one
-    jsonData[sha256Hash] = cid; // Create a mapping between sha256Hash and CID
-    // Write the JSON file
-    console.log(`returning CID ` + cid);
-    res.status(201).send({CID:cid})//201 because we created a resource
-     */
+    // Send response
+    res.status(201).send({ cid: cid });
 });
 
 function startServer() {
@@ -305,14 +320,14 @@ function startServer() {
 
     // Event listener for unhandled exceptions
     process.on('uncaughtException', (error) => {
-        console.log('Uncaught Exception:');
+        console.error('Uncaught Exception:'+ error);
         // Restart the server or take other appropriate action
         //startServer(); // Restart the server
     });
 
     // Event listener for unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
-        console.log('Unhandled Rejection');
+        console.error('Unhandled Rejection' + reason);
         // Restart the server or take other appropriate action
         //startServer(); // Restart the server
     });

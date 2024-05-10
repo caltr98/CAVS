@@ -233,6 +233,11 @@ POST http://localhost:4201/ipns/append
 Content-Type: application/json
 
 {
-  "text": "{first:letter, second:number}"
+  "text": "hopefornext"
 }
+
+
+### getting
+
+GET http://localhost:4201/retrieve?cid=bafkreihdqvrgncnmwzuggw2q6jgens3tzpwswkjl35bf4p3v2zgzn5dspm
 
