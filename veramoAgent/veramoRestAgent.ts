@@ -2,9 +2,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 // Import axios
-import axios from 'axios';
 import qrcode from 'qrcode'
-import { agent } from './src/veramo/setup.js'
+import { agent } from "./src/veramo/setup.js"
 import {
     CredentialSubject,
     ICredentialIssuer,
@@ -21,13 +20,9 @@ import {
 } from "@veramo/core";
 
 import {ICredentialIssuerLD} from "@veramo/credential-ld"
-import { Decoder } from '@nuintun/qrcode';
-import QrScanner from 'qr-scanner'; // if installed via package and bundling with a module bundler like webpack or rollup
 import fs from 'fs'
 import  decode from 'jsqr'
-import PNGReader from 'png.js'
 // Create an app instance
-import { BrowserQRCodeReader } from '@zxing/browser';
 import {PNG} from 'pngjs'
 import jpeg from 'jpeg-js'
 import { jwtDecode } from "jwt-decode";
@@ -39,13 +34,6 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Define a type for the user object
-interface User {
-    name: string;
-    email: string;
-    password: string;
-}
-
 
 
 app.get("/create_did_by_alias", async (req: Request, res: Response) => {
@@ -54,6 +42,12 @@ app.get("/create_did_by_alias", async (req: Request, res: Response) => {
     const identifier = await agent.didManagerCreate({ alias: gotalias })
     res.send(identifier);
 });
+
+app.get("/create_did", async (req: Request, res: Response) => {
+    const identifier = await agent.didManagerCreate({})
+    res.send(identifier);
+});
+
 
 
 // Define a route that returns a list of dids from the wallet
@@ -492,24 +486,25 @@ app.post('/get_qr_code/jwt', async (req: Request, res: Response) => {
 //route to convert a jwt to VP or VC (or any other text)
 app.get("/decode_jwt", async (req: Request, res: Response) => {
     let jwt:string = <string>req.query.jwt
-
+    try {
     let decoded = jwtDecode(jwt);
     let result = decoded; //result can be any json if not in the following two categories
-    if(decoded.hasOwnProperty('vc')){
-        //if a veriable credential
-        let result:VerifiableCredential = format_jwt_decoded_to_VC(jwt,decoded)
-        res.send(result);
-        return;
-    }
-    else if(decoded.hasOwnProperty('vp')){
-        let result:VerifiablePresentation = format_jwt_decoded_to_VP(jwt,decoded)
+        if (decoded.hasOwnProperty('vc')) {
+            //if a veriable credential
+            let result: VerifiableCredential = format_jwt_decoded_to_VC(jwt, decoded)
+            res.send(result);
+            return;
+        } else if (decoded.hasOwnProperty('vp')) {
+            let result: VerifiablePresentation = format_jwt_decoded_to_VP(jwt, decoded)
 
-        res.send(result);
+            res.send(result);
 
-        return;
+            return;
+        }
+    } catch (error){
+        res.status(500).send("error decoding");
+
     }
-    console.log(result)
-    res.send(result);
 });
 
 function convertTimestampToIssuanceDate(timestampInSeconds: number): string {
@@ -663,70 +658,6 @@ function format_jwt_decoded_to_VP(jwt_encoded: string, jwt_decoded: any): Verifi
 app.post('/verify', async (req: Request, res: Response) => {
 
     const credential = <VerifiableCredential>req.body.credential
-    /*
-    let credenziale = {
-        "VerifiableCredential": {
-            "credentialSubject": {
-                "hi": "hello",
-                "id": "did:ethr:goerli:0x034e4ecfb60a1a922c027c356480eab896c21f9eb95feabdb6e8408492c81c3f84"
-            },
-            "issuer": {
-                "id": "did:ethr:goerli:0x034e4ecfb60a1a922c027c356480eab896c21f9eb95feabdb6e8408492c81c3f84"
-            },
-            "type": [
-                "VerifiableCredential"
-            ],
-            "@context": [
-                "https://www.w3.org/2018/credentials/v1",
-                "https://www.w3.org/2018/credentials/examples/v1"
-            ],
-            "issuanceDate": "2024-04-30T14:34:42.000Z",
-            "proof": {
-                "type": "JwtProof2020",
-                "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL2V4YW1wbGVzL3YxIl0sInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiXSwiY3JlZGVudGlhbFN1YmplY3QiOnsiaGkiOiJoZWxsbyJ9fSwic3ViIjoiZGlkOmV0aHI6Z29lcmxpOjB4MDM0ZTRlY2ZiNjBhMWE5MjJjMDI3YzM1NjQ4MGVhYjg5NmMyMWY5ZWI5NWZlYWJkYjZlODQwODQ5MmM4MWMzZjg0IiwibmJmIjoxNzE0NDg3NjgyLCJpc3MiOiJkaWQ6ZXRocjpnb2VybGk6MHgwMzRlNGVjZmI2MGExYTkyMmMwMjdjMzU2NDgwZWFiODk2YzIxZjllYjk1ZmVhYmRiNmU4NDA4NDkyYzgxYzNmODQifQ.7wjtECVeVQYlH9qKko8W98VCxKxIDp3ySrPBXv9b21ou_gbN_xYAQQVldDlZS4iZsWJvKeSqklQbR_IdGcNpQA"
-            }
-        }
-    }*/
-    /*
-    const loaded_credential = await agent.dataStoreGetVerifiableCredential({ hash: 'QmQYJWqmf672SxbGoCYVwBdwmB1f2dn5nLL4X3ZCHxaY1H' })
-
-    console.log(loaded_credential)
-    let special_cred ={
-        "issuanceDate": "2024-04-30T21:31:29.000Z",
-        "@context": [
-            "https://www.w3.org/2018/credentials/v1",
-            "https://www.w3.org/2018/credentials/examples/v1"
-        ],
-        "type": [
-            "VerifiableCredential"
-        ],
-        "credentialSubject": {
-            "hi": "hello",
-            "id": "did:ethr:sepolia:0x03a29a90b56b9b40d5ef2720149bac4ef812878b52c86ac0da20a40c2383e826c7"
-        },
-        "issuer": {
-            "id": "did:ethr:sepolia:0x03a29a90b56b9b40d5ef2720149bac4ef812878b52c86ac0da20a40c2383e826c7"
-        },
-        "proof": {
-            "type": "JwtProof2020",
-            "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL2V4YW1wbGVzL3YxIl0sInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiXSwiY3JlZGVudGlhbFN1YmplY3QiOnsiaGkiOiJoZWxsbyJ9fSwic3ViIjoiZGlkOmV0aHI6c2Vwb2xpYToweDAzYTI5YTkwYjU2YjliNDBkNWVmMjcyMDE0OWJhYzRlZjgxMjg3OGI1MmM4NmFjMGRhMjBhNDBjMjM4M2U4MjZjNyIsIm5iZiI6MTcxNDUxMjY4OSwiaXNzIjoiZGlkOmV0aHI6c2Vwb2xpYToweDAzYTI5YTkwYjU2YjliNDBkNWVmMjcyMDE0OWJhYzRlZjgxMjg3OGI1MmM4NmFjMGRhMjBhNDBjMjM4M2U4MjZjNyJ9.TyURe7YlvHsljsf1VIL7u1ky5NoU-yapCtFsc_jgQqomDwt1JjuWQPQbUn-pMJLoo7IA4Zg3r3-WnnXXrDN8aA"
-        }
-    }
-    console.log("\n\n")
-    console.log(loaded_credential)
-
-    console.log("\n\n")
-
-    console.log(special_cred)
-    console.log("\n\n")
-    const result = await agent.verifyCredential({
-        credential: loaded_credential
-    })
-    console.log(`Credential verified res`,     result.verified
-    )
-
-    console.log(`Credential verified err`,     result.error
-    )*/
 
 
     const result:IVerifyResult = await agent.verifyCredential({
@@ -738,13 +669,21 @@ app.post('/verify', async (req: Request, res: Response) => {
 });
 
 
+app.post('/verify/vp', async (req: Request, res: Response) => {
+
+    const vp = <W3CVerifiablePresentation>req.body.vp
+    const result = await (verifyPresentation(vp))
+
+    res.send({res:result.verified})
+});
+
  async function verifyPresentation(VP:W3CVerifiablePresentation): Promise<IVerifyResult> {
      //simple verification call, you need to provide the internal content of VerifiablePresentation:
     let ris:IVerifyResult = await agent.verifyPresentation({ presentation: VP });
     return ris;
 }
 
-// Listen on port 3000
+// Listen on port 3001
 app.listen(3001, () => {
     console.log('Server is running on port 3001');
 });

@@ -91,7 +91,7 @@ app.get('/set_secrets', async (req, res) => {
     filesystem.writeFileSync("./secret.json", file);
     createNode()
     res.send({response:"OK"});
-    return;
+
 });
 
 
@@ -412,7 +412,7 @@ async function retrieveOrCreateKey() {
         const importedKey = await helia.libp2p.services.keychain.importKey(secretJson.name, secretJson.PKCS,secretJson.password);
         globalKeyInfo = importedKey
         console.log("Key imported:", importedKey);
-        return; // Exit the function after importing the key
+         // Exit the function after importing the key
     }
 }
 

@@ -1,5 +1,5 @@
 {
-"serviceKeywordsEndpoint": "http://localhost:4500",
-"serviceSkillsEndpoint": "http://localhost:4502",
-  "veramoAgentEndpoint":"http://localhost:3001"
+"serviceKeywordsEndpoint": "http://textprocessingservice:4500",
+"serviceSkillsEndpoint": "http://skillextractorservice:4502",
+  "veramoAgentEndpoint":"http://VeramoAgent:3001"
 }

@@ -19,13 +19,14 @@ def get_keywords():
     doc = request_data['doc']
 
     kw_model = KeyBERT()
-    keywords_with_scores1 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None, nr_candidates = 100,top_n = 50)
-    keywords_with_scores2 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words=None,nr_candidates = 100,top_n = 50)
+    keywords_with_scores1 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None, nr_candidates = 100,top_n = 50,use_mmr=True,diversity=0.7)
+    keywords_with_scores2 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words=None,nr_candidates = 100,top_n = 50,use_mmr=True,diversity=0.7)
+    print(keywords_with_scores1)
 
     # Combine the keyword lists
-    combined_keywords = [keyword for keyword, _ in keywords_with_scores1]
-    combined_keywords.extend([keyword for keyword, _ in keywords_with_scores2])
-    filtered_keywords = [keyword for keyword, score in combined_keywords if score >= 70]
+    combined_keywords = keywords_with_scores1 + keywords_with_scores2
+
+    filtered_keywords = [keyword for keyword, score in combined_keywords if (score) >= 0.30]
 
     # Count the number of keywords
     num_keywords = len(filtered_keywords)

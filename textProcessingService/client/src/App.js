@@ -6,6 +6,7 @@ import axios from "axios";
 
 function App() {
     const [inputText, setInputText] = useState("");
+
     const [addressTextProcessor, setAddressTextProcessor] = useState(config.textprocessor);
     const [addressSkillProcessor, setAddressSkillProcessor] = useState(config.skillprocessor);
 

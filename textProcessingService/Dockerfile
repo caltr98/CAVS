@@ -8,14 +8,13 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
-RUN npm install axios express cors
+RUN yarn install --frozen-lockfile
 
 # Copy the rest of the application code
 COPY ./textProcessingService.iml .
-COPY ./CAVSService.js .
 COPY ./config.json .
 COPY ./config.json ./src
+COPY ./textProcessingService.js ./textProcessingService.js
 
 # Expose the port your app runs on
 EXPOSE 4500

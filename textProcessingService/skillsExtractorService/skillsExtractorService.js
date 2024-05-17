@@ -4,7 +4,7 @@ const fs = require('fs');
 const axios = require('axios')
 const outPort = 4502;
 const app = express();
-const skillsEngines = ["OJD_DAPS","GPT3.5"]
+const skillsEngines = ["OJD_DAPS"]
 
 app.use(cors());
 

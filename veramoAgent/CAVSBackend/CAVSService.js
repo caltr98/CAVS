@@ -14,7 +14,7 @@ let skillExtractorEngines = []
 let selectedExtractorEngine = '';
 let selectedEnricherEngine = 'NONE';
 let selectedSkillExtractorEngine = '';
-const selectedDID = "did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1";
+const selectedDID = "did:ethr:sepolia:0x03a8a512fb942e874e92e3d44c3fe3451694b7d9af0b6a3b1f546011ef24cfbb00";
 
 const config = require('./config.json');
 
@@ -406,7 +406,7 @@ app.post('/api/vc',bodyParser.json(), async (req, res) => {
             j++;
         }
         if (put) {
-            if(verify_VC(cred)) { //put only if credential is verified
+            if(await verify_VC(cred) === true) { //put only if credential is verified
                 keywordsCredentials.push(cred);
             }
             else{
@@ -414,11 +414,11 @@ app.post('/api/vc',bodyParser.json(), async (req, res) => {
             }
 
         } else if (put2) {
-            if(verify_VC(cred)) { //put only if credential is verified
+            if(await verify_VC(cred) === true) { //put only if credential is verified
                 sameLevelKeywordsCredentials.push(cred);
             }
         } else if(put3) {
-            if (verify_VC(cred)) {
+            if (await verify_VC(cred) === true) {
                 upperLevelKeywordsCredentials.push(cred);
             }
         }

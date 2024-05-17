@@ -6,12 +6,12 @@ WORKDIR /app
 
 # Install dependencies from pip
 RUN pip install openai
-
 # Copy the API key file into the container
 COPY /app/openai_api_key.txt ./app/openai_api_key.txt
 
 # Copy the Python script into the container
 COPY keyLLMServer.py /app/keyLMMServer.py
+
 
 # Expose the port that the Flask application will listen on
 EXPOSE 5002

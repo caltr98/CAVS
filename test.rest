@@ -4,7 +4,7 @@
 //send request
 GET http://localhost:13000
 
-###
+##
 //send request
 POST http://localhost:13000
 Content-Type: application/json
@@ -85,7 +85,14 @@ Content-Type: application/json
 {
   "keywords": ["Blockchain", "Blockchain consensus mechanism", "working with computers","playing the piano","playing the violin play"]
 }
+###
+//test keywords to UPPERLEVEL
+GET http://localhost:5002/same_level_keywords?keywords="persona"
 
+
+###
+//test keywords to UPPERLEVEL
+GET http://localhost:5002/upper_level_keywords?keywords="persona"
 
 ###
 //test keywords to skill

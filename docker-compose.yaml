@@ -15,23 +15,45 @@ services:
     image: ojddapsservice1:latest
     ports:
       - "5005:5005"
-  TextProcessingService:
-    image: textprocessingservice1:latest
+  textprocessingservice:
+    image: textprocessingservice2:latest
     ports:
       - "4500:4500"
     depends_on:
       - KeyBertService
       - KeyLLMService
-  SkillsExtractorService:
+  skillextractorservice:
     image: skillextractorservice:latest
     ports:
       - "4502:4502"
     depends_on:
       - Ojd_service1
   TextWebApp:
-    image: textwebapp:latest
+    image: localtext:latest
     ports:
       - "13001:3000"
+    environment:
+      - TEXTPROCESSINGSERVICE_HOST=textprocessingservice
+      - TEXTPROCESSINGSERVICE_PORT=4500
+      - SKILLEXTRACTORSERVICE_HOST=skillextractorservice
+      - SKILLEXTRACTORSERVICE_PORT=4502
     depends_on:
-      - SkillsExtractorService
-      - TextProcessingService
+      - textprocessingservice
+      - skillextractorservice
+  IPFSAgent:
+      image: ipfsagentservice:latest
+      ports:
+        - "4201:4201"
+  VeramoAgent:
+        image: veramoagent:latest
+        ports:
+          - "3001:3001"
+  CAVSService:
+      image: cavsbackend:latest
+      ports:
+        - "4200:4200"
+      depends_on:
+        - IPFSAgent
+        - VeramoAgent
+        - skillextractorservice
+        - textprocessingservice

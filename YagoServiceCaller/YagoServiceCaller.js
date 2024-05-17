@@ -40,12 +40,11 @@ function generateYagoTermsListQuery(searchTerm) {
 
 function generateUpperHierarchyQuery(searchTerm) {
     return `
-        PREFIX schema: <http://schema.org/>
         PREFIX yago: <http://yago-knowledge.org/resource/>
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-        
-        SELECT DISTINCT ?relatedConcept
+
+        SELECT DISTINCT ?higherConcept
         WHERE {
           yago:${searchTerm} ?relation ?relatedConcept .
           ?relatedConcept rdfs:subClassOf+ ?higherConcept .
@@ -135,7 +134,7 @@ app.get('/queryUpperHierarchy', async (req, res) => {
             // Iterate through each binding object
             for (const binding of bindings) {
                 // Access the nested `relatedConcept` object
-                const relatedConceptObject = binding.relatedConcept.value;
+                const relatedConceptObject = binding.higherConcept.value;
                 const parts = relatedConceptObject.split("/"); // Split the Yago Concept URL by '/'
                 const lastPart = parts[parts.length - 1];
                 finalResults.push(lastPart);
