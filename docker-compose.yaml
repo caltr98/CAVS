@@ -1,35 +1,50 @@
+version: '3.8'
+
 services:
   YagoSC:
     image: yagoservice:latest
+    build: ./YagoServiceCaller
     ports:
       - "13000:13000"
+
   KeyBertService:
     image: keybertservice:latest
+    build: ./keyBertService
     ports:
       - "5003:5003"
+
   KeyLLMService:
     image: keyllmservice:latest
+    build: ./keyLLMService
     ports:
       - "5002:5002"
+
   Ojd_service1:
     image: ojddapsservice1:latest
+    build: ./ojd_daps_skillsService
     ports:
       - "5005:5005"
+
   textprocessingservice:
     image: textprocessingservice2:latest
+    build: ./textProcessingService
     ports:
       - "4500:4500"
     depends_on:
       - KeyBertService
       - KeyLLMService
+
   skillextractorservice:
     image: skillextractorservice:latest
+    build: ./textProcessingService/skillsExtractorService
     ports:
       - "4502:4502"
     depends_on:
       - Ojd_service1
+
   TextWebApp:
     image: localtext:latest
+    build: ./textProcessingService/client
     ports:
       - "13001:3000"
     environment:
@@ -40,20 +55,37 @@ services:
     depends_on:
       - textprocessingservice
       - skillextractorservice
+
   IPFSAgent:
-      image: ipfsagentservice:latest
-      ports:
-        - "4201:4201"
+    image: ipfsagentservice:latest
+    build: ./veramoAgent/ipfsAgent
+    ports:
+      - "4201:4201"
+
   VeramoAgent:
-        image: veramoagent:latest
-        ports:
-          - "3001:3001"
+    image: veramoagent:latest
+    build: ./veramoAgent
+    ports:
+      - "3001:3001"
+
   CAVSService:
-      image: cavsbackend:latest
-      ports:
-        - "4200:4200"
-      depends_on:
-        - IPFSAgent
-        - VeramoAgent
-        - skillextractorservice
-        - textprocessingservice
+    image: cavsbackend:latest
+    build: ./veramoAgent/CAVSBackend
+    ports:
+      - "4200:4200"
+    depends_on:
+      - IPFSAgent
+      - VeramoAgent
+      - skillextractorservice
+      - textprocessingservice
+
+  CAVSClient:
+    image: cavsclient:latest
+    build: ./veramoAgent/client
+    ports:
+      - "3000:3000"
+    depends_on:
+      - IPFSAgent
+      - VeramoAgent
+      - skillextractorservice
+      - textprocessingservice
