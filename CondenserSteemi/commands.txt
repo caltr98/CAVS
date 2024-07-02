@@ -1,0 +1,8 @@
+ 1627  cd CondenserSteemi/
+ 1628  git clone https://github.com/steemit/condenser
+ 1629  cd condenser
+ 1630  mkdir tmp
+ 1631  nvm install v8.7
+ 1643  npm install
+ 1644  npm run build
+ 1645  npm run start

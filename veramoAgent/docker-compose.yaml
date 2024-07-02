@@ -1,5 +1,0 @@
-services:
-  VeramoAgent:
-    image: veramoagent:latest
-    ports:
-      - "4200:4200"

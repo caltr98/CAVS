@@ -38,16 +38,15 @@ import {Entities, KeyStore, DIDStore, PrivateKeyStore, migrations, DataStore, Da
 // TypeORM is installed with `@veramo/data-store`
 import { DataSource } from 'typeorm'
 
+// @see https://github.com/uport-project/veramo/blob/next/__tests__/localAgent.test.ts
 
-// This will be the name for the local sqlite database for demo purposes
-const DATABASE_FILE = 'database.sqlite1'
+const databaseFile = 'database.sqlite1';
+const infuraProjectId = '05dfd704449d432ead7fdc7a2ee1fc4f';
+const secretKey = 'eb4aaf0408d8af22cdb8e63913a6ce49d898451fb949490b4a82d0018d9bf9d4';
 
-// You will need to get a project ID from infura https://www.infura.io I DID PUT THERE THE API KEY
-const INFURA_PROJECT_ID = '05dfd704449d432ead7fdc7a2ee1fc4f'
 
-// This will be the secret key for the KMS (replace this with your secret key)
-const KMS_SECRET_KEY = 'eb4aaf0408d8af22cdb8e63913a6ce49d898451fb949490b4a82d0018d9bf9d4'
-
+// This will be the name for the local sqlite database
+const DATABASE_FILE = 'database.sqlite2'
 
 // INITIALIZE DATABASE
 const dbConnection = new DataSource({
@@ -60,38 +59,48 @@ const dbConnection = new DataSource({
     entities: Entities,
 }).initialize()
 
-// Create the agent by using the createAgent method from @veramo/core
+const ethrDidProvider = new EthrDIDProvider({
+    defaultKms: "local",
+    networks: [
+        {
+            name: 'mainnet',
+            chainId: 1,
+            rpcUrl: 'https://mainnet.infura.io/v3/' + infuraProjectId,
+        }],
+    rpcUrl: `https://mainnet.infura.io/v3/${infuraProjectId}`,
+    gas: 1000001,
+    ttl: 60 * 60 * 24 * 30 * 12 + 1,
+});
 
-export const agent = createAgent<
+
+
+export const agentETH = createAgent<
     IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & ICredentialIssuerLD
 >({
+    context: {
+        // authenticatedDid: 'did:example:3456'
+    },
     plugins: [
         new KeyManager({
             store: new KeyStore(dbConnection),
             kms: {
-                local: new KeyManagementSystem(new PrivateKeyStore(dbConnection, new SecretBox(KMS_SECRET_KEY))),
+                local: new KeyManagementSystem(new PrivateKeyStore(dbConnection, new SecretBox(secretKey))),
             },
         }),
         new DIDManager({
             store: new DIDStore(dbConnection),
-            defaultProvider: 'did:ethr:sepolia',
+            defaultProvider: 'did:ethr',
             providers: {
-                'did:ethr:sepolia': new EthrDIDProvider({
-                    defaultKms: 'local',
-                    network: 'sepolia',
-                    rpcUrl: 'https://sepolia.infura.io/v3/' + INFURA_PROJECT_ID,
-                }),
+                'did:ethr': ethrDidProvider
             },
         }),
         new DIDResolverPlugin({
             resolver: new Resolver({
-                ...ethrDidResolver({ infuraProjectId: INFURA_PROJECT_ID }),
+                ...ethrDidResolver({ infuraProjectId: infuraProjectId }),
                 ...webDidResolver(),
             }),
         }),
-        new CredentialPlugin(),
         new DataStore(dbConnection),
-        new DataStoreORM(dbConnection),
-
+        new DataStoreORM(dbConnection)
     ],
-})
+});

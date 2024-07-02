@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/CondenserSteemi/condenser" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/DESOPROTOCOL/deso-examples-react" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/DESOPROTOCOL/deso-js" vcs="Git" />
   </component>
 </project>

@@ -248,3 +248,12 @@ Content-Type: application/json
 
 GET http://localhost:4201/retrieve?cid=bafkreihdqvrgncnmwzuggw2q6jgens3tzpwswkjl35bf4p3v2zgzn5dspm
 
+###
+
+### Request to /did_ethr_by_privkey
+GET http://localhost:3001/did_ethr_by_privkey?privatekey=d0fb78bbcf4a21f0b63e00369f3c8ffcc5738dace3352f2d7a6fdfd6d19356e5&walletaddr=0x90b1041EEfea68Ea564574f6C576bD3c902A8f32
+Content-Type: application/json
+
+### Request to /did_ethr_by_privkey
+GET http://localhost:3001/get_own_did_eth/
+Content-Type: application/json
