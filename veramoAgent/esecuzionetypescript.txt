@@ -1,0 +1,7 @@
+
+Opzione 1:
+node --loader ts-node/esm ./veramoRestAgent.ts
+
+Opzione 2:
+npx tsc --resolveJsonModule
+node ./veramoRestAgent.ts

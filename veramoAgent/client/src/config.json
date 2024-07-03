@@ -1,0 +1,8 @@
+{
+  "veramoagent": "http://localhost:3001",
+  "textprocessor": "http://localhost:4500",
+  "skillprocessor": "http://localhost:4502",
+  "cavsendpoint": "http://localhost:4200",
+  "ipfsagent": "http://localhost:4201"
+
+}
