@@ -1,0 +1,6 @@
+R_DEF: Internal format may change without notice
+local
+string media_projection_notification_text
+string media_projection_notification_title
+string ongoing_notification_channel_name
+style AppTheme

@@ -1,0 +1,36 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    xmlns:tools="http://schemas.android.com/tools"
+4    package="com.oney.WebRTCModule" >
+5
+6    <uses-sdk android:minSdkVersion="24" />
+6-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml
+7
+8    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+8-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:5:5-77
+8-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:5:22-74
+9    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+9-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:6:5-94
+9-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:6:22-91
+10
+11    <uses-feature
+11-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:13:5-17:7
+12        android:name="android.hardware.usb.host"
+12-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:14:9-49
+13        android:required="false"
+13-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:15:9-33
+14        tools:node="replace" />
+14-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:16:9-29
+15
+16    <application>
+16-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:7:5-12:19
+17        <service
+17-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:8:9-11:19
+18            android:name="com.oney.WebRTCModule.MediaProjectionService"
+18-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:9:17-55
+19            android:foregroundServiceType="mediaProjection" >
+19-->/Users/saghul/work/jitsi/jitsi-meet/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:10:17-64
+20        </service>
+21    </application>
+22
+23</manifest>

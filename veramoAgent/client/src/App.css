@@ -1,0 +1,294 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 25px;
+  margin-bottom: 20px; /* Add margin bottom */
+  background-color: #f0f0f0; /* Pleasurable background color */
+}
+
+.input {
+  padding: 15px;
+  width: 96%;
+  height: 100px; /* Adjust the height as needed */
+  margin: auto;
+  border: 1px solid lightgray;
+  border-radius: 6px;
+  font-size: 16px;
+  background-color: #ffffff; /* Add background color */
+  overflow-y: auto; /* Enable vertical scrollbar */
+  resize: both; /* Allow resizing vertically */
+}
+.input:focus {
+  outline: none;
+}
+.process-button {
+  padding: 10px 20px;
+  margin-top: 10px;
+  background-color: #526b83; /* Button background color */
+  color: #fff; /* Button text color */
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.dids-data {
+  background-color: #f4f4f4;
+  width: 60vw;
+  height: auto;
+  border-radius: 12px;
+  padding: 2vw;
+  margin-top: 1vh;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+}
+
+.title-dids-data {
+  text-align: center;
+
+  font-size: 2vw;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 2vh;
+}
+
+/* Select dropdown container */
+.dids-select-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Select dropdown for extractor engines */
+.dids-select {
+  width: 60vw; /* Adjust the width as needed */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 18px;
+  outline: none;
+  background-color: #ffffff; /* Add background color */
+}
+
+/* Style for options inside the select dropdown */
+.dids-select option {
+  padding: 10px;
+  font-size: 16px;
+  color: #333;
+  cursor: pointer;
+}
+
+/* Hover effect for options */
+.dids-select option:hover {
+  background-color: #f0f0f0;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  width: 40vw;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-size: 20px;
+}
+.jwt-textarea {
+  resize: none;
+  size:3vw;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 8px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.form-input {
+  width: 100%;
+  height: 2vw;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+.form-input-area {
+  width: 100%;
+  height: 7vw;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.feedback-data {
+  text-align: center;
+  font-size: 1.9vw;
+  font-weight: bold;
+  background-color: #fdfcfc;
+  color: #000000;
+  margin-bottom: 2vh;
+  border: 1px solid lightgray;
+  border-radius: 6px;
+  width: 30vw;
+
+}
+
+.title-extractor-engines-data {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  background-color: #f0f0f0; /* Pleasurable background color */
+
+
+}
+
+/* Add margin bottom for space below extractor engines */
+.extractor-engines-data {
+  margin-bottom: 50px;
+  background-color: #f0f0f0; /* Pleasurable background color */
+}
+
+/* Select dropdown container */
+.extractor-engines-select-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Select dropdown for extractor engines */
+.extractor-engines-select {
+  width: 50vw; /* Adjust the width as needed */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  outline: none;
+  background-color: #ffffff; /* Add background color */
+}
+
+/* Style for options inside the select dropdown */
+.extractor-engines-select option {
+  padding: 10px;
+  font-size: 16px;
+  color: #333;
+  cursor: pointer;
+}
+
+/* Hover effect for options */
+.extractor-engines-select option:hover {
+  background-color: #f0f0f0;
+}
+
+
+
+/* Form container */
+.credential-form {
+  margin: 20px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+/* Section title */
+.section-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* Labels */
+.form-label {
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+/* Input fields */
+.form-input {
+  width: 100%;
+  padding: 2px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+
+}
+
+/* Buttons */
+.action-button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #0056b3;
+}
+
+/* Feedback text */
+.feedback-text {
+  margin-top: 10px;
+  color: #888;
+  font-size: 14px;
+}
+
+/* Select box */
+.select-box {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+/* Error message */
+.error-message {
+  color: #dc3545;
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+
+.credentials-list-container {
+  width: 60vw;
+  overflow-x: auto;
+  align-self: center;
+  background-color: #f4f4f4;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.credential {
+  margin-bottom: 20px;
+  border: 2px solid #ccc; /* Add border */
+  padding: 10px; /* Add padding */
+  border-radius: 5px; /* Add border radius */
+}
+
+.credential h3 {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.credential p {
+  margin-bottom: 5px;
+}
+
+.credential textarea {
+  width: 90%;
+  height: 100px;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: vertical;
+}

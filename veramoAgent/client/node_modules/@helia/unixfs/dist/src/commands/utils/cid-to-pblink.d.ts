@@ -1,0 +1,6 @@
+import { type ExporterOptions } from 'ipfs-unixfs-exporter';
+import type { GetStore } from '../../unixfs.js';
+import type { PBLink } from '@ipld/dag-pb';
+import type { CID } from 'multiformats/cid';
+export declare function cidToPBLink(cid: CID, name: string, blockstore: GetStore, options?: ExporterOptions): Promise<Required<PBLink>>;
+//# sourceMappingURL=cid-to-pblink.d.ts.map
