@@ -9,14 +9,13 @@ COPY ./package-lock.json ./package-lock.json
 COPY ./package.json ./package.json
 
 # Copy other necessary files
-COPY ./CAVSService.js ./CAVSService.js
-COPY ./config.json ./config.json
+COPY ./SSIBridgeIntegration.js ./SSIBridgeIntegration.js
 
 # Install app dependencies
 RUN yarn install --frozen-lockfile
 
 # Expose the port on which the app will run
-EXPOSE 4200
+EXPOSE 17005
 
 # Run the app using ts-node/esm loader
-CMD ["node", "CAVSService.js"]
+CMD ["node", "SSIBridgeIntegration.js"]

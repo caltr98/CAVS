@@ -2,6 +2,7 @@
   "name": "textprocessingservice",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "CAVSService.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -14,7 +15,8 @@
   "dependencies": {
     "axios": "^1.6.8",
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "deso-protocol": "^2.6.8"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

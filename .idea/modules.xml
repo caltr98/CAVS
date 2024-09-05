@@ -2,8 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/Simulation/Simulation.iml" filepath="$PROJECT_DIR$/Simulation/Simulation.iml" />
       <module fileurl="file://$PROJECT_DIR$/YagoServiceCaller/YagoServiceCaller.iml" filepath="$PROJECT_DIR$/YagoServiceCaller/YagoServiceCaller.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/componentsCAVS.iml" filepath="$PROJECT_DIR$/.idea/componentsCAVS.iml" />
+      <module fileurl="file://$PROJECT_DIR$/frontendCAVS/frontendCAVS.iml" filepath="$PROJECT_DIR$/frontendCAVS/frontendCAVS.iml" />
       <module fileurl="file://$PROJECT_DIR$/textProcessingService/textProcessingService.iml" filepath="$PROJECT_DIR$/textProcessingService/textProcessingService.iml" />
     </modules>
   </component>

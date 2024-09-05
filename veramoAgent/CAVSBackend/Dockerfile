@@ -11,6 +11,8 @@ COPY ./package.json ./package.json
 # Copy other necessary files
 COPY ./CAVSService.js ./CAVSService.js
 COPY ./config.json ./config.json
+COPY ./trustedissuers.json ./trustedissuers.json
+
 
 # Install app dependencies
 RUN yarn install --frozen-lockfile
@@ -19,4 +21,4 @@ RUN yarn install --frozen-lockfile
 EXPOSE 4200
 
 # Run the app using ts-node/esm loader
-CMD ["npm","run","start"]
+CMD ["node", "CAVSService.js"]

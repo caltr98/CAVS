@@ -1,8 +1,14 @@
 # Use a Python base image
-FROM keybertservice
+FROM python:3.10-slim
 
 # Set the working directory in the container
 WORKDIR /app
+
+# Install Git
+RUN apt-get update && apt-get install -y git
+
+# Install dependency keybert and flask from pip
+RUN pip install git+https://github.com/MaartenGr/KeyBERT.git flask
 
 # Install dependencies from pip
 RUN pip install openai

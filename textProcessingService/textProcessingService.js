@@ -77,9 +77,9 @@ app.get("/extract", async (req, res) => {
                 }
             });
             let keywords = response.data.keywords;
-
+            let model  = response.data.model;
             console.log("received result"+keywords)
-            res.json({ "keyword": keywords });
+            res.json({ "keyword": keywords ,"model" :model });
         } catch (err) {
             if (err.code === 'ECONNABORTED') {
                 console.log("Request timed out");
@@ -105,9 +105,9 @@ app.get("/extract", async (req, res) => {
                 }
             });
             let keywords = response.data.keywords;
-
+            let model  = response.data.model;
             console.log("received result"+keywords)
-            res.json({ "keyword": keywords });
+            res.json({ "keyword": keywords ,"model" :model });
         } catch (err) {
             if (err.code === 'ECONNABORTED') {
                 console.log("Request timed out");
@@ -135,9 +135,9 @@ app.get("/extract", async (req, res) => {
                 }
             });
             let keywords = response.data.keywords;
-
+            let model  = response.data.model;
             console.log("received result"+keywords)
-            res.json({ "keyword": keywords });
+            res.json({ "keyword": keywords ,"model" :model });
         } catch (err) {
             if (err.code === 'ECONNABORTED') {
                 console.log("Request timed out");
@@ -157,6 +157,7 @@ app.get("/extract", async (req, res) => {
 async function extractYagoSameLvl(keywords, res) {
     try {
         let extrakeywords = []
+        let model = ""
         console.log(keyBertServiceCallerEndpoint)
         // Create a new instance of Axios for each request
         for (let i = 0; i < keywords.length; i++) {
@@ -174,10 +175,12 @@ async function extractYagoSameLvl(keywords, res) {
             // Check status code before concatenating
             if (response.status !== 500) {
                 extrakeywords = extrakeywords.concat(response.data.Keywords);
+                model = response.data.model;
+
             }
         }
         console.log("received result" + extrakeywords)
-        res.json({"keyword":extrakeywords});
+        res.json({"keyword":extrakeywords, "model":model});
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             console.log("Request timed out");
@@ -195,6 +198,7 @@ async function extractYagoSameLvl(keywords, res) {
 async function extractGPTSameLvl(keywords, res) {
     try {
         let extrakeywords = []
+        let model = "";
         console.log(keyBertServiceCallerEndpoint)
         // Create a new instance of Axios for each request
         for (let i = 0; i < keywords.length; i++) {
@@ -213,11 +217,12 @@ async function extractGPTSameLvl(keywords, res) {
             if (response.status !== 500) {
                 if(response.data.Keywords) {
                     extrakeywords = extrakeywords.concat(response.data.Keywords);
+                    model = response.data.model;
                 }
             }
         }
         console.log("received result" + extrakeywords)
-        res.json({"keyword":extrakeywords});
+        res.json({"keyword":extrakeywords, "model":model});
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             console.log("Request timed out");
@@ -261,6 +266,7 @@ app.get("/enrich_same_level", async (req, res) => {
 async function extractYagoUpper(keywords, res) {
     try {
         let extrakeywords = []
+        let model = "Yago";
         console.log(keyBertServiceCallerEndpoint)
         // Create a new instance of Axios for each request
         for (let i = 0; i < keywords.length; i++) {
@@ -275,7 +281,7 @@ async function extractYagoUpper(keywords, res) {
             extrakeywords = extrakeywords.concat(response.data.keywords);
         }
         console.log("received result" + extrakeywords)
-        res.json({"keyword":extrakeywords});
+        res.json({"keyword":extrakeywords, "model":model});
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             console.log("Request timed out");
@@ -295,6 +301,7 @@ async function extractYagoUpper(keywords, res) {
 async function extractGPTUpper(keywords, res) {
     try {
         let extrakeywords = []
+        let model = "";
         console.log(keyBertServiceCallerEndpoint)
         // Create a new instance of Axios for each request
         for (let i = 0; i < keywords.length; i++) {
@@ -309,11 +316,12 @@ async function extractGPTUpper(keywords, res) {
             if (response.status !== 500) {
                 if(response.data.Keywords) {
                     extrakeywords = extrakeywords.concat(response.data.Keywords);
+                    model = response.data.model;
                 }
             }
         }
         console.log("received result" + extrakeywords)
-        res.json({"keyword":extrakeywords});
+        res.json({"keyword":extrakeywords,"model":model});
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             console.log("Request timed out");

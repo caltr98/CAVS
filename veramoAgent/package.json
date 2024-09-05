@@ -45,6 +45,7 @@
     "qrcode-decoder": "^0.3.3",
     "sqlite3": "^5.1.7",
     "typeorm": "^0.3.20",
+    "universal-perf-hooks": "^1.0.1",
     "viem": "1.10.14",
     "web-did-resolver": "^2.0.27"
   }

@@ -40,7 +40,6 @@ import { DataSource } from 'typeorm'
 
 // @see https://github.com/uport-project/veramo/blob/next/__tests__/localAgent.test.ts
 
-const databaseFile = 'database.sqlite1';
 const infuraProjectId = '05dfd704449d432ead7fdc7a2ee1fc4f';
 const secretKey = 'eb4aaf0408d8af22cdb8e63913a6ce49d898451fb949490b4a82d0018d9bf9d4';
 
@@ -59,6 +58,7 @@ const dbConnection = new DataSource({
     entities: Entities,
 }).initialize()
 
+
 const ethrDidProvider = new EthrDIDProvider({
     defaultKms: "local",
     networks: [
@@ -73,7 +73,7 @@ const ethrDidProvider = new EthrDIDProvider({
 });
 
 
-
+/*
 export const agentETH = createAgent<
     IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & ICredentialIssuerLD
 >({
@@ -99,8 +99,48 @@ export const agentETH = createAgent<
                 ...ethrDidResolver({ infuraProjectId: infuraProjectId }),
                 ...webDidResolver(),
             }),
-        }),
+        }),        new CredentialPlugin(),
         new DataStore(dbConnection),
         new DataStoreORM(dbConnection)
     ],
 });
+
+ */
+// You will need to get a project ID from infura https://www.infura.io I DID PUT THERE THE API KEY
+const INFURA_PROJECT_ID = '05dfd704449d432ead7fdc7a2ee1fc4f'
+// This will be the secret key for the KMS (replace this with your secret key)
+const KMS_SECRET_KEY = 'eb4aaf0408d8af22cdb8e63913a6ce49d898451fb949490b4a82d0018d9bf9d4'
+
+export const agentETH = createAgent<
+    IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & ICredentialIssuerLD
+>({
+    plugins: [
+        new KeyManager({
+            store: new KeyStore(dbConnection),
+            kms: {
+                local: new KeyManagementSystem(new PrivateKeyStore(dbConnection, new SecretBox(KMS_SECRET_KEY))),
+            },
+        }),
+        new DIDManager({
+            store: new DIDStore(dbConnection),
+            defaultProvider: 'did:ethr:mainnet',
+            providers: {
+                'did:ethr:mainnet': new EthrDIDProvider({
+                    defaultKms: 'local',
+                    network: 'mainnet',
+                    rpcUrl: 'https://sepolia.infura.io/v3/' + INFURA_PROJECT_ID,
+                }),
+            },
+        }),
+        new DIDResolverPlugin({
+            resolver: new Resolver({
+                ...ethrDidResolver({ infuraProjectId: INFURA_PROJECT_ID }),
+                ...webDidResolver(),
+            }),
+        }),
+        new CredentialPlugin(),
+        new DataStore(dbConnection),
+        new DataStoreORM(dbConnection),
+
+    ],
+})

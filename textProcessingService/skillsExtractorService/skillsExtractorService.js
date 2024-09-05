@@ -77,7 +77,7 @@ app.get("/keyword_to_skills", async (req, res) => {
                 }
             });
             let skills = response.data.skills;
-
+            let model = response.data.model;
             let collection = skills[0]
             let skilled = collection['SKILL']
             //key=generating keyword, value= (skill, skill code) parsing!
@@ -104,7 +104,7 @@ app.get("/keyword_to_skills", async (req, res) => {
 
                     }
                 });
-                res.json({"skills": skilled});
+                res.json({"skills": skilled,"model":model});
             }
         } catch (err) {
             if (err.code === 'ECONNABORTED') {

@@ -258,7 +258,7 @@
     ky "^0.25.1"
     ky-universal "^0.8.2"
 
-"@digitalbazaar/http-client@^4.1.1":
+"@digitalbazaar/http-client@^4.1.0":
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/@digitalbazaar/http-client/-/http-client-4.1.1.tgz#73d31af4782eadd2440cf0cd487ad591f45d137c"
   integrity sha512-PG0r9sAEzAmnCSrwKg+HhM6+GNMU24ttiFMBycqhM1vDi8enipuFpW45vn2lzr8+i7I2yLUzNyfrrkQTlzGLmQ==
@@ -1235,6 +1235,11 @@
   version "18.15.13"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-18.15.13.tgz#f64277c341150c979e42b00e4ac289290c9df469"
   integrity sha512-N+0kuo9KgrUQ1Sn/ifDXsvg0TTleP7rIy4zOBGECxAljqvqfqpTfzx0Q1NUedOixRMBfe2Whhb056a42cWs26Q==
+
+"@types/node@^14.14.37":
+  version "14.18.63"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.18.63.tgz#1788fa8da838dbb5f9ea994b834278205db6ca2b"
+  integrity sha512-fAtCfv4jJg+ExtXhvCkCqUKZ+4ok/JQk01qDKhL5BDDoS3AxKXhV5/MAVUZyQnSEd2GT92fkgZl0pz0Q0AzcIQ==
 
 "@types/offscreencanvas@^2019.6.4":
   version "2019.7.3"
@@ -4459,6 +4464,13 @@ unique-slug@^2.0.0:
   integrity sha512-zoWr9ObaxALD3DOPfjPSqxt4fnZiWblxHIgeWqW8x7UqDzEtHEQLzji2cuJYQFCU6KmoJikOYAZlrTHHebjx2w==
   dependencies:
     imurmurhash "^0.1.4"
+
+universal-perf-hooks@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/universal-perf-hooks/-/universal-perf-hooks-1.0.1.tgz#be360fb2f96048ba71cc1afb3950f8bb70a05925"
+  integrity sha512-XPbS20JvSJBIY5XOVS0n+TOEVysUuuFhiWFVLAPh9iRSdH5R2rWOVWlXMwiaUD8TVtMiuVDedmfyIYQdu+gkrw==
+  dependencies:
+    "@types/node" "^14.14.37"
 
 universalify@^2.0.0:
   version "2.0.1"

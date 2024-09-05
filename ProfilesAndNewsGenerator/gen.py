@@ -9,7 +9,7 @@ def convert_llm_response_to_json_v2(llm_response ):
     return json_response
 
 # Initialize OpenAI client
-client = OpenAI(api_key='sk-proj-<ADD-YOUR-API-KEY>')
+client = OpenAI(api_key='sk-proj-TqzJ0kQuDUwsMS8XsJMAT3BlbkFJHETuuFLTeeZb2dwocpdd')
 
 # Create the assistant with specified instructions
 assistant  = client.beta.assistants.create(

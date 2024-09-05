@@ -117,7 +117,7 @@ GET http://localhost:3001/get_did_doc?did=did:ethr:goerli:0x034e4ecfb60a1a922c02
 Content-Type: application/json
 
 ###
-GET http://localhost:3001/get_verifiable_credential?hash_cred=QmddTNfSuDoNDytXvagAad8bERKe2iTSZkucApuU1VgAXj
+GET http://localhost:3001/get_verifiable_credential?hash_cred=QmWa7wJ1LJx2hfyRpFmNjXTgfeuGuZjeHS7mtdURXCr6KW
 
 
 ###
@@ -127,7 +127,7 @@ Content-Type: application/json
 
 
 ###
-GET http://localhost:3001/list_verifiable_credentials
+GET http://localhost:3001/list_verifiable_presentations
 
 ###
 GET http://localhost:3001/get_qr_code?hash=QmXvBCqkEFw6Tc14ct8TRReAZ7UkruJzFwPaSi8RFKj7rR
@@ -257,3 +257,47 @@ Content-Type: application/json
 ### Request to /did_ethr_by_privkey
 GET http://localhost:3001/get_own_did_eth/
 Content-Type: application/json
+
+
+###  TRY
+
+### Verify Credential
+POST http://localhost:3001/verify
+Content-Type: application/json
+
+{
+ "credential" : {
+   "issuanceDate": "2024-07-04T09:07:37.000Z",
+   "@context": [
+     "https://www.w3.org/2018/credentials/v1",
+     "https://www.w3.org/ns/credentials/v2"
+   ],
+   "type": [
+     "VerifiableCredential",
+     "ESCO_type_VerifiableCredential"
+   ],
+   "credentialSubject": {
+     "skills": [
+       [
+         "sas",
+         "sas"
+       ]
+     ],
+     "id": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32"
+   },
+   "issuer": {
+     "id": "did:ethr:sepolia:0x031b149813e8226c5518f8f8faf6773b804cf62f0102e385123f86f7442126bcda"
+   },
+   "proof": {
+     "type": "JwtProof2020",
+     "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiRVNDT190eXBlX1ZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7InNraWxscyI6W1sic2FzIiwic2FzIl1dfX0sInN1YiI6ImRpZDpldGhyOjB4OTBiMTA0MUVFZmVhNjhFYTU2NDU3NGY2QzU3NmJEM2M5MDJBOGYzMiIsIm5iZiI6MTcyMDA4NDA1NywiaXNzIjoiZGlkOmV0aHI6c2Vwb2xpYToweDAzMWIxNDk4MTNlODIyNmM1NTE4ZjhmOGZhZjY3NzNiODA0Y2Y2MmYwMTAyZTM4NTEyM2Y4NmY3NDQyMTI2YmNkYSJ9.QXHeh9rvVs7aVjVD79Y_1X2_iKbLiCO9vUpyEFDKKV1lsNicBzPdU305lgOQBvAzGTAINAwCb-LinpISmT3wjg"
+   }
+ }
+}
+###
+POST http://localhost:4200/simulation/skillsfromtext
+Content-Type: application/json
+
+{
+  "text": "helllloo"
+}

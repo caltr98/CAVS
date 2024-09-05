@@ -16,11 +16,75 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 // Endpoint to get DID ETHR by private key
-app.get("/did_ethr_by_privkey", async (req, res) => {
+app.get("/api/v0/check/", async (req, res) => {
+    const walletAddr = req.query.walletaddr;
+    try {
+        console.log(`Checking DID for wallet address: ${walletAddr}`);
+        const identifier = await agentETH.didManagerGetByAlias({ alias: walletAddr });
+        console.log(`Identifier found: ${JSON.stringify(identifier)}`);
+        res.send(identifier);
+    }
+    catch (error) {
+        console.error(`Error retrieving DID for wallet address ${walletAddr}:`, error);
+        res.send({ result: 'null' });
+    }
+});
+// Endpoint to get DID ETHR by private key
+app.get("/api/v0/setup/", async (req, res) => {
+    const privateKey = req.query.privatekey;
+    const walletAddr = req.query.walletaddr;
+    try {
+        console.log(`Setting up DID for wallet address: ${walletAddr} with private key: ${privateKey}`);
+        let identifier = await agentETH.didManagerGetByAlias({ alias: walletAddr });
+        console.log(`Identifier found: ${JSON.stringify(identifier)}`);
+        res.send(identifier);
+        return;
+    }
+    catch (error) {
+        console.warn(`DID not found for wallet address ${walletAddr}, proceeding to import. Error:`, error);
+    }
+    // If identifier not found, then import it
+    try {
+        const identifier = await agentETH.didManagerImport({
+            did: "did:ethr:" + walletAddr,
+            alias: walletAddr,
+            provider: "did:ethr",
+            keys: [
+                {
+                    type: "Secp256k1",
+                    kms: "local",
+                    kid: "key-1" + walletAddr,
+                    privateKeyHex: privateKey,
+                },
+            ],
+            services: [],
+        });
+        console.log(`Identifier created: ${JSON.stringify(identifier)}`);
+        res.send(identifier);
+    }
+    catch (error) {
+        console.error(`Error creating identifier for wallet address ${walletAddr}:`, error);
+        res.status(500).send({ error: 'An error occurred while creating the identifier.' });
+    }
+});
+app.get("/api/v0/confirm/", async (req, res) => {
     let privateKey = req.query.privatekey;
     let walletAddr = req.query.walletaddr;
-    // Use the private key directly without converting it
     let identifier;
+    // Use the private key directly without converting it
+    console.log(privateKey + " " + walletAddr);
+    try {
+        identifier = await agentETH.didManagerGetByAlias({ alias: walletAddr });
+        console.log(identifier);
+    }
+    catch (error) {
+        console.log(error);
+    }
+    if (identifier) {
+        console.log(identifier);
+        res.send(identifier);
+        return;
+    }
     try {
         identifier = await agentETH.didManagerImport({
             did: "did:ethr:" + walletAddr,
@@ -30,7 +94,7 @@ app.get("/did_ethr_by_privkey", async (req, res) => {
                 {
                     "type": "Secp256k1",
                     "kms": "local",
-                    "kid": "key-1",
+                    "kid": "key-1" + walletAddr,
                     privateKeyHex: privateKey
                 },
             ],
@@ -56,10 +120,16 @@ app.get("/create_did", async (req, res) => {
 // Define a route that returns a list of dids from the wallet
 app.get('/get_own_did', async (req, res) => {
     const identifiers = await agent.didManagerFind();
+    const identifiersETHR = await agentETH.didManagerFind();
     console.log(`There are ${identifiers.length} identifiers`);
     let list = [];
     if (identifiers.length > 0) {
         identifiers.map((id) => {
+            list.push(id.did);
+        });
+    }
+    if (identifiersETHR.length > 0) {
+        identifiersETHR.map((id) => {
             list.push(id.did);
         });
     }
@@ -80,16 +150,17 @@ app.get('/get_own_did_eth', async (req, res) => {
 // Define a route that returns a did document from the wallet
 app.get('/get_did_doc', async (req, res) => {
     let gotstring = req.query.did;
-    const identifier = await agent.didManagerGet({ did: gotstring });
-    console.log('identifier' + identifier);
-    res.send(identifier);
-});
-// Define a route that returns a did document from the wallet
-app.get('/get_did_doc', async (req, res) => {
-    let gotstring = req.query.did;
-    const identifier = await agent.didManagerGet({ did: gotstring });
-    console.log('identifier' + identifier);
-    res.send(identifier);
+    // Choose the appropriate agent based on the presence of ":sepolia" in the did
+    const agentToUse = !gotstring.includes(':sepolia') ? agentETH : agent;
+    try {
+        const identifier = await agentToUse.didManagerGet({ did: gotstring });
+        console.log('identifier', identifier);
+        res.send(identifier);
+    }
+    catch (error) {
+        console.error('Error fetching DID document:', error);
+        res.status(500).send({ error: 'Failed to fetch DID document' });
+    }
 });
 function parseNestedJSON(obj) {
     let parsed = {};
@@ -125,12 +196,15 @@ function parseNestedJSON(obj) {
     }
     return parsed;
 }
-// Your route handler
+// Define the route to store a verifiable credential
 app.post('/store_vc', bodyParser.json(), async (req, res) => {
     try {
         console.log("here");
-        console.log(req.body.verifiableCredential); // This should work
+        console.log(req.body); // This should work
         // Log the keys of the JSON object
+        const did = req.body.did;
+        // Choose the appropriate agent based on the presence of "sepolia" in the did
+        const agentToUse = !did.includes('sepolia') ? agentETH : agent;
         const decoded_jwt = jwtDecode(req.body.verifiableCredential);
         const verifiable_credential = format_jwt_decoded_to_VC(req.body.verifiableCredential, decoded_jwt);
         try {
@@ -138,12 +212,13 @@ app.post('/store_vc', bodyParser.json(), async (req, res) => {
             console.log(req.body.credentialSubject);
             let vc = ({ verifiableCredential: verifiable_credential });
             console.log("here is vc" + JSON.stringify(vc));
-            const hash = await agent.dataStoreSaveVerifiableCredential(vc);
+            // Use the selected agent to save the verifiable credential
+            const hash = await agentToUse.dataStoreSaveVerifiableCredential(vc);
             res.send({ res: "OK", hash: hash });
         }
         catch (error) {
             console.log(error);
-            // we'll proceed, but let's report it
+            // We'll proceed, but let's report it
             res.status(500).send({
                 message: `error in store`
             });
@@ -152,6 +227,9 @@ app.post('/store_vc', bodyParser.json(), async (req, res) => {
     catch (error) {
         console.log(error);
         // Handle errors
+        res.status(500).send({
+            message: `error in processing`
+        });
     }
 });
 // Define a route that issues a credential
@@ -167,8 +245,10 @@ app.post('/issue_verifiable_credential', async (req, res) => {
     if (type_cred) {
         typeToPut.push(type_cred);
     }
+    // Choose the appropriate agent based on the presence of "sepolia" in the issuer_did
+    const agentToUse = !issuer_did.includes(':sepolia') ? agentETH : agent;
     try {
-        let verifiableCredential = await agent.createVerifiableCredential({
+        let verifiableCredential = await agentToUse.createVerifiableCredential({
             credential: {
                 "@context": [
                     "https://www.w3.org/ns/credentials/v2",
@@ -182,7 +262,7 @@ app.post('/issue_verifiable_credential', async (req, res) => {
         });
         if (toStore) {
             console.log("before storing" + JSON.stringify(verifiableCredential, null, 2));
-            const hash = await agent.dataStoreSaveVerifiableCredential({ verifiableCredential });
+            const hash = await agentToUse.dataStoreSaveVerifiableCredential({ verifiableCredential });
             console.log("stored: " + hash);
             res.send({ res: "OK", jwt: verifiableCredential.proof.jwt });
         }
@@ -193,7 +273,7 @@ app.post('/issue_verifiable_credential', async (req, res) => {
     }
     catch (error) {
         console.log(error);
-        // we'll proceed, but let's report it
+        // We'll proceed, but let's report it
         res.status(500).send({
             message: `credential issuer must be a DID managed by this agent`
         });
@@ -206,11 +286,13 @@ app.post('/issue_verifiable_presentation/holder_claim', async (req, res) => {
     const attributes = req.body.attributes;
     const assertion = req.body.assertion;
     const toStore = req.body.store === true;
+    // Choose the appropriate agent based on the presence of "sepolia" in the holderDid
+    const agentToUse = !holderDid.includes('sepolia') ? agentETH : agent;
     try {
         const verifiablePresentation = await createVPwithHolderClaim(typeCred, assertion, holderDid, attributes);
         if (verifiablePresentation) {
             if (toStore) {
-                const hash = await agent.dataStoreSaveVerifiablePresentation({ verifiablePresentation });
+                const hash = await agentToUse.dataStoreSaveVerifiablePresentation({ verifiablePresentation });
                 console.log("Stored: " + hash);
             }
             res.send({ res: "OK", jwt: verifiablePresentation.proof.jwt });
@@ -224,16 +306,12 @@ app.post('/issue_verifiable_presentation/holder_claim', async (req, res) => {
         res.status(500).send({ message: "Internal server error" });
     }
 });
-// Define a route that returns a list of verifiable credentials from wallet
-app.get('/list_verifiable_credentials', async (req, res) => {
-    const respose = await agent.dataStoreORMGetVerifiableCredentials();
-    res.send(respose);
-});
 // Define a route that returns a list of verifiable presentations from the wallet
 app.get('/list_verifiable_presentations', async (req, res) => {
     try {
         // Retrieve the list of verifiable presentations from the wallet
         const verifiablePresentations = await agent.dataStoreORMGetVerifiablePresentations();
+        verifiablePresentations.concat(await agentETH.dataStoreORMGetVerifiablePresentations());
         // Send the list of verifiable presentations as the response
         res.send(verifiablePresentations);
     }
@@ -244,7 +322,8 @@ app.get('/list_verifiable_presentations', async (req, res) => {
     }
 });
 // Define a route that returns a list of verifiable credentials from wallet
-app.get('/list_verifiable_credentials_with_type', async (req, res) => {
+app.get('/api/v0/list-verifiable-credentials-with-type', async (req, res) => {
+    console.log("received request to get verifiable credentials with type");
     let queryParam = req.query.type;
     const query = {
         where: [
@@ -256,9 +335,13 @@ app.get('/list_verifiable_credentials_with_type', async (req, res) => {
         ],
         order: [{ column: 'issuanceDate', direction: 'ASC' }],
     };
-    let respose = await agent.dataStoreORMGetVerifiableCredentials(query);
-    console.log("respon" + respose.toString());
-    res.send(respose);
+    // Fetch results from both data stores
+    let response1 = await agent.dataStoreORMGetVerifiableCredentials(query);
+    let response2 = await agentETH.dataStoreORMGetVerifiableCredentials(query);
+    // Concatenate the results
+    let concatenatedResponse = response1.concat(response2);
+    console.log("respon" + concatenatedResponse.toString());
+    res.send(concatenatedResponse);
 });
 // Define a route that returns a list of verifiable presentations from the wallet based on a specific type
 app.get('/list_verifiable_presentations_with_type', async (req, res) => {
@@ -277,9 +360,13 @@ app.get('/list_verifiable_presentations_with_type', async (req, res) => {
             order: [{ column: 'issuanceDate', direction: 'ASC' }],
         };
         // Retrieve the list of verifiable presentations from the wallet based on the type query
-        const response = await agent.dataStoreORMGetVerifiablePresentations(query);
-        // Send the list of verifiable presentations as the response
-        res.send(response);
+        // Fetch results from both data stores
+        let response1 = await agent.dataStoreORMGetVerifiablePresentations(query);
+        let response2 = await agentETH.dataStoreORMGetVerifiablePresentations(query);
+        // Concatenate the results
+        let concatenatedResponse = response1.concat(response2);
+        console.log("response" + concatenatedResponse.toString());
+        res.send(concatenatedResponse);
     }
     catch (error) {
         // If an error occurs, send an error response
@@ -290,7 +377,11 @@ app.get('/list_verifiable_presentations_with_type', async (req, res) => {
 // Define a route that returns ONE verifiable credentials from wallet given an HASH
 app.get('/get_verifiable_credential', async (req, res) => {
     let hash = req.query.hash_cred;
-    const respose = await agent.dataStoreGetVerifiableCredential({ hash });
+    let respose = await agent.dataStoreGetVerifiableCredential({ hash });
+    if (!respose) {
+        //if not in the agent connected to sepolia, find it in the ETH sepolia agent
+        respose = await agentETH.dataStoreGetVerifiableCredential({ hash });
+    }
     res.send(respose);
 });
 //route to get a verifiable presentation from qr code
@@ -480,7 +571,7 @@ function format_jwt_decoded_to_VC(jwt_encoded, jwt_decoded) {
     credSubj = jwt_decoded.vc.credentialSubject;
     credSubj.id = jwt_decoded.sub;
     obj.credentialSubject = credSubj;
-    issuerObj.id = jwt_decoded.sub;
+    issuerObj.id = jwt_decoded.iss;
     obj.issuer = issuerObj;
     proofObj.type = "JwtProof2020";
     proofObj.jwt = jwt_encoded;
@@ -517,11 +608,13 @@ function format_jwt_decoded_to_VP(jwt_encoded, jwt_decoded) {
     obj.proof = proofObj;
     return (obj);
 }
+//TODO VERIFY SHOULD BE FROM DID:ETHR AGENT
 async function createVPwithHolderClaim(typeVP, assertion, holder, jsonVar) {
     let presentationPayload = {};
     presentationPayload.type = ["VerifiablePresentation", typeVP];
     presentationPayload["@context"] = ["https://www.w3.org/ns/credentials/v2"];
     presentationPayload.holder = holder;
+    const agentToUse = !holder.includes('sepolia') ? agentETH : agent;
     //create a uuid for the VP
     let uuid = crypto.randomUUID();
     presentationPayload.id = uuid;
@@ -536,13 +629,13 @@ async function createVPwithHolderClaim(typeVP, assertion, holder, jsonVar) {
     vc_cred_subj['id'] = uuid;
     vc_payload.credentialSubject = vc_cred_subj;
     try {
-        let verifiableCredential = await agent.createVerifiableCredential({
+        let verifiableCredential = await agentToUse.createVerifiableCredential({
             credential: vc_payload,
             proofFormat: 'jwt',
             fetchRemoteContexts: true
         });
         presentationPayload.verifiableCredential = [verifiableCredential];
-        let verifiablePresentation = await agent.createVerifiablePresentation({
+        let verifiablePresentation = await agentToUse.createVerifiablePresentation({
             presentation: presentationPayload,
             proofFormat: 'jwt'
         });
@@ -555,10 +648,11 @@ async function createVPwithHolderClaim(typeVP, assertion, holder, jsonVar) {
     return null;
 }
 //verify_credential
-// Define a route that returns a qr-code for a verifiable credential
 app.post('/verify', async (req, res) => {
     const credential = req.body.credential;
-    const result = await agent.verifyCredential({
+    // Choose the appropriate agent based on the presence of "sepolia" in the holderDid
+    const agentToUse = !req.body.credential.issuer.id.includes(':sepolia') ? agentETH : agent;
+    const result = await agentToUse.verifyCredential({
         credential: credential
     });
     console.log("result of verification" + result.verified);
@@ -566,12 +660,14 @@ app.post('/verify', async (req, res) => {
 });
 app.post('/verify/vp', async (req, res) => {
     const vp = req.body.vp;
-    const result = await (verifyPresentation(vp));
+    const did = req.body.vp.holder;
+    const result = await (verifyPresentation(vp, did));
     res.send({ res: result.verified });
 });
-async function verifyPresentation(VP) {
+async function verifyPresentation(VP, did) {
     //simple verification call, you need to provide the internal content of VerifiablePresentation:
-    let ris = await agent.verifyPresentation({ presentation: VP });
+    const agentToUse = !did.includes(':sepolia') ? agentETH : agent;
+    let ris = await agentToUse.verifyPresentation({ presentation: VP });
     return ris;
 }
 // Listen on port 3001

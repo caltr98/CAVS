@@ -7,7 +7,7 @@ WORKDIR /app
 # Install Git
 RUN apt-get update && apt-get install -y git
 
-# Install dependency keybert from pip
+# Install dependency keybert and flask from pip
 RUN pip install git+https://github.com/MaartenGr/KeyBERT.git flask
 
 # Copy the Python script into the container

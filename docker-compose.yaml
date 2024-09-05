@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   YagoSC:
@@ -89,3 +88,16 @@ services:
       - VeramoAgent
       - skillextractorservice
       - textprocessingservice
+      - CAVSService
+
+  SSIBridge:
+    image: ssibridge:latest
+    build: ./veramoAgent/CAVSBackend/SSIIntegrationHelper
+    ports:
+      - "17005:17005"
+    depends_on:
+      - IPFSAgent
+      - VeramoAgent
+      - skillextractorservice
+      - textprocessingservice
+      - CAVSService
