@@ -814,27 +814,29 @@
     
     
         credentials = jwt_decoded.vp.verifiableCredential;
-        let jwt_cred;
-        for (let i = 0; i < credentials.length; i++) {
-            if(!credentials[i].hasOwnProperty('vc')){ // if already decoded vc, keep as it is
-                //if not then it is encoded as jwt, we decode and assign
-                jwt_cred = jwtDecode(credentials[i]);
-                credentials[i] = format_jwt_decoded_to_VC(credentials[i],jwt_cred); // assign decoded jwt
+        if(credentials) {
+            let jwt_cred;
+            for (let i = 0; i < credentials.length; i++) {
+                if (!credentials[i].hasOwnProperty('vc')) { // if already decoded vc, keep as it is
+                    //if not then it is encoded as jwt, we decode and assign
+                    jwt_cred = jwtDecode(credentials[i]);
+                    credentials[i] = format_jwt_decoded_to_VC(credentials[i], jwt_cred); // assign decoded jwt
+                }
             }
+            obj.verifiableCredential = credentials
         }
-        obj.verifiableCredential=credentials
-    
         proofObj.type = "JwtProof2020";
         proofObj.jwt = jwt_encoded;
     
         obj.proof = proofObj;
-    
+        obj.attributes = jwt_decoded.attributes;
+        console.log("obj before return" + obj)
         return (obj);
     }
     
-    //TODO VERIFY SHOULD BE FROM DID:ETHR AGENT
-    
-        async function createVPwithHolderClaim(typeVP: string, assertion:string,holder: string, jsonVar: JSON): Promise<VerifiablePresentation|null> {
+
+    /*
+    async function createVPwithHolderClaim(typeVP: string, assertion:string,holder: string, jsonVar: JSON): Promise<VerifiablePresentation|null> {
             let presentationPayload: PresentationPayload = {} as PresentationPayload;
     
     
@@ -886,7 +888,38 @@
             }
             return null
         }
-    
+    */
+    async function createVPwithHolderClaim(typeVP: string, assertion:string,holder: string, jsonVar: JSON): Promise<VerifiablePresentation|null> {
+        let presentationPayload: PresentationPayload = {} as PresentationPayload;
+
+
+        presentationPayload.type = ["VerifiablePresentation", typeVP]
+        presentationPayload["@context"] = ["https://www.w3.org/ns/credentials/v2"]
+        presentationPayload.holder = holder
+
+        const agentToUse = !holder.includes('sepolia') ? agentETH : agent;
+
+
+        //create a uuid for the VP
+        let uuid = crypto.randomUUID()
+        presentationPayload.id = uuid;
+        presentationPayload.attributes = jsonVar;
+
+
+        try {
+            let verifiablePresentation = await agentToUse.createVerifiablePresentation({
+                presentation:presentationPayload,
+                proofFormat: 'jwt'
+            })
+
+            return verifiablePresentation
+        } catch (error) {
+            console.log(error)
+            return  null
+        }
+        return null
+    }
+
     //verify_credential
     app.post('/verify', async (req: Request, res: Response) => {
     

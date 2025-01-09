@@ -4,8 +4,7 @@ FROM node:20.12.0
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json to install app dependencies
-COPY ./package-lock.json ./package-lock.json
+# Copy yarn.json and package-lock.json to install app dependencies
 COPY ./package.json ./package.json
 COPY ./yarn.lock ./yarn.lock
 
@@ -20,4 +19,4 @@ RUN yarn install --frozen-lockfile
 EXPOSE 4201
 
 # Run the app using ts-node/esm loader
-CMD ["npm","run","start"]
+CMD ["node","ipfsAgentService.js"]

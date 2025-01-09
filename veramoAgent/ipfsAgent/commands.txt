@@ -1,8 +1,8 @@
- yarn add helia @helia/unixfs blockstore-fs express cors axios
+yarn add helia @helia/unixfs @helia/ipns blockstore-fs express cors axios
 
- yarn add body-parser
+yarn add body-parser
 
- npm install @libp2p/utils@latest
+npm install @libp2p/utils@latest
 
 
 

@@ -122,7 +122,21 @@ app.get("/api_skills", (req, res) => {
 });
 
 
+// ROUTE 4 set DID as new Selected DID
+app.post("/setup_did", async (req, res) => {
+    try {
+        const response = await axios.get(`${veramoAgentEndpoint}/create_did`, {
+            timeout: 65000,
+        });
+        selectedDID = response.data.did;
+        console.log("DID: " + response.data.did);
+        res.status(200).send({"did":response.data.did});
+    } catch (error) {
+        console.error("Error creating DID:", error.message);
+        res.status(500).send("Failed to create DID");
 
+    }
+});
 
 //Keyword extraction method
 const extractKeywords = async (document, res) => {
@@ -350,7 +364,7 @@ app.post('/api/vc', bodyParser.json(), async (req, res) => {
     const credentials = req.body.credentials;
     const typeStatement = req.body.typeStatement;
     const category = req.body.category;
-    const hostURL = req.body.hostURL;
+    const statementTitle = req.body.statementTitle;
     const holderDID = req.body.holderDID;
 
     // Extract keywords
@@ -478,7 +492,7 @@ app.post('/api/vc', bodyParser.json(), async (req, res) => {
                     general_concepts_keywords_model: upperLevelKeywordsModel, // Include model for upper-level keywords
                     statementType: typeStatement,
                     statementCategory: category,
-                    statementHostURL: hostURL,
+                    statementTitle: statementTitle,
                     credentials_for_skills: keywordsCredentials,
                     credentials_for_similar_concepts_skills: sameLevelKeywordsCredentials,
                     credentials_for_general_concepts_skills: upperLevelKeywordsCredentials,
@@ -581,7 +595,6 @@ app.post('/simulation/skillsfromtext',bodyParser.json(), async (req, res) => {
         res.status(500).send({ error: 'Internal Server Error', details: error.message });
     }
 });
-
 
 app.post('/simulation', bodyParser.json(),async (req, res) => {
     try {

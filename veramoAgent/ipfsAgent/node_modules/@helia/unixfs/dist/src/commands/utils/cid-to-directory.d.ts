@@ -1,0 +1,10 @@
+import { type ExporterOptions } from 'ipfs-unixfs-exporter';
+import type { GetStore } from '../../unixfs.js';
+import type { PBNode } from '@ipld/dag-pb';
+import type { CID } from 'multiformats/cid';
+export interface Directory {
+    cid: CID;
+    node: PBNode;
+}
+export declare function cidToDirectory(cid: CID, blockstore: GetStore, options?: ExporterOptions): Promise<Directory>;
+//# sourceMappingURL=cid-to-directory.d.ts.map

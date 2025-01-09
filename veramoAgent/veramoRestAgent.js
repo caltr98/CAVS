@@ -1,5 +1,6 @@
 // Import Express
 import express from 'express';
+import { performance } from 'universal-perf-hooks';
 import cors from 'cors';
 // Import axios
 import qrcode from 'qrcode';
@@ -232,14 +233,8 @@ app.post('/store_vc', bodyParser.json(), async (req, res) => {
         });
     }
 });
-// Define a route that issues a credential
-app.post('/issue_verifiable_credential', async (req, res) => {
-    console.log(req.body);
-    let issuer_did = req.body.issuer;
-    let holder_did = req.body.holder;
-    let type_cred = req.body.type;
-    const attributes = req.body.attributes;
-    const toStore = req.body.store === true;
+// Internal function to issue a verifiable credential
+async function issueCredential(issuer_did, holder_did, type_cred, attributes, toStore) {
     let credential_subject_full = { ...{ id: holder_did }, ...attributes };
     let typeToPut = [];
     if (type_cred) {
@@ -247,64 +242,129 @@ app.post('/issue_verifiable_credential', async (req, res) => {
     }
     // Choose the appropriate agent based on the presence of "sepolia" in the issuer_did
     const agentToUse = !issuer_did.includes(':sepolia') ? agentETH : agent;
+    // Create the verifiable credential
+    let verifiableCredential = await agentToUse.createVerifiableCredential({
+        credential: {
+            "@context": ["https://www.w3.org/ns/credentials/v2"],
+            issuer: { id: issuer_did },
+            type: typeToPut,
+            credentialSubject: credential_subject_full,
+        },
+        proofFormat: 'jwt',
+        fetchRemoteContexts: true
+    });
+    // Optionally store the credential
+    if (toStore) {
+        const hash = await agentToUse.dataStoreSaveVerifiableCredential({ verifiableCredential });
+        console.log("Stored credential with hash: " + hash);
+    }
+    return verifiableCredential.proof.jwt; // Return the JWT of the credential
+}
+// Route without measuring execution time
+app.post('/issue_verifiable_credential', async (req, res) => {
+    let issuer_did = req.body.issuer;
+    let holder_did = req.body.holder;
+    let type_cred = req.body.type;
+    const attributes = req.body.attributes;
+    const toStore = req.body.store === true;
     try {
-        let verifiableCredential = await agentToUse.createVerifiableCredential({
-            credential: {
-                "@context": [
-                    "https://www.w3.org/ns/credentials/v2",
-                ],
-                issuer: { id: issuer_did },
-                type: typeToPut,
-                credentialSubject: credential_subject_full,
-            },
-            proofFormat: 'jwt',
-            fetchRemoteContexts: true
-        });
-        if (toStore) {
-            console.log("before storing" + JSON.stringify(verifiableCredential, null, 2));
-            const hash = await agentToUse.dataStoreSaveVerifiableCredential({ verifiableCredential });
-            console.log("stored: " + hash);
-            res.send({ res: "OK", jwt: verifiableCredential.proof.jwt });
-        }
-        else {
-            console.log("sending" + verifiableCredential.proof.jwt);
-            res.send({ res: "OK", jwt: verifiableCredential.proof.jwt });
-        }
+        const jwt = await issueCredential(issuer_did, holder_did, type_cred, attributes, toStore);
+        res.send({ res: "OK", jwt });
     }
     catch (error) {
         console.log(error);
-        // We'll proceed, but let's report it
-        res.status(500).send({
-            message: `credential issuer must be a DID managed by this agent`
-        });
+        res.status(500).send({ message: `Credential issuer must be a DID managed by this agent` });
     }
 });
-// Define a route that issues a verifiable presentation
+// Test route that measures execution time
+app.post('/test_issue_verifiable_credential', async (req, res) => {
+    let issuer_did = req.body.issuer;
+    let holder_did = req.body.holder;
+    let type_cred = req.body.type;
+    const attributes = req.body.attributes;
+    const toStore = req.body.store === true;
+    const numTrials = req.body.numTrials || 1; // Number of trials, default is 1
+    let times = [];
+    for (let i = 0; i < numTrials; i++) {
+        const start = performance.now();
+        try {
+            await issueCredential(issuer_did, holder_did, type_cred, attributes, toStore);
+        }
+        catch (error) {
+            console.log(error);
+            res.status(500).send({ message: `Credential issuer must be a DID managed by this agent` });
+            return;
+        }
+        const end = performance.now();
+        times.push(end - start);
+    }
+    // Calculate mean and standard deviation
+    const mean = times.reduce((a, b) => a + b, 0) / numTrials;
+    const variance = times.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numTrials;
+    const stdev = Math.sqrt(variance);
+    res.send({ mean, stdev });
+});
+// Internal function to issue a verifiable presentation for holder claim
+async function issueHolderClaimPresentation(holderDid, typeCred, attributes, assertion, toStore) {
+    // Choose the appropriate agent based on the presence of "sepolia" in the holderDid
+    const agentToUse = !holderDid.includes('sepolia') ? agentETH : agent;
+    // Create verifiable presentation
+    const verifiablePresentation = await createVPwithHolderClaim(typeCred, assertion, holderDid, attributes);
+    if (verifiablePresentation) {
+        // Optionally store the verifiable presentation
+        if (toStore) {
+            const hash = await agentToUse.dataStoreSaveVerifiablePresentation({ verifiablePresentation });
+            console.log("Stored verifiable presentation with hash: " + hash);
+        }
+        return verifiablePresentation.proof.jwt; // Return the JWT of the presentation
+    }
+    else {
+        throw new Error("Failed to create verifiable presentation");
+    }
+}
+// Route without measuring execution time
 app.post('/issue_verifiable_presentation/holder_claim', async (req, res) => {
     const holderDid = req.body.holder;
     const typeCred = req.body.type;
     const attributes = req.body.attributes;
     const assertion = req.body.assertion;
     const toStore = req.body.store === true;
-    // Choose the appropriate agent based on the presence of "sepolia" in the holderDid
-    const agentToUse = !holderDid.includes('sepolia') ? agentETH : agent;
     try {
-        const verifiablePresentation = await createVPwithHolderClaim(typeCred, assertion, holderDid, attributes);
-        if (verifiablePresentation) {
-            if (toStore) {
-                const hash = await agentToUse.dataStoreSaveVerifiablePresentation({ verifiablePresentation });
-                console.log("Stored: " + hash);
-            }
-            res.send({ res: "OK", jwt: verifiablePresentation.proof.jwt });
-        }
-        else {
-            res.status(500).send({ message: "Failed to create verifiable presentation" });
-        }
+        const jwt = await issueHolderClaimPresentation(holderDid, typeCred, attributes, assertion, toStore);
+        res.send({ res: "OK", jwt });
     }
     catch (error) {
         console.error(error);
         res.status(500).send({ message: "Internal server error" });
     }
+});
+// Test route that measures execution time
+app.post('/test_issue_verifiable_presentation/holder_claim', async (req, res) => {
+    const holderDid = req.body.holder;
+    const typeCred = req.body.type;
+    const attributes = req.body.attributes;
+    const assertion = req.body.assertion;
+    const toStore = req.body.store === true;
+    const numTrials = req.body.numTrials || 1; // Number of trials, default is 1
+    let times = [];
+    for (let i = 0; i < numTrials; i++) {
+        const start = performance.now();
+        try {
+            await issueHolderClaimPresentation(holderDid, typeCred, attributes, assertion, toStore);
+        }
+        catch (error) {
+            console.error(error);
+            res.status(500).send({ message: "Internal server error" });
+            return;
+        }
+        const end = performance.now();
+        times.push(end - start); // store the execution time
+    }
+    // Calculate mean and standard deviation
+    const mean = times.reduce((a, b) => a + b, 0) / numTrials;
+    const variance = times.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numTrials;
+    const stdev = Math.sqrt(variance);
+    res.send({ mean, stdev });
 });
 // Define a route that returns a list of verifiable presentations from the wallet
 app.get('/list_verifiable_presentations', async (req, res) => {
@@ -608,7 +668,60 @@ function format_jwt_decoded_to_VP(jwt_encoded, jwt_decoded) {
     obj.proof = proofObj;
     return (obj);
 }
-//TODO VERIFY SHOULD BE FROM DID:ETHR AGENT
+/*
+async function createVPwithHolderClaim(typeVP: string, assertion:string,holder: string, jsonVar: JSON): Promise<VerifiablePresentation|null> {
+        let presentationPayload: PresentationPayload = {} as PresentationPayload;
+
+
+        presentationPayload.type = ["VerifiablePresentation", typeVP]
+        presentationPayload["@context"] = ["https://www.w3.org/ns/credentials/v2"]
+        presentationPayload.holder = holder
+
+        const agentToUse = !holder.includes('sepolia') ? agentETH : agent;
+
+
+        //create a uuid for the VP
+        let uuid = crypto.randomUUID()
+        presentationPayload.id = uuid;
+
+
+        let vc_payload: CredentialPayload = {} as CredentialPayload;
+
+        let issuer_data: IssuerType = {id:holder} as IssuerType;
+        vc_payload.issuer = issuer_data
+        vc_payload["@context"]= ["https://www.w3.org/ns/credentials/v2"]
+        vc_payload.type = ['VerifiableCredential', 'VCPresentation',"VCfor"+typeVP]
+        let vc_cred_subj: CredentialSubject = jsonVar
+        //vc_cred_subj['assertion'] = 'This VP is submitted by the subject as evidence of  VC propagation'
+        vc_cred_subj['assertion'] = assertion
+
+        vc_cred_subj['id'] = uuid
+
+        vc_payload.credentialSubject = vc_cred_subj;
+
+        try {
+            let verifiableCredential = await agentToUse.createVerifiableCredential({
+                credential:vc_payload,
+                proofFormat: 'jwt',
+                fetchRemoteContexts: true
+            })
+
+            presentationPayload.verifiableCredential = [verifiableCredential]
+
+
+            let verifiablePresentation = await agentToUse.createVerifiablePresentation({
+                presentation:presentationPayload,
+                proofFormat: 'jwt'
+            })
+
+            return verifiablePresentation
+        } catch (error) {
+            console.log(error)
+            return  null
+        }
+        return null
+    }
+*/
 async function createVPwithHolderClaim(typeVP, assertion, holder, jsonVar) {
     let presentationPayload = {};
     presentationPayload.type = ["VerifiablePresentation", typeVP];
@@ -618,23 +731,8 @@ async function createVPwithHolderClaim(typeVP, assertion, holder, jsonVar) {
     //create a uuid for the VP
     let uuid = crypto.randomUUID();
     presentationPayload.id = uuid;
-    let vc_payload = {};
-    let issuer_data = { id: holder };
-    vc_payload.issuer = issuer_data;
-    vc_payload["@context"] = ["https://www.w3.org/ns/credentials/v2"];
-    vc_payload.type = ['VerifiableCredential', 'VCPresentation', "VCfor" + typeVP];
-    let vc_cred_subj = jsonVar;
-    //vc_cred_subj['assertion'] = 'This VP is submitted by the subject as evidence of  VC propagation'
-    vc_cred_subj['assertion'] = assertion;
-    vc_cred_subj['id'] = uuid;
-    vc_payload.credentialSubject = vc_cred_subj;
+    presentationPayload.attributes = jsonVar;
     try {
-        let verifiableCredential = await agentToUse.createVerifiableCredential({
-            credential: vc_payload,
-            proofFormat: 'jwt',
-            fetchRemoteContexts: true
-        });
-        presentationPayload.verifiableCredential = [verifiableCredential];
         let verifiablePresentation = await agentToUse.createVerifiablePresentation({
             presentation: presentationPayload,
             proofFormat: 'jwt'
@@ -658,6 +756,7 @@ app.post('/verify', async (req, res) => {
     console.log("result of verification" + result.verified);
     res.send({ res: result.verified });
 });
+//verify_presentation
 app.post('/verify/vp', async (req, res) => {
     const vp = req.body.vp;
     const did = req.body.vp.holder;
@@ -670,6 +769,43 @@ async function verifyPresentation(VP, did) {
     let ris = await agentToUse.verifyPresentation({ presentation: VP });
     return ris;
 }
+//test for X trials of verification of VC
+app.post('/test_verify', async (req, res) => {
+    const credential = req.body.credential;
+    const numTrials = req.body.numTrials || 1; // Number of trials from the request, default is 1
+    const agentToUse = !req.body.credential.issuer.id.includes(':sepolia') ? agentETH : agent;
+    let times = [];
+    for (let i = 0; i < numTrials; i++) {
+        const start = performance.now();
+        const result = await agentToUse.verifyCredential({
+            credential: credential
+        });
+        const end = performance.now();
+        times.push(end - start); // store the execution time
+    }
+    const mean = times.reduce((a, b) => a + b, 0) / numTrials;
+    const variance = times.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numTrials;
+    const stdev = Math.sqrt(variance);
+    console.log(`Result of verification: ${mean}, Stdev: ${stdev}`);
+    res.send({ mean, stdev });
+});
+//test for X trials of verification of VP
+app.post('/test_verify/vp', async (req, res) => {
+    const vp = req.body.vp;
+    const did = req.body.vp.holder;
+    const numTrials = req.body.numTrials || 1; // Number of trials from the request, default is 1
+    let times = [];
+    for (let i = 0; i < numTrials; i++) {
+        const start = performance.now();
+        const result = await verifyPresentation(vp, did);
+        const end = performance.now();
+        times.push(end - start); // store the execution time
+    }
+    const mean = times.reduce((a, b) => a + b, 0) / numTrials;
+    const variance = times.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numTrials;
+    const stdev = Math.sqrt(variance);
+    res.send({ mean, stdev });
+});
 // Listen on port 3001
 app.listen(3001, () => {
     console.log('Server is running on port 3001');

@@ -1,0 +1,71 @@
+import { createTrustlessGatewaySession } from './session.js';
+import { findHttpGatewayProviders } from './utils.js';
+import { DEFAULT_ALLOW_INSECURE, DEFAULT_ALLOW_LOCAL } from './index.js';
+/**
+ * A class that accepts a list of trustless gateways that are queried
+ * for blocks.
+ */
+export class TrustlessGatewayBlockBroker {
+    allowInsecure;
+    allowLocal;
+    routing;
+    log;
+    logger;
+    constructor(components, init = {}) {
+        this.log = components.logger.forComponent('helia:trustless-gateway-block-broker');
+        this.logger = components.logger;
+        this.routing = components.routing;
+        this.allowInsecure = init.allowInsecure ?? DEFAULT_ALLOW_INSECURE;
+        this.allowLocal = init.allowLocal ?? DEFAULT_ALLOW_LOCAL;
+    }
+    async retrieve(cid, options = {}) {
+        const aggregateErrors = [];
+        for await (const gateway of findHttpGatewayProviders(cid, this.routing, this.logger, this.allowInsecure, this.allowLocal, options)) {
+            this.log('getting block for %c from %s', cid, gateway.url);
+            try {
+                const block = await gateway.getRawBlock(cid, options.signal);
+                this.log.trace('got block for %c from %s', cid, gateway.url);
+                try {
+                    await options.validateFn?.(block);
+                }
+                catch (err) {
+                    this.log.error('failed to validate block for %c from %s', cid, gateway.url, err);
+                    // try another gateway
+                    continue;
+                }
+                return block;
+            }
+            catch (err) {
+                this.log.error('failed to get block for %c from %s', cid, gateway.url, err);
+                if (err instanceof Error) {
+                    aggregateErrors.push(err);
+                }
+                else {
+                    aggregateErrors.push(new Error(`Unable to fetch raw block for CID ${cid} from gateway ${gateway.url}`));
+                }
+                // if signal was aborted, exit the loop
+                if (options.signal?.aborted === true) {
+                    this.log.trace('request aborted while fetching raw block for CID %c from gateway %s', cid, gateway.url);
+                    break;
+                }
+            }
+        }
+        if (aggregateErrors.length > 0) {
+            throw new AggregateError(aggregateErrors, `Unable to fetch raw block for CID ${cid} from any gateway`);
+        }
+        else {
+            throw new Error(`Unable to fetch raw block for CID ${cid} from any gateway`);
+        }
+    }
+    createSession(options = {}) {
+        return createTrustlessGatewaySession({
+            logger: this.logger,
+            routing: this.routing
+        }, {
+            ...options,
+            allowLocal: this.allowLocal,
+            allowInsecure: this.allowInsecure
+        });
+    }
+}
+//# sourceMappingURL=broker.js.map

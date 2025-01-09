@@ -23,47 +23,8 @@ async function createNode(){
     const helia = await createHelia({
         blockstore: new FsBlockstore ('./persisted')
     });
-    const { ipns } = await import( '@helia/ipns')
-    definition = ipns(helia)
-
-    // Read the contents of the secret.json file
-    const secretJson = JSON.parse(filesystem.readFileSync('./secret.json'));
-    // Check if the PKCS field exists
-    if (secretJson.PKCS) {
-        const importedKey = await helia.libp2p.services.keychain.importKey(secretJson.name, secretJson.PKCS,secretJson.password);
-        globalKeyInfo = importedKey
-        console.log("Key imported:", importedKey);
-    }
-    else{
-        try {
-            // PKCS field doesn't exist, create and store the key
-            // Create an RSA key with a valid name
-            const keyInfo = await helia.libp2p.services.keychain.createKey(secretJson.name, "rsa");
-            console.log("RSA key created:", keyInfo);
-
-            // Export the key and store it
-            console.log("this is name"+secretJson)
-            const exportedKey = await helia.libp2p.services.keychain.exportKey(secretJson.name, secretJson.password);
-            console.log("Exported key:", exportedKey);
-
-            // Write the key information to secret.json
-            secretJson.PKCS = exportedKey;
-            await filesystem.writeFileSync('./secret.json', JSON.stringify(secretJson, null, 2), 'utf-8');
-            globalKeyInfo = keyInfo;
-            console.log("Key information stored in secret.json.");
-        } catch (error) {
-            console.error("Error creating and storing key:", error);
-            throw error; // Propagate the error for handling at a higher level
-        }
-    }
-    // Export the peer ID associated with the created key
-    console.log("keyinfo "+ globalKeyInfo.name)
-
-    //try to put all the logic here :c
-    globalPeerId = await helia.libp2p.services.keychain.exportPeerId(globalKeyInfo.name);
-
-    console.log("this is name "+globalPeerId)
     fs = unixfs(helia); //init
+    return fs;
 }
 
 app.get('/peer_id', async (req, res) => {
@@ -104,13 +65,18 @@ app.post('/upload', async (req, res) => {
 
     //upload only if data was not already uploaded
     let jsonData = JSON.parse(filesystem.readFileSync("indexing.json"));
+    let secretJson = JSON.parse(filesystem.readFileSync("secret.json"));
 
     // Create SHA-256 hash
-    const hash = crypto.createHash('sha256');
+    console.log("here pre")
+    const hash = crypto.createHash('sha256',secretJson.password);
+    console.log("here post")
     hash.update(data);
+    console.log("after")
 
     // Get the hexadecimal digest of the hash
     const sha256Hash = hash.digest('hex');
+    console.log("afterafter")
 
     // we use the hash to check if a cid already exists
     if(jsonData.hasOwnProperty(sha256Hash) && !force) { // if yes we can return the cid

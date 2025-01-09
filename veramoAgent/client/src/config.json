@@ -3,6 +3,7 @@
   "textprocessor": "http://localhost:4500",
   "skillprocessor": "http://localhost:4502",
   "cavsendpoint": "http://localhost:4200",
+  "cavsendpoint2": "http://localhost:4202",
+  "cavsendpoint3": "http://localhost:4203",
   "ipfsagent": "http://localhost:4201"
-
 }

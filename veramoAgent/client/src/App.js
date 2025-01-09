@@ -2,9 +2,9 @@ import React, {useEffect, useState} from 'react';
 import "./App.css";
 import config from "./config.json"
 import secret from "./secret.json"
-
 import axios from "axios";
 import { FileUploader } from "react-drag-drop-files";
+import sjcl from 'sjcl'
 
 function App() {
 
@@ -19,7 +19,11 @@ function App() {
     const [addressTextProcessor] = useState(config.textprocessor);
     const [addressSkillProcessor] = useState(config.skillprocessor);
 
-    const [addressCAVS] = useState(config.cavsendpoint);
+    const [firstCAVSAddress] = useState(config.cavsendpoint);
+    const [secondCAVSAddress] = useState(config.cavsendpoint2);
+    const [thirdCAVSAddress] = useState(config.cavsendpoint3);
+
+    const [addressCAVS,setAddressCAVS] = useState("");
 
     const [dids, setDids] = useState([]);
     const [selectedDid, setSelectedDid] = useState(config.veramoagent);
@@ -30,7 +34,6 @@ function App() {
     const [ethrPrivKey, setEthrPrivKey] = useState('')
     const [ethrAddr, setEthrAddr] = useState('')
     const [opFeedback, setOpFeedback] = useState('Ready to Add')
-
 
 
 
@@ -145,8 +148,9 @@ function App() {
 
         const [selectedCredentials, setSelectedCredentials] = useState([]);
         const [statementText, setStatementText] = useState("")
+        const [CAVSInstanceEndpoint, setCAVSInstanceEndpoint] = useState("")
+
         const [opFeedback,setOpFeedback] = useState("Ready to Request")
-        const [hostURLStatement,setHostURLStatement] = useState("")
         const [categoryStatement,setCategoryStatement] = useState("")
         const [typeStatement] = useState(["News","Article","Rumor","Comment","Opinion","Leak","Blog","Post"])
         const [selectedTypeStatement,setSelectedTypeStatement] = useState(typeStatement[0])
@@ -169,6 +173,11 @@ function App() {
 
         // Function to fetch credentials
         const sendToCavs = async () => {
+
+            if(CAVSInstanceEndpoint === ""){
+                setOpFeedback("Please enter CAVS instance endpoint")
+                return;
+            }
             let credentials = []
             console.log(jsonDataVCSkills.at(0))
             if (selectedCredentials.length === 0){
@@ -182,15 +191,17 @@ function App() {
             setOpFeedback("Processing creation of Statement VC");
 
             try {
+                const startTime = new Date();
+                console.log(`Posting to api/vc at: ${startTime.toLocaleString()}`);
 
                 let response = await axios.post(
-                    `${addressCAVS}/api/vc`,
+                    `${CAVSInstanceEndpoint}/api/vc`,
                     {
                         document:statementText,
                         credentials:credentials,
                         typeStatement:selectedTypeStatement,
                         category:categoryStatement,
-                        hostURL:hostURLStatement,
+                        statementTitle:statementText.substring(0,30),
                         holderDID:selectedDid
                     },
                     {
@@ -200,6 +211,10 @@ function App() {
                         timeout: 195000 //3 minutes timeout
                     }
                 );
+                const endTime = new Date();
+                const timeTaken = (endTime - startTime) / 1000; // Time in seconds
+                console.log(`Response received at: ${endTime.toLocaleString()}`);
+                console.log(`Time taken for POST request: ${timeTaken} seconds`);
                 console.log(response)
 
 
@@ -217,7 +232,6 @@ function App() {
                 console.log(response)
                 setStatementText("")
                 setCategoryStatement("")
-                setHostURLStatement("")
 
 
 
@@ -286,7 +300,7 @@ function App() {
         };
 
         return (
-            <div className="dids-data" style={{textAlign:'center'}}>
+            <div className="dids-data" style={{textAlign: 'center'}}>
                 <button className="process-button" onClick={fetchCredentials}>Fetch ESCO Skills Verifiable Credential
                 </button>
                 {jsonDataVCSkills && (
@@ -296,7 +310,7 @@ function App() {
                         {jsonDataVCSkills.map((credential, index) => (
                             <div key={index} className="credential">
                                 <input
-                                    style={{width:'2vw', height:'2vw'}} // Set the width and height
+                                    style={{width: '2vw', height: '2vw'}} // Set the width and height
                                     type="checkbox"
                                     checked={selectedCredentials.includes(index)}
                                     onChange={(event) => handleCheckboxChange(event, index)}
@@ -328,19 +342,13 @@ function App() {
                     value={categoryStatement}
                     onChange={(e) => setCategoryStatement(e.target.value)}
                 />
-                <label className="form-label" htmlFor="holderURL">Statement Host URL</label>
-                <input
-                    type="text"
-                    className="form-input"
-                    id="holderURL"
-                    value={hostURLStatement}
-                    onChange={(e) => setHostURLStatement(e.target.value)}
-                />
                 <label className="form-label" htmlFor="holderURL">Statement Type:</label>
                 <select
                     className="select-box"
                     value={selectedTypeStatement}
-                    onChange={(e) => {setSelectedTypeStatement(e.target.value); }  }
+                    onChange={(e) => {
+                        setSelectedTypeStatement(e.target.value);
+                    }}
                 >
                     {typeStatement.map((typeS, i) => (
                         <option key={i} value={typeS}>
@@ -357,11 +365,23 @@ function App() {
                     value={statementText}
                     onChange={(e) => setStatementText(e.target.value)}
                 />
+
+                <h3>Choose CAVS instance endpoint, preset ones: http://localhost:4200, http://localhost:4202, http://localhost:4203</h3>
+                <textarea
+                    type="text"
+                    className="form-input"
+                    id="instanceEndpoint"
+                    placeholder="Enter CAVS instance endpoint"
+                    value={CAVSInstanceEndpoint}
+                    onChange={(e) => setCAVSInstanceEndpoint(e.target.value)}
+                />
+
                 <button className="process-button" onClick={sendToCavs}>Send to CAVS
                 </button>
                 <p className="feedback-text">{opFeedback}</p>
                 <div></div>
-                <button className="process-button" onClick={fetchStatementCredentials}> Fetch StatementVerifiableCredentials
+                <button className="process-button" onClick={fetchStatementCredentials}> Fetch
+                    StatementVerifiableCredentials
                 </button>
 
                 {jsonDataVCStatement && (
@@ -375,7 +395,7 @@ function App() {
                                 </button>
 
                                 <h3>Credential #{index + 1}</h3>
-                                {listCIDs[index]? (
+                                {listCIDs[index] ? (
                                     <h3>CID is defined: {listCIDs[index]}</h3>
                                 ) : (
                                     <h3>CID is unkwown</h3>
@@ -409,23 +429,34 @@ function App() {
         const [cidOfStatementVC, setCidOfStatementVC] = useState('');
         const [prevUUID, setPrevUUID] = useState('')
         const [prevJWT, setPrevJWT] = useState('')
-
+        const[ listOfCIDsOfStatementVC,setListOfCIDsOfStatementVC] = useState([])
         const [opFeedback,setOpFeedback] = useState('Ready To Create')
         const [jwtGot,setJwtGot] = useState('')
 
         const typePresentation = ["Origin", "Diffusion"]; // Define your array of presentation types
+        const [textOfStatement, setTextOfStatement] = useState("")
+        const [jsonVPsSharing,setJsonVPsSharing] = useState([])
+        // Function to calculate hash
+        const calculateHash = (text) => {
+            const bitArray = sjcl.hash.sha256.hash(text);
+            return sjcl.codec.hex.fromBits(bitArray);
+        };
 
-        const [jsonVPsDiffusion,setJsonVPsDiffusion] = useState([])
+
         const createPresentationOrigin = async () => {
-            if (hostURLPresentation && selectedTypePresentation && cidOfStatementVC) {
+            if (textOfStatement && selectedTypePresentation && listOfCIDsOfStatementVC.length > 0) {
 
+                const hashOfStatement = calculateHash(textOfStatement); // Calculate hash of statement
+                console.log("Hash of Statement:", hashOfStatement);
                 try {
 
                     let response = await axios.post(`${addressVeramoAgent}/issue_verifiable_presentation/holder_claim`, {
                         holder:selectedDid,
-                        type:"StatementDiffusion_VPv01",
+                        type:"StatementSharing_VP",
                         attributes:(
-                            {statement_vc_cid_or_url:cidOfStatementVC,
+                            {statement_vc_cid_list:listOfCIDsOfStatementVC,
+                                hashing_algo : "sha256",
+                                hash_of_statement : hashOfStatement,
                                 prev_vp_uuid:"",//jwt of prev_vp, empty if origin
                                 url_or_cid_jwt_prev:"",
                                 type:"origin",//first presentation that refers to statement vc, else diffusion
@@ -453,7 +484,7 @@ function App() {
         }
     };
 
-        const createPresentationDiffusion = async () => {
+        const createPresentationSharing = async () => {
             if (hostURLPresentation && selectedTypePresentation && cidOfStatementVC && prevUUID) {
                 try {
                     setOpFeedback("Loading previous VP obtained to IPFS with own PeerID");
@@ -477,10 +508,10 @@ function App() {
 
                     response = await axios.post(`${addressVeramoAgent}/issue_verifiable_presentation/holder_claim`, {
                         holder:selectedDid,
-                        type:"StatementDiffusion_VPv01",
+                        type:"StatementSharing_VP",
                         attributes:(
                             {
-                                statement_vc_cid_or_url:cidOfStatementVC,
+                                statement_vc_cid_list:cidOfStatementVC,
                                 prev_vp_uuid:prevUUID,//jwt of prev_vp, empty if origin
                                 url_or_cid_jwt_prev:cid,
                                 type:"diffusion",//first presentation that refers to statement vc, else diffusion,
@@ -512,20 +543,32 @@ function App() {
                 const response = await axios.get(`${addressVeramoAgent}/list_verifiable_presentations_with_type`, {
                     timeout:65000,
                     params:{
-                        type:"StatementDiffusion_VPv01"
+                        type:"StatementSharing_VP"
                     }
                 });
                 console.log(response.data)
-                setJsonVPsDiffusion(response.data);
+                setJsonVPsSharing(response.data);
             } catch (error) {
                 console.error('Error fetching credentials:', error);
             }
 
         };
 
-        return (<div className="dids-data" style={{align:'center', textAlign:'center', width:'57vw'}}>
+        function addCidOfStatementVC() {
+            if(cidOfStatementVC !== "") {
+                if(!listOfCIDsOfStatementVC.includes(cidOfStatementVC)) {
+                    setListOfCIDsOfStatementVC((prevList) => [...prevList, cidOfStatementVC]);
+                    setOpFeedback("Added CID of Statement Verifiable Credential/s");
+
+                }
+
+                setCidOfStatementVC("");
+            }
+        }
+
+        return (<div className="dids-data" style={{align: 'center', textAlign: 'center', width: '57vw'}}>
             <p className="form-label">PeerID on IPFS:{peerIDIPFS}</p>
-            <p className="title-dids-data">Create Diffusion Verifiable Presentation:</p>
+            <p className="title-dids-data">Create Sharing Verifiable Presentation:</p>
             <label className="form-label" htmlFor="holderURL">Presentation Host URL</label>
             <input
                 type="text"
@@ -534,6 +577,16 @@ function App() {
                 value={hostURLPresentation}
                 onChange={(e) => setHostURLPresentation(e.target.value)}
             />
+            <label className="form-label" htmlFor="holderURL">Statement Text for Hashing</label>
+
+            <input
+                type="text"
+                className="form-input"
+                id="textOfStatement"
+                value={textOfStatement}
+                onChange={(e) => setTextOfStatement(e.target.value)}
+            />
+
             <label className="form-label" htmlFor="holderURL">Presentation Type:</label>
             <select
                 className="select-box"
@@ -555,67 +608,94 @@ function App() {
                     id="cidStatement"
                     value={cidOfStatementVC}
                     onChange={(e) => setCidOfStatementVC(e.target.value)}
-                /> {selectedTypePresentation === 'Origin' && (
-                <button className="process-button" onClick={createPresentationOrigin}>Create Origin
-                    Presentation
-                </button>)}
-            </div>)}
-            {selectedTypePresentation === 'Diffusion' && (<div>
-                <label className="form-label" htmlFor="holderURL">UUID of Previous Presentation</label>
-                <input
-                    type="text"
-                    className="form-input"
-                    id="uuidPrev"
-                    value={prevUUID}
-                    onChange={(e) => setPrevUUID(e.target.value)}
-                />
-                <label className="form-label" htmlFor="holderURL">JWT of Previous Presentation</label>
-                <input
-                    type="text"
-                    className="form-input"
-                    id="uuidPrev"
-                    value={prevJWT}
-                    onChange={(e) => setPrevJWT(e.target.value)}
                 />
 
-                <button className="process-button" onClick={createPresentationDiffusion}>Create Diffusion
-                    Presentation
-                </button>
-            </div>)}
+
+                )
+                {selectedTypePresentation === 'Origin' && (
+                    <div>
+                        <button className="process-button" onClick={addCidOfStatementVC}>
+                            Add CID of Statement Verifiable Credential
+                        </button>
+                        <div> -</div>
+                        <button className="process-button" onClick={createPresentationOrigin}>
+                            Create Origin Presentation
+                        </button>
+                    </div>
+                )}
+            </div>)
+            }
+            {
+                selectedTypePresentation === 'Diffusion' && (<div>
+                    <label className="form-label" htmlFor="holderURL">UUID of Previous Presentation</label>
+                    <input
+                        type="text"
+                        className="form-input"
+                        id="uuidPrev"
+                        value={prevUUID}
+                        onChange={(e) => setPrevUUID(e.target.value)}
+                    />
+                    <label className="form-label" htmlFor="holderURL">JWT of Previous Presentation</label>
+                    <input
+                        type="text"
+                        className="form-input"
+                        id="uuidPrev"
+                        value={prevJWT}
+                        onChange={(e) => setPrevJWT(e.target.value)}
+                    />
+
+                    <button className="process-button" onClick={createPresentationSharing}>Create Sharing
+                        Presentation
+                    </button>
+                </div>)}
             <p className="feedback-text">{opFeedback}</p>
             {jwtGot && (
                 <textarea
                     className="jwt-textarea"
-                    style={{overflowX:'auto', width:'100%', minHeight:'100px'}}
+                    style={{overflowX: 'auto', width: '100%', minHeight: '100px'}}
                     value={jwtGot}
                     readOnly
                 />
             )}
-            <button className="process-button" onClick={fetchVerifiablePresentations}>Fetch Diffusion VP</button>
-            {jsonVPsDiffusion.map((presentation, index) => (
+            <button className="process-button" onClick={fetchVerifiablePresentations}>Fetch Sharing VP</button>
+            {jsonVPsSharing.map((presentation, index) => (
                     <div key={index} className="credential">
-                        <h3>Diffusion VP #{index + 1}</h3>
-                        <p>Type: {presentation.verifiablePresentation.verifiableCredential[0].credentialSubject.type}</p> {/* Type from Credential Subject */}
+                        <h3>Sharing VP #{index + 1}</h3>
+                        <p>Type: {presentation.verifiablePresentation.attributes.type}</p> {/* Type from Credential Subject */}
                         <p>Issuance
                             Date: {presentation.verifiablePresentation.issuanceDate}</p> {/* Issuance Date from VP */}
-                        <h3 style={{overflowX:'auto', width:'100%', minHeight:'auto'}}>UUID of
+                        <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>UUID of
                             VP: {presentation.verifiablePresentation.id}</h3> {/* UUID from Issuer DID */}
-                        <h3 style={{overflowX:'auto', width:'100%', minHeight:'auto'}}>URL or CID on IPFS of prev JWT
-                            URL: {presentation.verifiablePresentation.verifiableCredential[0].credentialSubject.url_or_cid_jwt_prev}</h3> {/* vc_statement_cid_or_url */}
-                        <h3 style={{overflowX:'auto', width:'100%', minHeight:'auto'}}>VC statement CID or
-                            URL: {presentation.verifiablePresentation.verifiableCredential[0].credentialSubject.statement_vc_cid_or_url}</h3> {/* vc_statement_cid_or_url */}
-                        <p style={{overflowX:'auto', width:'100%', minHeight:'auto'}}>Holder
+                        <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>URL or CID on IPFS of prev JWT
+                            URL: {presentation.verifiablePresentation.attributes.url_or_cid_jwt_prev}</h3> {/* vc_statement_cid_or_url */}
+                        <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Hash of statement
+                            URL: {presentation.verifiablePresentation.attributes.hash_of_statement}</h3> {/* vc_statement_cid_or_url */}
+                        <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Hashing algorithm for reproducibility
+                            URL: {presentation.verifiablePresentation.attributes.hashing_algo}</h3> {/* vc_statement_cid_or_url */}
+                        <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>
+                            VC statement CID or URL:
+                            {presentation?.verifiablePresentation?.attributes?.statement_vc_cid_list?.length > 0 ? (
+                                presentation.verifiablePresentation.attributes.statement_vc_cid_list.map((cid, index) => (
+                                    <div key={index}>
+                                        {index + 1}. {cid}
+                                    </div>
+                                ))
+                            ) : (
+                                <div>No CIDs available</div>
+                            )}
+                        </h3>
+                        <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Holder
                             DID: {presentation.verifiablePresentation.holder}</p> {/* Holder DID */}
-                        <p style={{overflowX:'auto', width:'100%', minHeight:'auto'}}>Host
-                            URL: {presentation.verifiablePresentation.verifiableCredential[0].credentialSubject.host_URL}</p> {/* HostURL */}
-                        <p style={{overflowX:'auto', width:'100%', minHeight:'auto'}}>Prev
-                            UUID: {presentation.verifiablePresentation.verifiableCredential[0].credentialSubject.prev_vp_uuid}</p>
+                        <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Host
+                            URL: {presentation.verifiablePresentation.attributes.host_URL}</p> {/* HostURL */}
+                        <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Prev
+                            UUID: {presentation.verifiablePresentation.attributes.prev_vp_uuid}</p>
 
-                        <h3>JWT of Diffusion VP #{index + 1} for next Diffusion VP</h3>
+                        <h3>JWT of Sharing VP #{index + 1} for next Sharing VP</h3>
 
                         <textarea
                             className="jwt-textarea"
-                            style={{overflowX:'auto', width:'90%', minHeight:'100px'}}
+                            style={{overflowX: 'auto', width: '90%', minHeight: '100px'}}
                             value={presentation.verifiablePresentation.proof.jwt}
                             readOnly/>
 
@@ -623,11 +703,11 @@ function App() {
                     </div>
                 )
             )}
-            {jsonVPsDiffusion.length > 0 && (
+            {jsonVPsSharing.length > 0 && (
                 <textarea
                     className="jwt-textarea"
-                    style={{overflowX:'auto', width:'100%', height:'10vw'}}
-                    value={JSON.stringify(jsonVPsDiffusion, null, 2)}
+                    style={{overflowX: 'auto', width: '100%', height: '10vw'}}
+                    value={JSON.stringify(jsonVPsSharing, null, 2)}
                     readOnly
                 />
             )}
@@ -880,6 +960,7 @@ function App() {
             </div>);
     };
 
+
     const CavsComponentPanel = ({}) => {
         const [processingFeedback, setProcessingFeedback] = useState('');
         const [statementVC] = useState('');
@@ -887,93 +968,15 @@ function App() {
         const [didIssuer, setDIDCertificateIssuer] = useState('');
         const [extractorEngines, setExtractorEngines] = useState([]);
         const [selectedKeywordsEngine, setSelectedKeywordsEngine] = useState(''); // State to hold the selected engine
-
         const [enricherEngines, setEnricherEngines] = useState([]);
         const [selectedEnricherEngine, setSelectedEnricherEngine] = useState(''); // State to hold the selected engine
-
-        const [skillExtractorEngines, setSkillExtractorEngines] = useState([])
-        const [selectedSkillExtractorEngine, setSelectedSkillExtractorEngine] = useState([])
-        // Combine selected engines into a string
-        const [selectedEnginesString, setSelectedEnginesString] = useState("")
-        const [changeOP,setChangeOP] = useState("")
-
-
-
-        useEffect(() => {
-            if (addressCAVS) {
-                fetch(addressCAVS + "/api_skills")
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.skills_engines.length !== 0) {
-                            setSkillExtractorEngines(data.skills_engines);
-                            setSelectedSkillExtractorEngine(data.skills_engines[0])
-                            setChangeOP("yes")                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching data:', error);
-                    });
-            }
-        }, [addressCAVS]); // Ensure that [addressTextProcessor] is included in the dependency array
-
-        useEffect(() => {
-            if (addressCAVS) {
-                fetch(addressCAVS + "/api_extractor")
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.extractor_engines.length !== 0) {
-                            setExtractorEngines(data.extractor_engines);
-                            setSelectedKeywordsEngine(data.extractor_engines[0])
-                            setChangeOP("yes")
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching data:', error);
-                    });
-                fetch(addressCAVS + "/api_enricher")
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.enricher_engines.length !== 0) {
-                            setEnricherEngines(data.enricher_engines);
-                            setSelectedEnricherEngine(data.enricher_engines[0])
-                        }
-                        setChangeOP("yes")                    })
-                    .catch(error => {
-                        console.error('Error fetching data:', error);
-                    });
-            }
-        }, [addressCAVS]); // Ensure that [addressTextProcessor] is included in the dependency array
-        useEffect(() =>{
-            setSelectedEnginesString([selectedKeywordsEngine, selectedEnricherEngine, selectedSkillExtractorEngine].join(', '));
-            setChangeOP("")
-        },[changeOP==="yes"]);
-        const updateConfig = async () => {
-            if (addressCAVS) {
-                try {
-                    const response = await axios.post(
-                        `${addressCAVS}/set_api`,
-                        {
-                            extractorEngine: selectedKeywordsEngine,
-                            enricherEngine: selectedEnricherEngine,
-                            skillExtractorEngine: selectedSkillExtractorEngine,
-                        },
-                        {
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            timeout: 65000
-                        }
-                    );
-
-                    setSelectedEnginesString([response.data.selectedExtractorEngine, response.data.selectedEnricherEngine, response.data.selectedSkillExtractorEngine].join(', '))
-                    console.log("did it")
-                } catch (error) {
-                    console.error('Error updating config:', error);
-                    setProcessingFeedback("Error updating config");
-                }
-            } else {
-                setProcessingFeedback("Omitted Field/s");
-            }
-        };
+        const [skillExtractorEngines, setSkillExtractorEngines] = useState([]);
+        const [selectedSkillExtractorEngine, setSelectedSkillExtractorEngine] = useState([]);
+        const [selectedEnginesString, setSelectedEnginesString] = useState("");
+        const [changeOP, setChangeOP] = useState("");
+        const [addressCAVS, setAddressCAVS] = useState(""); // State for CAVS endpoint
+        const [opFeedback, setOpFeedback] = useState("");
+        const [didInput, setDidInput] = useState(""); // New state for DID input
 
 
         async function sendNewIssuer() {
@@ -994,103 +997,211 @@ function App() {
                 }
             }
         }
-        return (
-                    <div className="dids-data">
-                        <p className="section-title">CAVS available at {addressCAVS}</p>
 
-                        <div className="extractor-engines-data">
-                            <p className="title-extractor-engines-data">Extractor Engines:</p>
-                            <select
-                                className="extractor-engines-select"
-                                value={selectedKeywordsEngine}
-                                onChange={(e) => setSelectedKeywordsEngine(e.target.value)}
-                            >
-                                {extractorEngines.map((engine, i) => (
-                                    <option key={i} value={engine}>
-                                        {engine}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="extractor-engines-data">
-                            <p className="title-extractor-engines-data">Enricher Engines:</p>
-                            <select
-                                className="extractor-engines-select"
-                                value={selectedEnricherEngine}
-                                onChange={(e) => setSelectedEnricherEngine(e.target.value)}
-                            >
-                                {enricherEngines.map((engine, i) => (
-                                    <option key={i} value={engine}>
-                                        {engine}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="extractor-engines-data">
-                            <p className="title-extractor-engines-data">Skill Extractor Engines:</p>
-                            <select
-                                className="extractor-engines-select"
-                                value={selectedSkillExtractorEngine}
-                                onChange={(e) => setSelectedSkillExtractorEngine(e.target.value)}
-                            >
-                                {skillExtractorEngines.map((engine, i) => (
-                                    <option key={i} value={engine}>
-                                        {engine}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <button className="process-button" onClick={updateConfig}>
-                            Update Config
-                        </button>
-                        <p>Current Setup: {processingFeedback} {selectedEnginesString}</p>
-
-
-                        {statementVC && (
-                            <textarea
-                                readOnly={true}
-                                className="input"
-                                value={JSON.stringify(statementVC, null, 2)}
-                            />
-                        )
+        useEffect(() => {
+            if (addressCAVS) {
+                fetch(addressCAVS + "/api_skills")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.skills_engines.length !== 0) {
+                            setSkillExtractorEngines(data.skills_engines);
+                            setSelectedSkillExtractorEngine(data.skills_engines[0]);
+                            setChangeOP("yes");
                         }
-                        <div className="container">
-                            <div className="credential-form">
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="ethereumAddress">Certificate Issuer
-                                        DID:</label>
-                                    <input
-                                        type="text"
-                                        className="form-input"
-                                        id="didIssuer"
-                                        value={didIssuer}
-                                        onChange={(e) => setDIDCertificateIssuer(e.target.value)}
-                                    />
-                                    <label className="form-label" htmlFor="ethPrivKey">Trust Score [1-5]:</label>
-                                    <input
-                                        type="text"
-                                        className="form-input"
-                                        id="trustScore"
-                                        value={trustScore}
-                                        onChange={(e) => setTrustScore(e.target.value)}
-                                    />
-                                    <button className="process-button" onClick={sendNewIssuer}>Rank Issuer</button>
-                                    <p className="feedback-text">{opFeedback}</p>
-                                </div>
-                            </div>
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                    });
+            }
+        }, [addressCAVS]);
+
+        useEffect(() => {
+            if (addressCAVS) {
+                fetch(addressCAVS + "/api_extractor")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.extractor_engines.length !== 0) {
+                            setExtractorEngines(data.extractor_engines);
+                            setSelectedKeywordsEngine(data.extractor_engines[0]);
+                            setChangeOP("yes");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                    });
+                fetch(addressCAVS + "/api_enricher")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.enricher_engines.length !== 0) {
+                            setEnricherEngines(data.enricher_engines);
+                            setSelectedEnricherEngine(data.enricher_engines[0]);
+                        }
+                        setChangeOP("yes");
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                    });
+            }
+        }, [addressCAVS]);
+
+        useEffect(() => {
+            setSelectedEnginesString([selectedKeywordsEngine, selectedEnricherEngine, selectedSkillExtractorEngine].join(', '));
+            setChangeOP("");
+        }, [changeOP === "yes"]);
+
+        const updateConfig = async () => {
+            if (addressCAVS) {
+                try {
+                    const response = await axios.post(
+                        `${addressCAVS}/set_api`,
+                        {
+                            extractorEngine: selectedKeywordsEngine,
+                            enricherEngine: selectedEnricherEngine,
+                            skillExtractorEngine: selectedSkillExtractorEngine,
+                        },
+                        {
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            timeout: 65000
+                        }
+                    );
+
+                    setSelectedEnginesString([response.data.selectedExtractorEngine, response.data.selectedEnricherEngine, response.data.selectedSkillExtractorEngine].join(', '));
+                    console.log("did it");
+                } catch (error) {
+                    console.error('Error updating config:', error);
+                    setProcessingFeedback("Error updating config");
+                }
+            } else {
+                setProcessingFeedback("Omitted Field/s");
+            }
+        };
+
+        const setupDID = async () => {
+            if ( addressCAVS) {
+                try {
+                    const response = await axios.post(`${addressCAVS}/setup_did`
+                    );
+                    console.log("DID setup response:", response.data);
+                    setProcessingFeedback("DID setup complete, new DID: " + response.data.did);
+                } catch (error) {
+                    console.error('Error setting up DID:', error);
+                    setProcessingFeedback("Error setting up DID");
+                }
+            } else {
+                setProcessingFeedback("Please provide a valid DID and endpoint.");
+            }
+        };
+
+        return (
+            <div className="dids-data">
+                <p className="section-title">Configure CAVS at
+                    addresses {firstCAVSAddress}, {secondCAVSAddress}, {thirdCAVSAddress}</p>
+                <button className="process-button" onClick={setupDID}>
+                    Setup a new DID
+                </button>
+
+                <div className="form-group">
+                    <label className="form-label" htmlFor="cavsEndpoint">CAVS Endpoint:</label>
+                    <input
+                        type="text"
+                        className="form-input"
+                        id="cavsEndpoint"
+                        value={addressCAVS}
+                        onChange={(e) => setAddressCAVS(e.target.value)}
+                    />
+                </div>
+
+                <div className="extractor-engines-data">
+                    <p className="title-extractor-engines-data">Extractor Engines:</p>
+                    <select
+                        className="extractor-engines-select"
+                        value={selectedKeywordsEngine}
+                        onChange={(e) => setSelectedKeywordsEngine(e.target.value)}
+                    >
+                        {extractorEngines.map((engine, i) => (
+                            <option key={i} value={engine}>
+                                {engine}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="extractor-engines-data">
+                    <p className="title-extractor-engines-data">Enricher Engines:</p>
+                    <select
+                        className="extractor-engines-select"
+                        value={selectedEnricherEngine}
+                        onChange={(e) => setSelectedEnricherEngine(e.target.value)}
+                    >
+                        {enricherEngines.map((engine, i) => (
+                            <option key={i} value={engine}>
+                                {engine}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="extractor-engines-data">
+                    <p className="title-extractor-engines-data">Skill Extractor Engines:</p>
+                    <select
+                        className="extractor-engines-select"
+                        value={selectedSkillExtractorEngine}
+                        onChange={(e) => setSelectedSkillExtractorEngine(e.target.value)}
+                    >
+                        {skillExtractorEngines.map((engine, i) => (
+                            <option key={i} value={engine}>
+                                {engine}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <button className="process-button" onClick={updateConfig}>
+                    Update Config
+                </button>
+                <p>Current Setup: {processingFeedback} {selectedEnginesString}</p>
+
+                {statementVC && (
+                    <textarea
+                        readOnly={true}
+                        className="input"
+                        value={JSON.stringify(statementVC, null, 2)}
+                    />
+                )}
+                <div className="container">
+                    <div className="credential-form">
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="didIssuer">Certificate Issuer DID:</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                id="didIssuer"
+                                value={didIssuer}
+                                onChange={(e) => setDIDCertificateIssuer(e.target.value)}
+                            />
+                            <label className="form-label" htmlFor="trustScore">Trust Score [1-5]:</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                id="trustScore"
+                                value={trustScore}
+                                onChange={(e) => setTrustScore(e.target.value)}
+                            />
+                            <button className="process-button" onClick={sendNewIssuer}>Rank Issuer</button>
+                            <p className="feedback-text">{opFeedback}</p>
                         </div>
                     </div>
-                );
-            }
-            ;
+                </div>
+            </div>
+        );
+    };
 
-            const ReaderVerifier = () => {
+    const ReaderVerifier = () => {
 
-                //const for reading qr functionality
-                //default image loader config https://www.npmjs.com/package/react-drag-drop-files
+        //const for reading qr functionality
+        //default image loader config https://www.npmjs.com/package/react-drag-drop-files
                 const [, setFile] = useState(null);
                 const [readData, setReadData] = useState(null)
                 const handleChange = (file) => {
@@ -1118,7 +1229,7 @@ function App() {
                 const [inputJWT, setInputJWT] = useState('')
                 // Define your array of presentation types
 
-                const [jsonVPsDiffusion, setJsonVPsDiffusion] = useState([])
+                const [jsonVPsSharing, setJsonVPsSharing] = useState([])
 
                 const [decodedJWT, setDecodedJWT] = useState("")
 
@@ -1133,11 +1244,14 @@ function App() {
 
                 const [verificationResSkill, setVerificationResSkill] = useState([])
                 const [traceLen, setTraceLen] = useState(0)
-                const [verificationResDiffusion, setVerificationResDiffusion] = useState([])
+                const [verificationResSharingVP, setVerificationResSharingVP] = useState([])
 
 
                 const verify_VC = async (vc) => {
                     try {
+                        const startTime = new Date();
+                        console.log(`Starting VC verification at: ${startTime.toLocaleString()}`);
+
                         let response = await axios.post(
                             `${addressVeramoAgent}/verify`,
                             {
@@ -1147,26 +1261,33 @@ function App() {
                                 headers: {
                                     'Content-Type': 'application/json'
                                 },
-                                timeout: 65000
+                                timeout: 65000 // 65 seconds timeout
                             }
                         );
-                        return response.data.res
+
+                        const endTime = new Date();
+                        const timeTaken = (endTime - startTime) / 1000; // Time in seconds
+                        console.log(`Verification response received at: ${endTime.toLocaleString()}`);
+                        console.log(`Time taken for VC verification: ${timeTaken} seconds`);
+
+                        return response.data.res;
 
                     } catch (error) {
-                        console.log("error in verification")
+                        console.log("Error in verification");
                     }
                     return "";
-                }
-                const verifyVPDiffusion = async (vp, index) => {
+                };
+
+                const verifyVPSharing = async (vp, index) => {
                     // Make a copy of the verificationResSkill array
-                    const updatedverificationResDiffusion = [...verificationResDiffusion];
+                    const updatedverificationResSharingVP = [...verificationResSharingVP];
                     let verval = await verify_VP(vp);
                     console.log(verval)
                     // Update the verification result for the specific index
-                    updatedverificationResDiffusion[index] = (verval.toString());
+                    updatedverificationResSharingVP[index] = (verval.toString());
                     console.log(index);
                     // Set the updated array as the new state
-                    setVerificationResDiffusion(updatedverificationResDiffusion);
+                    setVerificationResSharingVP(updatedverificationResSharingVP);
 
                 }
 
@@ -1213,11 +1334,22 @@ function App() {
                 };
                 const [risVC, setRisVC] = useState('')
                 const verifyStatementVC = async (vc) => {
+                    // Start the timer
+                    const startTime = new Date();
+                    console.log(`Starting verification at: ${startTime.toLocaleString()}`);
+
                     // Make a copy of the verificationResSkill array
                     let verval = await verify_VC(vc);
-                    console.log(verval)
+                    console.log(verval);
+
                     // Update the verification result for the specific index
                     setRisVC(verval.toString());
+
+                    // End the timer
+                    const endTime = new Date();
+                    const timeTaken = (endTime - startTime) / 1000; // Time in seconds
+                    console.log(`Verification completed at: ${endTime.toLocaleString()}`);
+                    console.log(`Time taken for verifying VC: ${timeTaken} seconds`);
                 };
 
 
@@ -1226,12 +1358,12 @@ function App() {
                         const response = await axios.get(`${addressVeramoAgent}/list_verifiable_presentations_with_type`, {
                             timeout: 65000,
                             params: {
-                                type: "StatementDiffusion_VPv01"
+                                type: "StatementSharing_VP"
                             }
                         });
 
                         console.log(response.data)
-                        setJsonVPsDiffusion(response.data);
+                        setJsonVPsSharing(response.data);
                     } catch (error) {
                         console.error('Error fetching credentials:', error);
                     }
@@ -1287,13 +1419,13 @@ function App() {
                     }
                 };
                 //extract from VC
-                const fetchSkillsFromVC = async () => {
-                    if (verifiableCredentialStatement) {
-                        setJsonDataVCSkills(verifiableCredentialStatement.credentialSubject.credentials_for_skills)
-                        setJsonDataVCSkills2(verifiableCredentialStatement.credentialSubject.credentials_for_similar_concepts_skills)
-                        setJsonDataVCSkills3(verifiableCredentialStatement.credentialSubject.credentials_for_general_concepts_skills)
+                const fetchSkillsFromVC = async (vc) => {
+                    if (vc && vc.credentialSubject) {
+                        setJsonDataVCSkills(vc.credentialSubject.credentials_for_skills);
+                        setJsonDataVCSkills2(vc.credentialSubject.credentials_for_similar_concepts_skills);
+                        setJsonDataVCSkills3(vc.credentialSubject.credentials_for_general_concepts_skills);
                     }
-                }
+                };
                 const closeSkill = () => {
                     setJsonDataVCSkills([])
                     setJsonDataVCSkills2([])
@@ -1315,14 +1447,14 @@ function App() {
                             response = await axios.get(`${addressIPFSAgent}/retrieve`, {
                                 timeout: 120000, //2 min wait max
                                 params: {
-                                    cid: current.verifiableCredential[0].credentialSubject.url_or_cid_jwt_prev
+                                    cid: current.attributes.url_or_cid_jwt_prev
                                 }
                             });
                             console.log("result got" + JSON.stringify(response.data, null, 2))
                             i++
                             setOpFeedback("Tracing back at START - " + i);
                             //address jwt of prev with uuid of prev as key
-                            jwt_of_prev = JSON.parse(response.data.result)[current.verifiableCredential[0].credentialSubject.prev_vp_uuid]
+                            jwt_of_prev = JSON.parse(response.data.result)[current.attributes.prev_vp_uuid]
 
                             setOpFeedback("Decoding jwt of START - " + i);
 
@@ -1338,7 +1470,7 @@ function App() {
                             history.push(prev)
                             setOpFeedback("Decoded jwt up to (START - " + i + " ) proceed");
 
-                            if (prev.verifiableCredential[0].credentialSubject.type === 'origin') {
+                            if (prev.attributes.type === 'origin') {
                                 current = null
                             } else {
                                 current = prev
@@ -1352,44 +1484,52 @@ function App() {
                         setOpFeedback("Error in VP traceback")
                     }
                     try {
-                        // fetch Statement VC
-                        console.log("trying to get" + decodedJWT.verifiableCredential[0].credentialSubject.statement_vc_cid_or_url)
-                        response = await axios.get(`${addressIPFSAgent}/retrieve`, {
-                            timeout: 120000, //2 min wait max
-                            params: {
-                                cid: decodedJWT.verifiableCredential[0].credentialSubject.statement_vc_cid_or_url
-                            }
-                        });
-                        console.log("responded" + response.data.result)
-                        //let string_jwt_of_prev = (response.data.result)
-                        //string_jwt_of_prev.replace('\\','')
-                        jwt_of_prev = (response.data.result)
+                        // Fetch and decode a list of Statement VCs
+                        const statementCIDs = decodedJWT.attributes.statement_vc_cid_list;
+                        console.log("Trying to get Statement VCs: " + statementCIDs);
 
-                        console.log("result got" + (jwt_of_prev))
-                        setOpFeedback("Decoding Statement VC");
-                        response = await axios.get(`${addressVeramoAgent}/decode_jwt`, {
-                            timeout: 65000,
-                            params: {
-                                jwt: jwt_of_prev
-                            }
-                        });
-                        console.log("post")
+                        const decodedVCs = [];
+                        for (let i = 0; i < statementCIDs.length; i++) {
+                            const cid = statementCIDs[i];
+                            console.log(`Fetching CID ${i + 1}: ${cid}`);
 
-                        setOpFeedback("Traced back " + i + " Verifiable Presentation Diffusion and Statement VC");
-                        VC = (response.data)
-                        console.log("vc is" + JSON.stringify(VC))
-                        setVerifiableCredentialStatement(VC)
+                            // Fetch Statement VC from IPFS Agent
+                            const responseFetch = await axios.get(`${addressIPFSAgent}/retrieve`, {
+                                timeout: 120000, // 2 min wait max
+                                params: {cid}
+                            });
+                            console.log("Response received for CID " + (i + 1) + ": " + responseFetch.data.result);
+                            const jwtOfPrev = responseFetch.data.result;
+
+                            // Decode the JWT using Veramo Agent
+                            setOpFeedback(`Decoding Statement VC ${i + 1}`);
+                            const responseDecode = await axios.get(`${addressVeramoAgent}/decode_jwt`, {
+                                timeout: 65000,
+                                params: {jwt: jwtOfPrev}
+                            });
+
+                            const VC = responseDecode.data;
+                            console.log("Decoded VC " + (i + 1) + ": " + JSON.stringify(VC));
+
+                            // Add the decoded VC to the list
+                            decodedVCs.push(VC);
+                        }
+
+                        // Update the state with the list of decoded VCs
+                        setVerifiableCredentialStatement(decodedVCs);
+                        setOpFeedback("All Statement VCs decoded and traced successfully");
+
                     } catch (error) {
-                        console.error("error " + error)
-                        setOpFeedback("Error in VC statement trace back, maybe missing")
+                        console.error("Error during VC statement trace back: " + error);
+                        setOpFeedback("Error in VC statement trace back, maybe missing");
                     }
-                };
+                }
 
 
                 <textarea
                     className="jwt-textarea"
                     style={{overflowX: 'auto', width: '100%', minHeight: '100px'}}
-                    value={JSON.stringify(jsonVPsDiffusion, null, 2)}
+                    value={JSON.stringify(jsonVPsSharing, null, 2)}
                 />
 
                 return (
@@ -1436,7 +1576,7 @@ function App() {
 
                         {decodedJWT && (
                             <div key='decodedJWT1' className="credential">
-                                {decodedJWT.verifiableCredential[0].credentialSubject.type && (
+                                {decodedJWT.attributes.type && (
                                     <div key='decodedJWT2' className="credential">
 
                                         <button className="process-button" onClick={traceBack}
@@ -1446,114 +1586,105 @@ function App() {
 
 
                                         <p className="feedback-text">{opFeedback}</p>
-                                        {verifiableCredentialStatement && (
+                                        <p className="feedback-text">{opFeedback}</p>
+                                        {verifiableCredentialStatement && Array.isArray(verifiableCredentialStatement) ? (
+                                            verifiableCredentialStatement.map((vc, index) => (
+                                                <div key={`cred-${index}`} className="credential">
+                                                    <h3>Statement Verifiable Credential #{index + 1}</h3>
 
-                                            <div key='cred' className="credential">
-                                                <h3>Statement Verifiable Credential</h3>
+                                                    {<button className="action-button" onClick={() => fetchSkillsFromVC(vc)}>Fetch Skills VC</button>}
+                                                    <div><p></p></div>
+                                                    <button className="action-button" onClick={() => verifyStatementVC(vc)}>
+                                                        Verify Statement Verifiable Credential
+                                                    </button>
+                                                    <p>Result verification: <b>{risVC}</b></p>
 
-                                                <button className="action-button"
-                                                        onClick={fetchSkillsFromVC}> Fetch Skills VC
-                                                </button>
-                                                <div><p></p></div>
-                                                <button className="action-button"
-                                                        onClick={() => verifyStatementVC(verifiableCredentialStatement)}
-                                                >Verify Statement Verifiable Credential
-                                                </button>
-                                                <p>Result verification: <b>{risVC}</b></p> {/*  */}
+                                                    <p>Issuance Date: {vc.issuanceDate}</p>
+                                                    <p>Credential Type: {vc.type.join(', ')}</p>
+                                                    <p>Holder DID: {vc.credentialSubject.id}</p>
+                                                    <h3>Issuer CAVS DID: {vc.issuer.id}</h3>
+                                                    <textarea
+                                                        readOnly={true}
+                                                        className="input"
+                                                        value={JSON.stringify(vc.credentialSubject, null, 2)}
+                                                    />
+                                                    <button className="action-button" onClick={closeSkill}>Close Skills VC</button>
 
-                                                <p>Issuance Date: {verifiableCredentialStatement.issuanceDate}</p>
-                                                <p>Credential Type: {verifiableCredentialStatement.type.join(', ')}</p>
-                                                <p>Holder DID: {verifiableCredentialStatement.credentialSubject.id}</p>
-                                                <textarea
-                                                    readOnly={true}
-                                                    className="input"
-                                                    value={JSON.stringify(verifiableCredentialStatement.credentialSubject, null, 2)}
-                                                />
-                                                <button className="action-button"
-                                                        onClick={closeSkill}> Close Skills VC
-                                                </button>
+                                                    {jsonDataVCSkills.length > 0 && (
+                                                        <div key='skills' className="credential">
+                                                            <p>Skill Credential from keywords</p>
 
-                                                {jsonDataVCSkills.length > 0 && (
-                                                    <div key='cred' className="credential">
-                                                        <p>Skill Credential from keywords</p>
+                                                            {jsonDataVCSkills.map((credential, i) => (
+                                                                <div key={`skill-${i}`} className="credential">
+                                                                    <h3>Skill Credential #{i + 1}</h3>
+                                                                    <button className="process-button" onClick={() => verifySkill(credential, i)}>Verify</button>
+                                                                    <p>Verification Result: <b>{verificationResSkill.at(i)}</b></p>
+                                                                    <p>Issuance Date: {credential.issuanceDate}</p>
+                                                                    <p>Credential Type: {credential.type.join(', ')}</p>
+                                                                    <p>Issuer DID: {credential.issuer.id}</p>
+                                                                    <p>Holder DID: {credential.credentialSubject.id}</p>
+                                                                    <textarea
+                                                                        readOnly={true}
+                                                                        className="input"
+                                                                        value={JSON.stringify(credential.credentialSubject, null, 2)}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
 
-                                                        {jsonDataVCSkills.map((credential, index) => (
-                                                            <div key={index} className="credential">
-                                                                <h3>Skill Credential #{index + 1}</h3>
-                                                                <button className="process-button"
-                                                                        onClick={() => verifySkill(credential, index)}> Verify
-                                                                </button>
-                                                                <p>Verification
-                                                                    Result: <b>{verificationResSkill.at(index)}</b>
-                                                                </p>
-                                                                <p>Issuance Date: {credential.issuanceDate}</p>
-                                                                <p>Credential Type: {credential.type.join(', ')}</p>
-                                                                <p>Issuer DID: {credential.issuer.id}</p>
-                                                                <p>Holder DID: {credential.credentialSubject.id}</p>
-                                                                <textarea
-                                                                    readOnly={true}
-                                                                    className="input"
-                                                                    value={JSON.stringify(credential.credentialSubject, null, 2)}
-                                                                />
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                {jsonDataVCSkills2.length > 0 && (
-                                                    <div key='cred' className="credential">
-                                                        <p>Skill Credential similar keyword</p>
 
-                                                        {jsonDataVCSkills2.map((credential, index) => (
-                                                            <div key={index} className="credential">
-                                                                <h3>Skill Credential #{index + 1}</h3>
-                                                                <button className="process-button"
-                                                                        onClick={() => verifySkill(credential, index)}> Verify
-                                                                </button>
-                                                                <p>Verification
-                                                                    Result: <b>{verificationResSkill.at(index)}</b>
-                                                                </p>
-                                                                <p>Issuance Date: {credential.issuanceDate}</p>
-                                                                <p>Credential Type: {credential.type.join(', ')}</p>
-                                                                <p>Issuer DID: {credential.issuer.id}</p>
-                                                                <p>Holder DID: {credential.credentialSubject.id}</p>
-                                                                <textarea
-                                                                    readOnly={true}
-                                                                    className="input"
-                                                                    value={JSON.stringify(credential.credentialSubject, null, 2)}
-                                                                />
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                {jsonDataVCSkills3.length > 0 && (
-                                                    <div key='cred' className="credential">
-                                                        <p>Skill Credential higher concept keyword</p>
+                                                    {jsonDataVCSkills2.length > 0 && (
+                                                        <div key='skills2' className="credential">
+                                                            <p>Skill Credential similar keyword</p>
 
-                                                        {jsonDataVCSkills3.map((credential, index) => (
-                                                            <div key={index} className="credential">
-                                                                <h3>Skill Credential #{index + 1}</h3>
-                                                                <button className="process-button"
-                                                                        onClick={() => verifySkill(credential, index)}> Verify
-                                                                </button>
-                                                                <p>Verification
-                                                                    Result: <b>{verificationResSkill.at(index)}</b>
-                                                                </p>
-                                                                <p>Issuance Date: {credential.issuanceDate}</p>
-                                                                <p>Credential Type: {credential.type.join(', ')}</p>
-                                                                <p>Issuer DID: {credential.issuer.id}</p>
-                                                                <p>Holder DID: {credential.credentialSubject.id}</p>
-                                                                <textarea
-                                                                    readOnly={true}
-                                                                    className="input"
-                                                                    value={JSON.stringify(credential.credentialSubject, null, 2)}
-                                                                />
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
+                                                            {jsonDataVCSkills2.map((credential, i) => (
+                                                                <div key={`skill2-${i}`} className="credential">
+                                                                    <h3>Skill Credential #{i + 1}</h3>
+                                                                    <button className="process-button" onClick={() => verifySkill(credential, i)}>Verify</button>
+                                                                    <p>Verification Result: <b>{verificationResSkill.at(i)}</b></p>
+                                                                    <p>Issuance Date: {credential.issuanceDate}</p>
+                                                                    <p>Credential Type: {credential.type.join(', ')}</p>
+                                                                    <p>Issuer DID: {credential.issuer.id}</p>
+                                                                    <p>Holder DID: {credential.credentialSubject.id}</p>
+                                                                    <textarea
+                                                                        readOnly={true}
+                                                                        className="input"
+                                                                        value={JSON.stringify(credential.credentialSubject, null, 2)}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
 
-                                            </div>
+                                                    {jsonDataVCSkills3.length > 0 && (
+                                                        <div key='skills3' className="credential">
+                                                            <p>Skill Credential higher concept keyword</p>
+
+                                                            {jsonDataVCSkills3.map((credential, i) => (
+                                                                <div key={`skill3-${i}`} className="credential">
+                                                                    <h3>Skill Credential #{i + 1}</h3>
+                                                                    <button className="process-button" onClick={() => verifySkill(credential, i)}>Verify</button>
+                                                                    <p>Verification Result: <b>{verificationResSkill.at(i)}</b></p>
+                                                                    <p>Issuance Date: {credential.issuanceDate}</p>
+                                                                    <p>Credential Type: {credential.type.join(', ')}</p>
+                                                                    <p>Issuer DID: {credential.issuer.id}</p>
+                                                                    <p>Holder DID: {credential.credentialSubject.id}</p>
+                                                                    <textarea
+                                                                        readOnly={true}
+                                                                        className="input"
+                                                                        value={JSON.stringify(credential.credentialSubject, null, 2)}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p>No Verifiable Credentials available</p>
                                         )}
+
 
                                     </div>)}
                                 <h3>Decoded Diffusion VP</h3>
@@ -1563,21 +1694,25 @@ function App() {
                                 </button>
                                 <p>Result verification: <b>{risVerDecoded}</b></p> {/* Type from Credential Subject */}
 
-                                <p>Type: {decodedJWT.verifiableCredential[0].credentialSubject.type}</p> {/* Type from Credential Subject */}
+                                <p>Type: {decodedJWT.attributes.type}</p> {/* Type from Credential Subject */}
                                 <p>Issuance Date: {decodedJWT.issuanceDate}</p> {/* Issuance Date from VP */}
                                 <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>UUID of
                                     VP: {decodedJWT.id}</h3> {/* UUID from Issuer DID */}
                                 <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>URL or CID on IPFS of
                                     prev JWT
-                                    URL: {decodedJWT.verifiableCredential[0].credentialSubject.url_or_cid_jwt_prev}</h3> {/* vc_statement_cid_or_url */}
+                                    URL: {decodedJWT.attributes.url_or_cid_jwt_prev}</h3> {/* vc_statement_cid_or_url */}
                                 <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>VC statement CID or
-                                    URL: {decodedJWT.verifiableCredential[0].credentialSubject.statement_vc_cid_or_url}</h3> {/* vc_statement_cid_or_url */}
+                                    URL: {decodedJWT.attributes.statement_vc_cid_list}</h3> {/* vc_statement_cid_or_url */}
+                                <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Hash of statement
+                                    Hash: {decodedJWT.attributes.hash_of_statement}</h3> {/* hash_of_statement */}
+                                <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Hashing algorithm for reproducibility
+                                    Hashing Algorithm: {decodedJWT.attributes.hashing_algo}</h3> {/* hashing_algo */}
                                 <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Holder
                                     DID: {decodedJWT.holder}</p> {/* Holder DID */}
                                 <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Host
-                                    URL: {decodedJWT.verifiableCredential[0].credentialSubject.host_URL}</p> {/* HostURL */}
+                                    URL: {decodedJWT.attributes.host_URL}</p> {/* HostURL */}
                                 <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Prev
-                                    UUID: {decodedJWT.verifiableCredential[0].credentialSubject.prev_vp_uuid}</p>
+                                    UUID: {decodedJWT.attributes.prev_vp_uuid}</p>
                                 <h3>JWT of Diffusion VP for next Diffusion VP</h3>
                                 <textarea
                                     className="jwt-textarea"
@@ -1592,11 +1727,11 @@ function App() {
                                                     <h3>Diffusion VP with distance from
                                                         origin: {traceLen - (index + 1)}</h3>
                                                     <button className="process-button"
-                                                            onClick={() => verifyVPDiffusion(presentation, index)}> Verify
+                                                            onClick={() => verifyVPSharing(presentation, index)}> Verify
                                                     </button>
-                                                    <p>Verification Result: <b>{verificationResDiffusion.at(index)}</b></p>
+                                                    <p>Verification Result: <b>{verificationResSharingVP.at(index)}</b></p>
 
-                                                    <p>Type: {presentation.verifiableCredential[0].credentialSubject.type}</p> {/* Type from Credential Subject */}
+                                                    <p>Type: {presentation.attributes.type}</p> {/* Type from Credential Subject */}
                                                     <p>Issuance
                                                         Date: {presentation.issuanceDate}</p> {/* Issuance Date from VP */}
                                                     <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>UUID
@@ -1606,18 +1741,18 @@ function App() {
                                                         CID on
                                                         IPFS
                                                         of prev JWT
-                                                        URL: {presentation.verifiableCredential[0].credentialSubject.url_or_cid_jwt_prev}</h3> {/* vc_statement_cid_or_url */}
+                                                        URL: {presentation.attributes.url_or_cid_jwt_prev}</h3> {/* vc_statement_cid_or_url */}
                                                     <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>VC
                                                         statement
                                                         CID
                                                         or
-                                                        URL: {presentation.verifiableCredential[0].credentialSubject.statement_vc_cid_or_url}</h3> {/* vc_statement_cid_or_url */}
+                                                        URL: {presentation.attributes.statement_vc_cid_list}</h3> {/* vc_statement_cid_or_url */}
                                                     <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Holder
                                                         DID: {presentation.holder}</p> {/* Holder DID */}
                                                     <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Host
-                                                        URL: {presentation.verifiableCredential[0].credentialSubject.host_URL}</p> {/* HostURL */}
+                                                        URL: {presentation.attributes.host_URL}</p> {/* HostURL */}
                                                     <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Prev
-                                                        UUID: {presentation.verifiableCredential[0].credentialSubject.prev_vp_uuid}</p>
+                                                        UUID: {presentation.attributes.prev_vp_uuid}</p>
 
                                                     <h3>JWT of Diffusion VP #{index + 1} for next Diffusion VP</h3>
 
@@ -1641,27 +1776,31 @@ function App() {
                         </div>
                         <button className="process-button" onClick={fetchVerifiablePresentations}>Fetch Diffusion VP
                         </button>
-                        {jsonVPsDiffusion.map((presentation, index) => (
+                        {jsonVPsSharing.map((presentation, index) => (
                                 <div key={index} className="credential">
-                                    <h3>Diffusion VP #{index + 1}</h3>
-                                    <p>Type: {presentation.verifiablePresentation.verifiableCredential[0].credentialSubject.type}</p> {/* Type from Credential Subject */}
+                                    <h3>Sharing VP #{index + 1}</h3>
+                                    <p>Type: {presentation.verifiablePresentation.attributes.type}</p> {/* Type from Credential Subject */}
                                     <p>Issuance
                                         Date: {presentation.verifiablePresentation.issuanceDate}</p> {/* Issuance Date from VP */}
                                     <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>UUID of
                                         VP: {presentation.verifiablePresentation.id}</h3> {/* UUID from Issuer DID */}
                                     <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>URL or CID on IPFS of
                                         prev JWT
-                                        URL: {presentation.verifiablePresentation.verifiableCredential[0].credentialSubject.url_or_cid_jwt_prev}</h3> {/* vc_statement_cid_or_url */}
+                                        URL: {presentation.verifiablePresentation.attributes.url_or_cid_jwt_prev}</h3> {/* vc_statement_cid_or_url */}
                                     <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>VC statement CID or
-                                        URL: {presentation.verifiablePresentation.verifiableCredential[0].credentialSubject.statement_vc_cid_or_url}</h3> {/* vc_statement_cid_or_url */}
+                                        URL: {presentation.verifiablePresentation.attributes.statement_vc_cid_list}</h3> {/* vc_statement_cid_or_url */}
+                                    <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Hash of statement
+                                        URL: {presentation.verifiablePresentation.attributes.hash_of_statement}</h3> {/* vc_statement_cid_or_url */}
+                                    <h3 style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Hashing algorithm for reproducibility
+                                        URL: {presentation.verifiablePresentation.attributes.hashing_algo}</h3> {/* vc_statement_cid_or_url */}
                                     <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Holder
                                         DID: {presentation.verifiablePresentation.holder}</p> {/* Holder DID */}
                                     <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Host
-                                        URL: {presentation.verifiablePresentation.verifiableCredential[0].credentialSubject.host_URL}</p> {/* HostURL */}
+                                        URL: {presentation.verifiablePresentation.attributes.host_URL}</p> {/* HostURL */}
                                     <p style={{overflowX: 'auto', width: '100%', minHeight: 'auto'}}>Prev
-                                        UUID: {presentation.verifiablePresentation.verifiableCredential[0].credentialSubject.prev_vp_uuid}</p>
+                                        UUID: {presentation.verifiablePresentation.attributes.prev_vp_uuid}</p>
 
-                                    <h3>JWT of Diffusion VP #{index + 1} for next Diffusion VP</h3>
+                                    <h3>JWT of Sharing VP #{index + 1} for next Sharing VP</h3>
 
                                     <textarea
                                         className="jwt-textarea"
@@ -1673,11 +1812,11 @@ function App() {
                                 </div>
                             )
                         )}
-                        {jsonVPsDiffusion.length > 0 && (
+                        {jsonVPsSharing.length > 0 && (
                             <textarea
                                 className="jwt-textarea"
                                 style={{overflowX: 'auto', width: '100%', minHeight: '100px'}}
-                                value={JSON.stringify(jsonVPsDiffusion, null, 2)}
+                                value={JSON.stringify(jsonVPsSharing, null, 2)}
                                 readOnly
                             />
                         )}
