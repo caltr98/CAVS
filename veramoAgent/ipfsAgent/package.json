@@ -1,0 +1,16 @@
+{
+  "name": "ipfsAgent",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@helia/ipns": "^8.0.1",
+    "@helia/unixfs": "^4.0.1",
+    "axios": "^1.7.9",
+    "blockstore-fs": "^2.0.2",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "helia": "^5.1.1"
+  }
+}
