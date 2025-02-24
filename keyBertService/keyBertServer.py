@@ -11,6 +11,7 @@ checksum = None
 
 app = Flask(__name__)
 
+
 @app.route('/keywords', methods=['GET'])
 def get_keywords():
 	global checksum  # Ensure we're accessing the global checksum variable
@@ -29,8 +30,10 @@ def get_keywords():
 	kw_model = KeyBERT()
 
 	# Extract keywords with different ngram ranges
-	keywords_with_scores1 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None, nr_candidates=100, top_n=50, use_mmr=True, diversity=0.7)
-	keywords_with_scores2 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words=None, nr_candidates=100, top_n=50, use_mmr=True, diversity=0.7)
+	keywords_with_scores1 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None,
+	                                                  nr_candidates=100, top_n=50, use_mmr=True, diversity=0.7)
+	keywords_with_scores2 = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words=None,
+	                                                  nr_candidates=100, top_n=50, use_mmr=True, diversity=0.7)
 
 	# Combine the keyword lists
 	combined_keywords = keywords_with_scores1 + keywords_with_scores2
@@ -49,6 +52,7 @@ def get_keywords():
 
 	# Return JSON response with the number of keywords, keywords array, model name, and checksum
 	return jsonify(num_keywords=num_keywords, keywords=filtered_keywords, model=model_info)
+
 
 # test performance of the keyword extraction function
 @app.route('/test_keywords', methods=['POST'])
@@ -72,8 +76,10 @@ def test_keywords():
 		# Call the keyword extraction function
 		kw_model = KeyBERT()
 
-		kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None, nr_candidates=100, top_n=50, use_mmr=True, diversity=0.7)
-		kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words=None, nr_candidates=100, top_n=50, use_mmr=True, diversity=0.7)
+		kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None, nr_candidates=100, top_n=50,
+		                          use_mmr=True, diversity=0.7)
+		kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words=None, nr_candidates=100, top_n=50,
+		                          use_mmr=True, diversity=0.7)
 
 		end_time = time.time()
 		time_taken.append(end_time - start_time)

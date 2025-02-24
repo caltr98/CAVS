@@ -12,9 +12,8 @@ COPY ./package.json ./package.json
 COPY ./tsconfig.json ./tsconfig.json
 COPY src/veramo/setup.ts ./src/veramo/setup.ts
 COPY src/veramo/setupETH.ts ./src/veramo/setupETH.ts
-
+COPY src/hash ./src/hash
 COPY ./veramoRestAgent.ts ./veramoRestAgent.ts
-
 # Install app dependencies
 RUN yarn install
 

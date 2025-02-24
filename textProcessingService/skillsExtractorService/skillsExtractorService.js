@@ -8,7 +8,7 @@ const skillsEngines = ["OJD_DAPS"]
 
 app.use(cors());
 
-let ojdServiceEndpoint,gptServiceEndpoint
+let ojdServiceEndpoint, gptServiceEndpoint
 
 // Function to read config.json and update yagoServiceCallerEndpoint
 function updateConfig() {
@@ -43,9 +43,8 @@ fs.watchFile('config.json', (curr, prev) => {
 //ROUTE 1 get available skill matchers
 app.get("/api_skills", (req, res) => {
     console.log(`App listening on port${outPort}`)
-    res.json({ "skills_engines": skillsEngines })
+    res.json({"skills_engines": skillsEngines})
 });
-
 
 
 //ROUTE 2 ->  Keyword extraction
@@ -53,13 +52,13 @@ app.get("/keyword_to_skills", async (req, res) => {
     const keywords = req.query.keywords;
     const engine = req.query.engine;
     console.log(engine)
-    if(!skillsEngines.includes(engine)){
+    if (!skillsEngines.includes(engine)) {
         console.log("Unsupported engine");
         res.status(500).send({
             message: `Response: unsupported engine}`
         });
     }
-    if(engine === "OJD_DAPS"){
+    if (engine === "OJD_DAPS") {
         try {
             console.log(ojdServiceEndpoint)
             // Create a new instance of Axios for each request
@@ -70,7 +69,7 @@ app.get("/keyword_to_skills", async (req, res) => {
             });
             // Convert the JSON object to a string
             const jsonString = JSON.stringify(jsonObject, null, 2);
-            const response = await axios.get( `${ojdServiceEndpoint}/keyword_to_skills`, {
+            const response = await axios.get(`${ojdServiceEndpoint}/keyword_to_skills`, {
                 timeout: 250000,
                 params: {
                     keywords: jsonString
@@ -85,12 +84,11 @@ app.get("/keyword_to_skills", async (req, res) => {
             //GENERATE URI FOR EACH SKILL
 
             //console.log(skilled)
-            let uri =  ""
-            if(skilled.length === 0) {
-                res.json({ "skills": [] });
+            let uri = ""
+            if (skilled.length === 0) {
+                res.json({"skills": []});
 
-            }
-            else {
+            } else {
                 skilled.forEach((skill, i) => {
                     if (Array.isArray(skill) && skill.length > 1) {
                         let integratedCode = skill[1][1]
@@ -104,7 +102,7 @@ app.get("/keyword_to_skills", async (req, res) => {
 
                     }
                 });
-                res.json({"skills": skilled,"model":model});
+                res.json({"skills": skilled, "model": model});
             }
         } catch (err) {
             if (err.code === 'ECONNABORTED') {
@@ -119,8 +117,7 @@ app.get("/keyword_to_skills", async (req, res) => {
                 });
             }
         }
-    }
-    else if(engine === "GPT3.5"){
+    } else if (engine === "GPT3.5") {
         try {
             // Create a new instance of Axios for each request
         } catch (err) {
@@ -139,8 +136,6 @@ app.get("/keyword_to_skills", async (req, res) => {
     }
 
 });
-
-
 
 
 app.listen(outPort, () => console.log(`Server running on port: ${outPort}`));

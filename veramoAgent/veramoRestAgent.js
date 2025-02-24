@@ -7,11 +7,13 @@ import qrcode from 'qrcode';
 import { agent } from "./src/veramo/setup.js";
 import { agentETH } from "./src/veramo/setupETH.js";
 import fs from 'fs';
+import path from 'path';
 import decode from 'jsqr';
 // Create an app instance
 import { PNG } from 'pngjs';
 import { jwtDecode } from "jwt-decode";
 import bodyParser from "body-parser";
+import { createVCPayload, createVPPayload, verifyVPSelectiveDisclousureCorrectness } from "./src/hash/main.js";
 const app = express();
 // Enable CORS
 app.use(cors());
@@ -163,40 +165,6 @@ app.get('/get_did_doc', async (req, res) => {
         res.status(500).send({ error: 'Failed to fetch DID document' });
     }
 });
-function parseNestedJSON(obj) {
-    let parsed = {};
-    // Iterate over all keys in the object
-    for (let key in obj) {
-        // Check if the value corresponding to the key is an object
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-            // If it's an object, recursively parse it and assign the result to the key
-            parsed[key] = parseNestedJSON(obj[key]);
-        }
-        else if (typeof obj[key] === 'string') {
-            // If it's a string, try to parse it as JSON
-            try {
-                // Attempt to parse as JSON object
-                parsed[key] = JSON.parse(obj[key]);
-            }
-            catch (error) {
-                // If parsing as object fails, attempt to parse as JSON array
-                try {
-                    // Attempt to parse as JSON array
-                    parsed[key] = JSON.parse(`[${obj[key]}]`);
-                }
-                catch (error) {
-                    // If parsing fails, assign the string value as is
-                    parsed[key] = obj[key];
-                }
-            }
-        }
-        else {
-            // If it's not an object or a string, assign its value to the key
-            parsed[key] = obj[key];
-        }
-    }
-    return parsed;
-}
 // Define the route to store a verifiable credential
 app.post('/store_vc', bodyParser.json(), async (req, res) => {
     try {
@@ -258,7 +226,7 @@ async function issueCredential(issuer_did, holder_did, type_cred, attributes, to
         const hash = await agentToUse.dataStoreSaveVerifiableCredential({ verifiableCredential });
         console.log("Stored credential with hash: " + hash);
     }
-    return verifiableCredential.proof.jwt; // Return the JWT of the credential
+    return verifiableCredential; // Return the JWT of the credential
 }
 // Route without measuring execution time
 app.post('/issue_verifiable_credential', async (req, res) => {
@@ -268,7 +236,7 @@ app.post('/issue_verifiable_credential', async (req, res) => {
     const attributes = req.body.attributes;
     const toStore = req.body.store === true;
     try {
-        const jwt = await issueCredential(issuer_did, holder_did, type_cred, attributes, toStore);
+        const jwt = (await issueCredential(issuer_did, holder_did, type_cred, attributes, toStore)).proof.jwt;
         res.send({ res: "OK", jwt });
     }
     catch (error) {
@@ -288,7 +256,7 @@ app.post('/test_issue_verifiable_credential', async (req, res) => {
     for (let i = 0; i < numTrials; i++) {
         const start = performance.now();
         try {
-            await issueCredential(issuer_did, holder_did, type_cred, attributes, toStore);
+            (await issueCredential(issuer_did, holder_did, type_cred, attributes, toStore)).proof.jwt;
         }
         catch (error) {
             console.log(error);
@@ -303,6 +271,270 @@ app.post('/test_issue_verifiable_credential', async (req, res) => {
     const variance = times.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numTrials;
     const stdev = Math.sqrt(variance);
     res.send({ mean, stdev });
+});
+app.post('/issue_verifiable_credential/selective_disclosure', async (req, res) => {
+    let issuer_did = req.body.issuer;
+    let holder_did = req.body.holder;
+    let type_cred = req.body.type;
+    const attributes = req.body.attributes;
+    const toStore = req.body.store === true;
+    // The route generates a proof (PVC) by signing the new credential,
+    // which consists of hashed claims (ChV_C) and metadata (MVC).
+    try {
+        // The route then returns the Verifiable Credential (VCh) and the attributes data structure:
+        // VCh = < ChV_C, MVC, PVC >
+        // attributes = < (path(claim1), val1, key1), ..., (path(claimn), valn, keyn) >
+        //console.log("pre creation of VCPayload")
+        let resultFromHashing = await createVCPayload(attributes);
+        //console.log("post creation of VCPayload")
+        let mapStructure = resultFromHashing['disclosure'];
+        let jwt = {};
+        //console.log("pre issue")
+        jwt['vc'] = await issueCredential(issuer_did, holder_did, type_cred, resultFromHashing['hashedAttributes'], toStore);
+        jwt['map'] = mapStructure;
+        res.status(200).send(jwt);
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).send({ message: `Error in creating VCPayload` });
+    }
+});
+app.post('/test/issue_verifiable_credential/selective_disclosure', async (req, res) => {
+    let issuer_did = req.body.issuer;
+    let holder_did = req.body.holder;
+    let type_cred = req.body.type;
+    const attributes = req.body.attributes;
+    const toStore = req.body.store === true;
+    const numTrials = req.body.numTrials || 1; // Number of trials, default is 1
+    let times = [];
+    let jwt = {};
+    for (let i = 0; i < numTrials; i++) {
+        const start = performance.now();
+        try {
+            let resultFromHashing = await createVCPayload(attributes);
+            //console.log("post creation of VCPayload")
+            let mapStructure = resultFromHashing['disclosure'];
+            //console.log("pre issue")
+            jwt['vc'] = [await issueCredential(issuer_did, holder_did, type_cred, resultFromHashing['hashedAttributes'], toStore)];
+            jwt['map'] = mapStructure;
+        }
+        catch (error) {
+            console.log(error);
+            res.status(500).send({ message: `Credential issuer must be a DID managed by this agent` });
+            return;
+        }
+        const end = performance.now();
+        times.push(end - start);
+    }
+    // Calculate mean and standard deviation
+    const mean = times.reduce((a, b) => a + b, 0) / numTrials;
+    const variance = times.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numTrials;
+    const stdev = Math.sqrt(variance);
+    res.send({ mean, stdev, jwt });
+});
+app.post('/issue_verifiable_presentation/selective_disclosure', async (req, res) => {
+    const holderDid = req.body.holder;
+    const typeVP = req.body.type;
+    const attributesToDisclose = req.body.attributesToDisclose;
+    const hashOfVCs = req.body.hashOfVCs; // Assuming it's an array of hash values
+    let vcs = [];
+    try {
+        // Fetch disclosures from files named by {hash_of_vc}.json
+        const disclosures = [];
+        for (const hash of hashOfVCs) {
+            const filePath = path.join("./", `${hash}.json`);
+            let respose = await agent.dataStoreGetVerifiableCredential({ hash });
+            if (!respose) {
+                //if not in the agent connected to sepolia, find it in the ETH sepolia agent
+                respose = await agentETH.dataStoreGetVerifiableCredential({ hash });
+            }
+            vcs.push(respose);
+            try {
+                // Check if file exists
+                if (fs.existsSync(filePath)) {
+                    // Read the file content and parse it
+                    const fileData = fs.readFileSync(filePath, 'utf-8');
+                    const disclosure = JSON.parse(fileData);
+                    disclosures.push(disclosure);
+                }
+                else {
+                    console.warn(`Disclosure file for ${hash} not found.`);
+                }
+            }
+            catch (err) {
+                console.error(`Error reading file for ${hash}:`, err);
+            }
+        }
+        let payload_attributes = createVPPayload(vcs, attributesToDisclose, disclosures); // Pass disclosures to the payload
+        let vp = await createVP(typeVP, "", holderDid, vcs, payload_attributes);
+        // Send the response back with the JWT
+        res.send({ res: "OK", vp });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Internal server error" });
+    }
+});
+app.post('/test/issue_verifiable_presentation/selective_disclosure', async (req, res) => {
+    const holderDid = req.body.holder;
+    const typeVP = req.body.type;
+    const attributesToDisclose = req.body.attributesToDisclose;
+    const hashOfVCs = req.body.hashOfVCs; // Assuming it's an array of hash values
+    let vcs = [];
+    const numTrials = req.body.numTrials || 1; // Number of trials, default is 1
+    try {
+        // Fetch disclosures from files named by {hash_of_vc}.json
+        const disclosures = [];
+        for (const hash of hashOfVCs) {
+            const filePath = path.join("./", `${hash}.json`);
+            let respose = await agent.dataStoreGetVerifiableCredential({ hash });
+            if (!respose) {
+                //if not in the agent connected to sepolia, find it in the ETH sepolia agent
+                respose = await agentETH.dataStoreGetVerifiableCredential({ hash });
+            }
+            vcs.push(respose);
+            try {
+                // Check if file exists
+                if (fs.existsSync(filePath)) {
+                    // Read the file content and parse it
+                    const fileData = fs.readFileSync(filePath, 'utf-8');
+                    const disclosure = JSON.parse(fileData);
+                    disclosures.push(disclosure);
+                }
+                else {
+                    console.warn(`Disclosure file for ${hash} not found.`);
+                }
+            }
+            catch (err) {
+                console.error(`Error reading file for ${hash}:`, err);
+            }
+        }
+        let times = [];
+        let vp;
+        for (let i = 0; i < numTrials; i++) {
+            const start = performance.now();
+            try {
+                let payload_attributes = createVPPayload(vcs, attributesToDisclose, disclosures); // Pass disclosures to the payload
+                let vp = await createVP(typeVP, "", holderDid, vcs, payload_attributes);
+            }
+            catch (error) {
+                console.log(error);
+                res.status(500).send({ message: `Credential issuer must be a DID managed by this agent` });
+                return;
+            }
+            const end = performance.now();
+            times.push(end - start);
+        }
+        // Calculate mean and standard deviation
+        const mean = times.reduce((a, b) => a + b, 0) / numTrials;
+        const variance = times.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numTrials;
+        const stdev = Math.sqrt(variance);
+        res.send({ mean, stdev, vp });
+        // Send the response back with the JWT
+        res.send({ res: "OK", vp });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Internal server error" });
+    }
+});
+async function createVP(typeVP, assertion, holder, vcs, jsonVar) {
+    let presentationPayload = {};
+    console.log("those are VCS " + vcs);
+    presentationPayload.type = ["VerifiablePresentation", typeVP];
+    presentationPayload["@context"] = ["https://www.w3.org/ns/credentials/v2"];
+    presentationPayload.holder = holder;
+    presentationPayload.verifiableCredential = vcs;
+    const agentToUse = !holder.includes('sepolia') ? agentETH : agent;
+    //create a uuid for the VP
+    let uuid = crypto.randomUUID();
+    presentationPayload.id = uuid;
+    presentationPayload.attributes = jsonVar;
+    try {
+        let verifiablePresentation = await agentToUse.createVerifiablePresentation({
+            presentation: presentationPayload,
+            proofFormat: 'jwt'
+        });
+        return verifiablePresentation;
+    }
+    catch (error) {
+        console.log(error);
+        return null;
+    }
+    return null;
+}
+app.post('/verify/vp/selective_disclosure_correctness', async (req, res) => {
+    const vp = req.body.vp;
+    let jwt = {};
+    try {
+        jwt["verificationRES"] = await verifyVPSelectiveDisclousureCorrectness(vp);
+        res.send({ res: "OK", jwt });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).send({ message: `Error` });
+    }
+});
+app.post('/test/verify/vp/selective_disclosure_correctness', async (req, res) => {
+    const vp = req.body.vp;
+    const numTrials = req.body.numTrials || 1; // Number of trials, default is 1
+    let times = [];
+    for (let i = 0; i < numTrials; i++) {
+        const start = performance.now();
+        try {
+            (await verifyVPSelectiveDisclousureCorrectness(vp));
+        }
+        catch (error) {
+            console.log(error);
+            res.status(500).send({ message: `Credential issuer must be a DID managed by this agent` });
+            return;
+        }
+        const end = performance.now();
+        times.push(end - start);
+    }
+    // Calculate mean and standard deviation
+    const mean = times.reduce((a, b) => a + b, 0) / numTrials;
+    const variance = times.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numTrials;
+    const stdev = Math.sqrt(variance);
+    res.send({ mean, stdev });
+});
+// Define the route to store a verifiable credential for selective disclousure
+app.post('/store_vc/selective_disclosure', bodyParser.json(), async (req, res) => {
+    try {
+        // Log the keys of the JSON object
+        const did = req.body.did;
+        const vc = req.body.vc;
+        const map = req.body.map;
+        // Choose the appropriate agent based on the presence of "sepolia" in the did
+        const agentToUse = !did.includes('sepolia') ? agentETH : agent;
+        const verifiable_credential = vc;
+        try {
+            let vc = ({ verifiableCredential: verifiable_credential });
+            // Use the selected agent to save the verifiable credential
+            const hash = await agentToUse.dataStoreSaveVerifiableCredential(vc);
+            // Define file path to store mapping
+            const filePath = path.join("./", `${hash}.json`);
+            const fileData = JSON.stringify(map, null, 2);
+            // Write mapping to a file named after the hash
+            fs.writeFileSync(filePath, fileData);
+            //console.log(`Mapping stored in file: ${filePath}`);
+            res.send({ res: "OK", hash: hash });
+        }
+        catch (error) {
+            console.log(error);
+            // We'll proceed, but let's report it
+            res.status(500).send({
+                message: `error in store`
+            });
+        }
+    }
+    catch (error) {
+        console.log(error);
+        // Handle errors
+        res.status(500).send({
+            message: `error in processing`
+        });
+    }
 });
 // Internal function to issue a verifiable presentation for holder claim
 async function issueHolderClaimPresentation(holderDid, typeCred, attributes, assertion, toStore) {
@@ -381,6 +613,17 @@ app.get('/list_verifiable_presentations', async (req, res) => {
         res.status(500).send({ message: "Internal server error" });
     }
 });
+// Define a route that returns a list of verifiable credentials from wallet without type needed
+app.get('/api/v0/list-verifiable-credentials', async (req, res) => {
+    console.log("received request to get verifiable credentials with type");
+    // Fetch results from both data stores
+    let response1 = await agent.dataStoreORMGetVerifiableCredentials();
+    let response2 = await agentETH.dataStoreORMGetVerifiableCredentials();
+    // Concatenate the results
+    let concatenatedResponse = response1.concat(response2);
+    console.log("respon" + concatenatedResponse.toString());
+    res.send(concatenatedResponse);
+});
 // Define a route that returns a list of verifiable credentials from wallet
 app.get('/api/v0/list-verifiable-credentials-with-type', async (req, res) => {
     console.log("received request to get verifiable credentials with type");
@@ -402,6 +645,48 @@ app.get('/api/v0/list-verifiable-credentials-with-type', async (req, res) => {
     let concatenatedResponse = response1.concat(response2);
     console.log("respon" + concatenatedResponse.toString());
     res.send(concatenatedResponse);
+});
+// Define a route that returns a list of verifiable credentials along with their mappings
+app.get('/api/v0/list-verifiable-credentials-with-type/selective_disclosure', async (req, res) => {
+    console.log("Received request to get verifiable credentials with type");
+    let queryParam = req.query.type;
+    const query = {
+        where: [
+            {
+                column: 'type',
+                value: ['VerifiableCredential,' + queryParam],
+                op: 'Equal',
+            }
+        ],
+        order: [{ column: 'issuanceDate', direction: 'ASC' }],
+    };
+    try {
+        // Fetch results from both data stores
+        let response1 = await agent.dataStoreORMGetVerifiableCredentials(query);
+        let response2 = await agentETH.dataStoreORMGetVerifiableCredentials(query);
+        // Concatenate the results
+        let concatenatedResponse = response1.concat(response2);
+        // Read mappings from files
+        let enrichedResponse = concatenatedResponse.map(vc => {
+            const filePath = path.join("./", `${vc.hash}.json`);
+            let mapping = null;
+            if (fs.existsSync(filePath)) {
+                try {
+                    const fileData = fs.readFileSync(filePath, 'utf8');
+                    mapping = JSON.parse(fileData);
+                }
+                catch (error) {
+                    console.error(`Error reading mapping for ${vc.hash}:`, error);
+                }
+            }
+            return { ...vc, mapping };
+        });
+        res.send(enrichedResponse);
+    }
+    catch (error) {
+        console.error("Error fetching credentials:", error);
+        res.status(500).send({ message: "Error fetching credentials" });
+    }
 });
 // Define a route that returns a list of verifiable presentations from the wallet based on a specific type
 app.get('/list_verifiable_presentations_with_type', async (req, res) => {
@@ -654,74 +939,24 @@ function format_jwt_decoded_to_VP(jwt_encoded, jwt_decoded) {
     obj.holder = jwt_decoded.iss; //iss corresponds to the holder, the one creating the vp
     obj.id = jwt_decoded.jti; //jti corresponds to the id (Which can be a uuid) assigned to the claim
     credentials = jwt_decoded.vp.verifiableCredential;
-    let jwt_cred;
-    for (let i = 0; i < credentials.length; i++) {
-        if (!credentials[i].hasOwnProperty('vc')) { // if already decoded vc, keep as it is
-            //if not then it is encoded as jwt, we decode and assign
-            jwt_cred = jwtDecode(credentials[i]);
-            credentials[i] = format_jwt_decoded_to_VC(credentials[i], jwt_cred); // assign decoded jwt
+    if (credentials) {
+        let jwt_cred;
+        for (let i = 0; i < credentials.length; i++) {
+            if (!credentials[i].hasOwnProperty('vc')) { // if already decoded vc, keep as it is
+                //if not then it is encoded as jwt, we decode and assign
+                jwt_cred = jwtDecode(credentials[i]);
+                credentials[i] = format_jwt_decoded_to_VC(credentials[i], jwt_cred); // assign decoded jwt
+            }
         }
+        obj.verifiableCredential = credentials;
     }
-    obj.verifiableCredential = credentials;
     proofObj.type = "JwtProof2020";
     proofObj.jwt = jwt_encoded;
     obj.proof = proofObj;
+    obj.attributes = jwt_decoded.attributes;
+    console.log("obj before return" + obj);
     return (obj);
 }
-/*
-async function createVPwithHolderClaim(typeVP: string, assertion:string,holder: string, jsonVar: JSON): Promise<VerifiablePresentation|null> {
-        let presentationPayload: PresentationPayload = {} as PresentationPayload;
-
-
-        presentationPayload.type = ["VerifiablePresentation", typeVP]
-        presentationPayload["@context"] = ["https://www.w3.org/ns/credentials/v2"]
-        presentationPayload.holder = holder
-
-        const agentToUse = !holder.includes('sepolia') ? agentETH : agent;
-
-
-        //create a uuid for the VP
-        let uuid = crypto.randomUUID()
-        presentationPayload.id = uuid;
-
-
-        let vc_payload: CredentialPayload = {} as CredentialPayload;
-
-        let issuer_data: IssuerType = {id:holder} as IssuerType;
-        vc_payload.issuer = issuer_data
-        vc_payload["@context"]= ["https://www.w3.org/ns/credentials/v2"]
-        vc_payload.type = ['VerifiableCredential', 'VCPresentation',"VCfor"+typeVP]
-        let vc_cred_subj: CredentialSubject = jsonVar
-        //vc_cred_subj['assertion'] = 'This VP is submitted by the subject as evidence of  VC propagation'
-        vc_cred_subj['assertion'] = assertion
-
-        vc_cred_subj['id'] = uuid
-
-        vc_payload.credentialSubject = vc_cred_subj;
-
-        try {
-            let verifiableCredential = await agentToUse.createVerifiableCredential({
-                credential:vc_payload,
-                proofFormat: 'jwt',
-                fetchRemoteContexts: true
-            })
-
-            presentationPayload.verifiableCredential = [verifiableCredential]
-
-
-            let verifiablePresentation = await agentToUse.createVerifiablePresentation({
-                presentation:presentationPayload,
-                proofFormat: 'jwt'
-            })
-
-            return verifiablePresentation
-        } catch (error) {
-            console.log(error)
-            return  null
-        }
-        return null
-    }
-*/
 async function createVPwithHolderClaim(typeVP, assertion, holder, jsonVar) {
     let presentationPayload = {};
     presentationPayload.type = ["VerifiablePresentation", typeVP];

@@ -68,7 +68,6 @@ function generateSameLevelHierarchyQuery(searchTerm) {
 }
 
 
-
 app.use(express.json());
 
 /*app.post('/api', async (req, res) => {
@@ -119,7 +118,7 @@ app.get('/queryUpperHierarchy', async (req, res) => {
         }
         console.log(results1)
         const finalResults = []
-        for(let i=0; i<results1.length;i++) {
+        for (let i = 0; i < results1.length; i++) {
             //second phase
             const response = await axios.get(sparqlEndpoint, {
                 timeout: 5000, // Set a timeout of 30 seconds

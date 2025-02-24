@@ -4,8 +4,8 @@ import axios from 'axios';
 import bodyParser from 'body-parser';
 import fs from 'fs';
 import path from 'path';
-import config from './config.json' assert { type: 'json' };
-import trustedissuers from './trustedissuers.json' assert { type: 'json' };
+import config from './config.json' assert {type: 'json'};
+import trustedissuers from './trustedissuers.json' assert {type: 'json'};
 
 const app = express();
 const outPort = 4200;
@@ -25,6 +25,10 @@ let selectedDID = '';
 const serviceKeywordsEndpoint = config.serviceKeywordsEndpoint;
 const serviceSkillsEndpoint = config.serviceSkillsEndpoint;
 const veramoAgentEndpoint = config.veramoAgentEndpoint;
+
+let selectiveDisclosureMode = true;
+
+let selectiveDisclousureRequests = {};
 app.use(cors(), express.json());
 
 async function fetchDIDWithRetry() {
@@ -85,6 +89,7 @@ app.post('/set_api', (req, res) => {
     const extractorEngine = req.body.extractorEngine;
     const enricherEngine = req.body.enricherEngine;
     const skillExtractorEngine = req.body.skillExtractorEngine;
+    const requestedSelectiveDisclosureMode = req.body.selectiveDisclosureMode;
 
     if (extractorEngine) {
         selectedExtractorEngine = extractorEngine;
@@ -96,30 +101,37 @@ app.post('/set_api', (req, res) => {
         selectedSkillExtractorEngine = skillExtractorEngine;
     }
 
+    selectiveDisclosureMode = requestedSelectiveDisclosureMode === "true";
+
+
     res.json({
         selectedExtractorEngine,
         selectedEnricherEngine,
-        selectedSkillExtractorEngine
+        selectedSkillExtractorEngine,
+        selectiveDisclosureMode
     });
 });
 
 //ROUTE 1 get available extractors
 app.get("/api_extractor", (req, res) => {
     console.log(`App listening on port ${outPort}`);
-    res.json({ "extractor_engines": keywordExtractorEngines });
+    res.json({"extractor_engines": keywordExtractorEngines});
 });
 
 //ROUTE 2 get available enricher
 app.get("/api_enricher", (req, res) => {
     console.log(`App listening on port ${outPort}` + " enrichers " + enricherEngines);
-    res.json({ "enricher_engines": enricherEngines });
+    res.json({"enricher_engines": enricherEngines});
 });
 
 //ROUTE 3 get available skills extractors
 app.get("/api_skills", (req, res) => {
     console.log(`App listening on port ${outPort}`);
-    res.json({ "skills_engines": skillExtractorEngines });
+    res.json({"skills_engines": skillExtractorEngines});
 });
+
+
+
 
 
 // ROUTE 4 set DID as new Selected DID
@@ -130,13 +142,20 @@ app.post("/setup_did", async (req, res) => {
         });
         selectedDID = response.data.did;
         console.log("DID: " + response.data.did);
-        res.status(200).send({"did":response.data.did});
+        res.status(200).send({"did": response.data.did});
     } catch (error) {
         console.error("Error creating DID:", error.message);
         res.status(500).send("Failed to create DID");
 
     }
 });
+
+//ROUTE 5 selective disclosure mode
+app.get("/api_selective_disclosure_mode", (req, res) => {
+    console.log(`App listening on port ${outPort}`);
+    res.json({"selectiveDisclosureMode": selectiveDisclosureMode});
+});
+
 
 //Keyword extraction method
 const extractKeywords = async (document, res) => {
@@ -152,7 +171,7 @@ const extractKeywords = async (document, res) => {
         console.log("Service caller endpoint: " + serviceKeywordsEndpoint);
 
         let response = await axios.get(`${serviceKeywordsEndpoint}/extract`, {
-            timeout : 65000,
+            timeout: 65000,
             params: {
                 document: document,
                 engine: selectedExtractorEngine
@@ -161,7 +180,7 @@ const extractKeywords = async (document, res) => {
         console.log(response.data)
         let keywords = response.data.keyword;
         console.log("Received result: " + keywords);
-        return { status: 200, keywords: keywords ,model: response.data.model};
+        return {status: 200, keywords: keywords, model: response.data.model};
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             console.log("Request timed out");
@@ -193,7 +212,7 @@ const enrichSameLevel = async (keywords, res) => {
     }
     if (selectedEnricherEngine === "NONE") {
         // Return empty list of keywords
-        return { status: 200, keywords: [] };
+        return {status: 200, keywords: []};
     }
 
     try {
@@ -207,7 +226,7 @@ const enrichSameLevel = async (keywords, res) => {
             }
         });
         let extrakeywords = response.data.keyword
-        return { status: 200, keywords: extrakeywords };
+        return {status: 200, keywords: extrakeywords};
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             console.log("Request timed out");
@@ -238,7 +257,7 @@ const enrichUpperLevel = async (keywords, res) => {
     }
     if (selectedEnricherEngine === "NONE") {
         // Return empty list of keywords
-        return { status: 200, keywords: [] };
+        return {status: 200, keywords: []};
     }
 
     try {
@@ -252,7 +271,7 @@ const enrichUpperLevel = async (keywords, res) => {
             }
         });
         let extrakeywords = response.data.keyword
-        return { status: 200, keywords: extrakeywords };
+        return {status: 200, keywords: extrakeywords};
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             console.log("Request timed out");
@@ -273,7 +292,7 @@ const enrichUpperLevel = async (keywords, res) => {
 };
 
 const extractSkills = async (keywords, res) => {
-    if(keywords.length === 0){
+    if (keywords.length === 0) {
 
         return {
             status: 200,
@@ -300,7 +319,7 @@ const extractSkills = async (keywords, res) => {
         });
         console.log(response.data)
         let skills = response.data.skills;
-        return { status: 200, skills: skills , model: response.data.model};
+        return {status: 200, skills: skills, model: response.data.model};
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             console.log("Request timed out");
@@ -334,18 +353,18 @@ function checkSkillAgainstKeywords(skill, skillsKeywords) {
 
 
 app.post('/api/issuer_trust', bodyParser.json(), async (req, res) => {
-    const { did, rank } = req.body;
+    const {did, rank} = req.body;
 
-    if(!did){
-        res.status(500).send({ error: 'DID is missing' });
+    if (!did) {
+        res.status(500).send({error: 'DID is missing'});
 
     }
-    if(!rank || rank >5 || rank <0){
-        res.status(500).send({ error: 'rank must be between 0 and 5' });
+    if (!rank || rank > 5 || rank < 0) {
+        res.status(500).send({error: 'rank must be between 0 and 5'});
     }
 
     // Append the new object to the array
-    trustedissuers.push({ did:did, rank:rank });
+    trustedissuers.push({did: did, rank: rank});
 
     // Save the updated array back to the JSON file
     const filePath = path.resolve('./trustedissuers.json');
@@ -360,115 +379,236 @@ app.post('/api/issuer_trust', bodyParser.json(), async (req, res) => {
 // IT VERIFIES THEM
 // Then it creates a Statement Verifiable credential
 app.post('/api/vc', bodyParser.json(), async (req, res) => {
-    const document = req.body.document;
-    const credentials = req.body.credentials;
-    const typeStatement = req.body.typeStatement;
-    const category = req.body.category;
-    const statementTitle = req.body.statementTitle;
-    const holderDID = req.body.holderDID;
+    try {
 
-    // Extract keywords
-    let result = await extractKeywords(document);
-    if (result.status !== 200) {
-        return res.status(result.status).send(result);
+
+        const document = req.body.document;
+        const credentials = req.body.credentials;
+        const typeStatement = req.body.typeStatement;
+        const category = req.body.category;
+        const statementTitle = req.body.statementTitle;
+        const holderDID = req.body.holderDID;
+
+        let result;
+        if(!selectiveDisclosureMode) {
+            result = await processVerificationDataNonSelectiveDisclousure(document, credentials, holderDID);
+        }
+
+        else {
+            result = await selectiveDisclosureRequest(document, holderDID);
+        }
+        res.status(result.status).send(result.data);
+    } catch (error) {
+        res.status(500).send("Failed to create Verifiable Credential");
     }
+});
+
+async function selectiveDisclosureRequest(document, holderDID) {
+    let result = await extractKeywords(document);
+    if (result.status !== 200) return { status: result.status, data: result };
+    let keywords = result.keywords;
+    let concepts_keywords_model = result.model;
+
+    result = await extractSkills(keywords);
+    if (result.status !== 200) return { status: result.status, data: result };
+    let skillsKeywords = parseSkills(result.skills);
+    let skills_model = result.model;
+
+
+    let selectiveDisclosureRequest = {
+        "holder": holderDID,
+        "skills_extracted": skillsKeywords,
+        "keywords_to_skills_extracted":result.skills,
+        "skills_model": skills_model,
+        "concepts_keywords_model": concepts_keywords_model,
+    }
+
+
+    selectiveDisclousureRequests[holderDID] = selectiveDisclosureRequest;
+    console.log("Selective Disclosure "+ JSON.stringify(selectiveDisclousureRequests[holderDID],null,2));
+    return { status: 200, data: { selectiveDisclosureRequest: selectiveDisclosureRequest } };
+
+}
+
+app.post('/api/vc/selective_disclosure_issuing', bodyParser.json(), async (req, res) => {
+    const holderDID = req.body.holderDID;
+    const vp = req.body.vp;
+    const attributes = vp.attributes;
+    const verifiableCredentials = vp.verifiableCredential;
+
+    console.log(vp.attributes)
+
+    if (!selectiveDisclousureRequests[holderDID]) {
+        return res.status(404).send("Selective Disclosure Request not found");
+    }
+
+
+    console.log(selectiveDisclousureRequests[holderDID])
+    let skill;
+    let skillsPossessed = [];
+    let skillName = "";
+    console.log(selectiveDisclousureRequests[holderDID].skills_extracted.length)
+    for (skill of selectiveDisclousureRequests[holderDID].skills_extracted) {
+        skillName = skill[0];
+        for (let attribute of attributes) {
+            console.log("Checking skill against attribute" + skillName + " " + attribute.clearValue);
+            let attributeName = attribute.clearValue.split("|")[0];
+            if (skillName === attributeName) {
+                skillsPossessed.push(attribute.clearValue);
+            }
+        }
+    }
+
+    if(skillsPossessed.length === 0){
+        return res.status(404).send("No skills found in the provided credentials");
+
+    }
+    let response_verification_correctness;
+    try{
+        response_verification_correctness = await axios.post(`${veramoAgentEndpoint}/verify/vp/selective_disclosure_correctness`, {vp: vp},{
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 65000
+        })
+    }catch (error) {
+        return { status: 500, data: "Failed to verify correctness of VP Selective Disclosure" };
+    }
+
+    console.log(response_verification_correctness)
+
+    if(response_verification_correctness["verificationRES"] === false){
+        res.status(200).send("Wrong Verification Result for Selective Disclosure");
+        return;
+    }
+
+    let verification_vp;
+    try{
+        verification_vp = await axios.post(`${veramoAgentEndpoint}/verify/vp`, {vp: vp,did: holderDID},{
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 65000
+        })
+    }catch (error) {
+        return { status: 500, data: "Failed to verify of VP" };
+    }
+    console.log("verification: "+verification_vp.data["res"])
+    if(verification_vp.data["res"] === false){
+        res.status(200).send("False VP for Selective Disclosure");
+        return;
+    }
+
+    let keywordsCredentials = [];
+    let keywordsCredentialsRanks = [];
+
+    for(let verifiableCredential of verifiableCredentials){
+        if(!await verify_VC(verifiableCredential)){
+            res.status(200).send("verifiableCredential from issuer is false",verifiableCredential.issuer.id);
+            return;
+        }
+        let rank = getCredentialRank(verifiableCredential.issuer.id);
+        keywordsCredentials.push(verifiableCredential);
+        keywordsCredentialsRanks.push(rank);
+
+    }
+
+
+
+    console.log("Issuing Statement Verifiable Credential");
+    try {
+
+        let response_issuing = await axios.post(
+            `${veramoAgentEndpoint}/issue_verifiable_credential`,
+            {
+                issuer: selectedDID,
+                holder: holderDID,
+                type: "StatementVerifiableCredential",
+                attributes: {
+                    cavs_config: selectedExtractorEngine + "+" + selectedEnricherEngine + "+" + selectedSkillExtractorEngine,
+                    keywords_model: selectiveDisclousureRequests[holderDID].concepts_keywords_model,
+                    skills_model: selectiveDisclousureRequests[holderDID].skills_model,
+                    skills_possessed: skillsPossessed,
+                    ranks_for_skills: keywordsCredentialsRanks,
+                    extracted_skills: selectiveDisclousureRequests[holderDID].skills_extracted,
+                    keywords_to_skills_extracted: selectiveDisclousureRequests[holderDID].keywords_to_skills_extracted
+                },
+                store: false
+            },
+            {
+                headers: { 'Content-Type': 'application/json' },
+                timeout: 650000
+            }
+        );
+        console.log("After issuing Statement Verifiable Credential");
+        console.log(response_issuing.data)
+        return res.status(200).send({jwt: response_issuing.data.jwt});
+    } catch (error) {
+        console.log("Failed at Statement Verifiable Credential");
+        return res.status(500).send("Failed to create Verifiable Credential");
+    }
+});
+
+async function processVerificationDataNonSelectiveDisclousure(document, credentials, holderDID) {
+    let result = await extractKeywords(document);
+    if (result.status !== 200) return { status: result.status, data: result };
     let keywords = result.keywords;
     let keywordsModel = result.model;
 
-    // Enrich with same-level concepts
     result = await enrichSameLevel(keywords);
-    if (result.status !== 200) {
-        return res.status(result.status).send(result);
-    }
+    if (result.status !== 200) return { status: result.status, data: result };
     let sameLevelKeywords = result.keywords;
     let sameLevelKeywordsModel = result.model;
 
-    // Enrich with upper-level concepts
     result = await enrichUpperLevel(keywords);
-    if (result.status !== 200) {
-        return res.status(result.status).send(result);
-    }
+    if (result.status !== 200) return { status: result.status, data: result };
     let upperLevelKeywords = result.keywords;
     let upperLevelKeywordsModel = result.model;
 
-    // Extract skills for each level
     result = await extractSkills(keywords);
-    let skillsModel = result.model;
-    if (result.status !== 200) {
-        return res.status(result.status).send(result);
-    }
+    if (result.status !== 200) return { status: result.status, data: result };
     let skillsKeywords = parseSkills(result.skills);
+    let skillsModel = result.model;
 
     result = await extractSkills(sameLevelKeywords);
-    if (result.status !== 200) {
-        return res.status(result.status).send(result);
-    }
+    if (result.status !== 200) return { status: result.status, data: result };
     let sameLevelKeywordsSkills = parseSkills(result.skills);
 
     result = await extractSkills(upperLevelKeywords);
-    if (result.status !== 200) {
-        return res.status(result.status).send(result);
-    }
+    if (result.status !== 200) return { status: result.status, data: result };
     let upperLevelKeywordsSkills = parseSkills(result.skills);
 
-    // Arrays to store credentials and their respective ranks
-    let keywordsCredentials = [];
-    let sameLevelKeywordsCredentials = [];
-    let upperLevelKeywordsCredentials = [];
+    let extracted_keywords_to_skills = [];
+    let sameLevelMatchedSkills = [];
+    let upperLevelMatchedSkills = [];
 
     let keywordsCredentialsRanks = [];
     let sameLevelKeywordsCredentialsRanks = [];
     let upperLevelKeywordsCredentialsRanks = [];
 
-    // Process each credential
-    for (let i = 0; i < credentials.length; i++) {
-        let cred = credentials[i];
-        let skills = cred.credentialSubject.skills;
-        let put = false, put2 = false, put3 = false;
-        let j = 0;
+    for (let cred of credentials) {
+        let { skills, id } = cred.credentialSubject;
 
-        if (cred.credentialSubject.id === holderDID) {
-            // Credential will be included only if the holder DID matches the Author DID
-            while (j < skills.length && !(put || put2 || put3)) {
-                put = checkSkillAgainstKeywords(skills[j], skillsKeywords);
-                put2 = checkSkillAgainstKeywords(skills[j], sameLevelKeywordsSkills);
-                put3 = checkSkillAgainstKeywords(skills[j], upperLevelKeywordsSkills);
-                j++; // Increment j to check the next skill
+        if (id === holderDID && verify_VC(cred)) {
+            let rank = getCredentialRank(cred.issuer.id);
+
+            let matchedKeywords = skillsKeywords.filter(keyword =>
+                skills.some(skill => checkSkillAgainstKeywords(skill, [keyword]))
+            );
+            let matchedSameLevelKeywords = sameLevelKeywordsSkills.filter(keyword =>
+                skills.some(skill => checkSkillAgainstKeywords(skill, [keyword]))
+            );
+            let matchedUpperLevelKeywords = upperLevelKeywordsSkills.filter(keyword =>
+                skills.some(skill => checkSkillAgainstKeywords(skill, [keyword]))
+            );
+
+            if (matchedKeywords.length > 0) {
+                extracted_keywords_to_skills.push(...matchedKeywords);
+                keywordsCredentialsRanks.push(rank);
             }
-
-            if (put) {
-                if (verify_VC(cred)) {
-                    let rank = 0;
-                    for (let k = 0; k < trustedissuers.length && rank === 0; k++) {
-                        if (cred.issuer.id === trustedissuers[k].did) {
-                            rank = trustedissuers[k].rank;
-                        }
-                    }
-                    keywordsCredentials.push(cred);
-                    keywordsCredentialsRanks.push(rank);
-                }
-            } else if (put2) {
-                if (verify_VC(cred)) {
-                    let rank = 0;
-                    for (let k = 0; k < trustedissuers.length && rank === 0; k++) {
-                        if (cred.issuer.id === trustedissuers[k].did) {
-                            rank = trustedissuers[k].rank;
-                        }
-                    }
-                    sameLevelKeywordsCredentials.push(cred);
-                    sameLevelKeywordsCredentialsRanks.push(rank);
-                }
-            } else if (put3) {
-                if (verify_VC(cred)) {
-                    let rank = 0;
-                    for (let k = 0; k < trustedissuers.length && rank === 0; k++) {
-                        if (cred.issuer.id === trustedissuers[k].did) {
-                            rank = trustedissuers[k].rank;
-                        }
-                    }
-                    upperLevelKeywordsCredentials.push(cred);
-                    upperLevelKeywordsCredentialsRanks.push(rank);
-                }
+            if (matchedSameLevelKeywords.length > 0) {
+                sameLevelMatchedSkills.push(...matchedSameLevelKeywords);
+                sameLevelKeywordsCredentialsRanks.push(rank);
+            }
+            if (matchedUpperLevelKeywords.length > 0) {
+                upperLevelMatchedSkills.push(...matchedUpperLevelKeywords);
+                upperLevelKeywordsCredentialsRanks.push(rank);
             }
         }
     }
@@ -483,39 +623,46 @@ app.post('/api/vc', bodyParser.json(), async (req, res) => {
                 type: "StatementVerifiableCredential",
                 attributes: {
                     cavs_config: selectedExtractorEngine + "+" + selectedEnricherEngine + "+" + selectedSkillExtractorEngine,
-                    keywords: keywords,
-                    keywords_model: keywordsModel, // Include model for keywords
+                    keywords,
+                    keywords_model: keywordsModel,
                     skills_model: skillsModel,
+                    skills: skillsKeywords,
                     similar_concepts_keywords: sameLevelKeywords,
-                    similar_concepts_keywords_model: sameLevelKeywordsModel, // Include model for same-level keywords
-                    general_concepts_keywords: upperLevelKeywords,
-                    general_concepts_keywords_model: upperLevelKeywordsModel, // Include model for upper-level keywords
-                    statementType: typeStatement,
-                    statementCategory: category,
-                    statementTitle: statementTitle,
-                    credentials_for_skills: keywordsCredentials,
-                    credentials_for_similar_concepts_skills: sameLevelKeywordsCredentials,
-                    credentials_for_general_concepts_skills: upperLevelKeywordsCredentials,
+                    similar_concepts_keywords_model: sameLevelKeywordsModel,
                     ranks_for_skills: keywordsCredentialsRanks,
+                    matched_skills: extracted_keywords_to_skills,
+                    matched_similar_concepts_skills: sameLevelMatchedSkills,
+                    matched_general_concepts_skills: upperLevelMatchedSkills,
                     ranks_for_similar_concepts_skills: sameLevelKeywordsCredentialsRanks,
                     ranks_for_general_concepts_skills: upperLevelKeywordsCredentialsRanks
                 },
                 store: false
             },
             {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 timeout: 65000
             }
         );
 
-        let jwt = response.data.jwt;
-        res.status(200).send({ jwt: jwt });
+        return { status: 200, data: { jwt: response.data.jwt } };
     } catch (error) {
-        res.status(500).send("Failed to create Verifiable Credential");
+        return { status: 500, data: "Failed to create Verifiable Credential" };
     }
-});
+}
+
+
+function getCredentialRank(issuerDID) {
+    let rank = 0;
+    for (let trustedIssuer of trustedissuers) {
+        if (trustedIssuer.did === issuerDID) {
+            rank = trustedIssuer.rank;
+            break;
+        }
+    }
+    return rank;
+}
+
+
 
 const parseSkills = (skills) => {
     // Create a map to store unique skills
@@ -560,11 +707,9 @@ const verify_VC = async (vc) => {
 }
 
 
-
-
 // SIMULATION
 //CODE TO USE FOR SIMULATION
-app.post('/simulation/skillsfromtext',bodyParser.json(), async (req, res) => {
+app.post('/simulation/skillsfromtext', bodyParser.json(), async (req, res) => {
     try {
         let text = req.body.text;
         console.log("text:", text);
@@ -592,13 +737,13 @@ app.post('/simulation/skillsfromtext',bodyParser.json(), async (req, res) => {
 
     } catch (error) {
         console.error("Error in /simulation/skillsfromtext:", error);
-        res.status(500).send({ error: 'Internal Server Error', details: error.message });
+        res.status(500).send({error: 'Internal Server Error', details: error.message});
     }
 });
 
-app.post('/simulation', bodyParser.json(),async (req, res) => {
+app.post('/simulation', bodyParser.json(), async (req, res) => {
     try {
-        let { document, bio } = req.body;
+        let {document, bio} = req.body;
         console.log("Bio:", bio);
 
         // Extract keywords from bio
@@ -654,7 +799,7 @@ app.post('/simulation', bodyParser.json(),async (req, res) => {
 
     } catch (error) {
         console.error("Error in /simulation:", error);
-        res.status(500).send({ error: 'Internal Server Error', details: error.message });
+        res.status(500).send({error: 'Internal Server Error', details: error.message});
     }
 });
 

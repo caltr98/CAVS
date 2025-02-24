@@ -1,9 +1,7 @@
-
 # Combating Fake NewsA Survey on Identification and Mitigation Techniques
 
-
 | Method Category           | Specific Method                       | Description                                                                                       | Pros                                                                              | Cons                                                                                                | Technology and Implementation                                                                                  |
-| ------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+|---------------------------|---------------------------------------|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
 | Content-Based             | Cue and Feature-Based                 | Analyzes textual characteristics and linguistic cues for misinformation.                          | Direct analysis of misinformation content.                                        | Needs new cue sets for different contexts; limited generalizability.                                | Utilizes decision trees, logistic regression, neural networks for analysis.                                    |
 |                           | Deep Learning Methods                 | Employs CNNs and RNNs to automatically extract complex features from content.                     | Captures complex patterns and nuances in data.                                    | Requires extensive labeled data sets; crafting fake content to resemble truth challenges detection. | Convolutional Neural Networks (CNN), Recurrent Neural Networks (RNN) for feature extraction.                   |
 | Feedback-Based            | User Responses & Propagation Patterns | Utilizes patterns of user engagement and propagation on social media as indicators.               | Exploits the dynamics of social interactions for detection.                       | Reliant on substantial and often late-stage user interaction data.                                  | Analyzes propagation and temporal patterns using social media data.                                            |
@@ -16,33 +14,28 @@
 |                           |                                       |                                                                                                   |                                                                                   |                                                                                                     |                                                                                                                |
 |                           |                                       |                                                                                                   |                                                                                   |                                                                                                     |                                                                                                                |
 
-
-For each method category: 
+For each method category:
 
 | Method Category           | Cons                                                                                                                                                                                                                                                                                                                    |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|---------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Content-Based             | Requires creation of new cue sets for different contexts, limiting its generalizability across various misinformation topics and formats. Deep learning methods need extensive data and struggle with fake content crafted to closely resemble the truth.                                                               |
 | Feedback-Based            | Heavily reliant on significant amounts of user response data, which may only become available at later stages of information propagation, potentially delaying the detection of misinformation.                                                                                                                         |
 | Intervention-Based        | Resource-intensive, acting more as corrective measures after misinformation has spread, rather than preventive strategies. Assumes that fake news has already been identified and tracked, which is a complex prerequisite.                                                                                             |
 | Identification Strategies | Network monitoring can be costly and requires frequent updates due to changing network dynamics. Crowd-sourcing is vulnerable to misuse and relies on the reliability of community feedback, which can vary. User behavior modeling assumes simplistic network structures, limiting applicability in complex scenarios. |
 
-
 ---------
 
-
 | Method Category           | Description                                                                                                | Cons                                                                                                                                             | Why |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
+|---------------------------|------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|-----|
 | Content-Based             | Analyzes textual characteristics and linguistic cues for misinformation.                                   | Requires new cue sets for different contexts; deep learning methods need extensive data.                                                         |     |
 | Feedback-Based            | Utilizes patterns of user engagement and propagation on social media.                                      | Reliant on significant, often late-stage, user response data.                                                                                    |     |
 | Intervention-Based        | Employs strategies like decontamination and competing cascades to counter misinformation after its spread. | Acts as corrective measures; requires prior identification of fake news.                                                                         |     |
 | Identification Strategies | Involves methods like network monitoring and crowd-sourcing to identify potential misinformation sources.  | Network monitoring is costly and requires updates; crowd-sourcing is vulnerable to misuse; user behavior modeling relies on simplistic networks. |     |
 
-
-
 # Characterizing Fake News Targeting Corporations
 
 | **Category**               | **Details**                                                                                                                             |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | **Categorizing Fake News** | - **Low Intention**: Might be due to honest mistakes or negligence. Includes factual but negative news about a company such as layoffs. |
 |                            | - **High Intention**: Aims to deceive and harm, involves manipulation of information on the company, like scandals.                     |
 | **Research Questions**     | 1. How should corporate fake news articles be categorized?                                                                              |
@@ -66,9 +59,8 @@ For each method category:
 
 # Fake News Detection on Social Media A Data Mining Perspective
 
-
 | **Category**                            | **Key Concepts**                                                                                                                                                                                                                               |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Shift in News Consumption**           | - News consumption has shifted from traditional media to social media. <br>- Social media offers timeliness, cost-effectiveness, easier sharing, and interactive discussion, but often at lower quality.                                       |
 | **Fake News and Challenges**            | - Fake news, designed to mislead, presents challenges to journalistic standards. <br>- It employs various linguistic styles and may misuse true evidence, making detection difficult.                                                          |
 | **Time-critical Events and Fake News**  | - Fake news often correlates with events lacking corroborative evidence. <br>- This results in big, incomplete, and noisy data from user engagement.                                                                                           |

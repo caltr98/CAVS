@@ -1,5 +1,5 @@
 {
   "yagoServiceCallerEndpoint": "http://YagoSC:13000",
-  "keyBertServiceEndpoint":"http://KeyBertService:5003",
-  "keyLLMServiceEndpoint":"http://KeyLLMService:5002"
+  "keyBertServiceEndpoint": "http://KeyBertService:5003",
+  "keyLLMServiceEndpoint": "http://KeyLLMService:5002"
 }

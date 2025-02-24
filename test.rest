@@ -21,7 +21,7 @@ GET http://localhost:13000/queryUpperHierarchy
 Content-Type: application/json
 
 {
- "element": "Red Bull"
+  "element": "Red Bull"
 }
 
 ###
@@ -79,12 +79,19 @@ Content-Type: application/json
 
 ###
 //test keywords to skill
-GET http://localhost:5005/keyword_to_skills
+POST http://localhost:5005/keyword_to_skills
 Content-Type: application/json
 
 {
-  "keywords": ["Blockchain", "Blockchain consensus mechanism", "working with computers","playing the piano","playing the violin play"]
+  "keywords": [
+    "Blockchain",
+    "Blockchain consensus mechanism",
+    "working with computers",
+    "playing the piano",
+    "playing the violin play"
+  ]
 }
+
 ###
 //test keywords to UPPERLEVEL
 GET http://localhost:5002/same_level_keywords?keywords="persona"
@@ -113,7 +120,8 @@ GET http://localhost:3000/create_did_by_alias?alias="ciao"
 GET http://localhost:3001/get_own_did
 
 ###
-GET http://localhost:3001/get_did_doc?did=did:ethr:goerli:0x034e4ecfb60a1a922c027c356480eab896c21f9eb95feabdb6e8408492c81c3f84
+GET http://localhost:3001/get_did_doc?
+    did=did:ethr:goerli:0x034e4ecfb60a1a922c027c356480eab896c21f9eb95feabdb6e8408492c81c3f84
 Content-Type: application/json
 
 ###
@@ -121,7 +129,10 @@ GET http://localhost:3001/get_verifiable_credential?hash_cred=QmWa7wJ1LJx2hfyRpF
 
 
 ###
-GET http://localhost:3001/issue_verifiable_credential?issuer=did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1&holder=did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1&attributes={"hi":"hello"}&store=true
+GET http://localhost:3001/issue_verifiable_credential?
+    issuer=did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1&
+    holder=did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1&
+    attributes={"hi":"hello"}&store=true
 Content-Type: application/json
 
 
@@ -180,10 +191,20 @@ GET http://localhost:4201/fetch?gotCID=bafkreidicqo66z47ytwi4zobwzxuckpenl7epmtm
 
 
 
+###
+
+POST http://localhost:3001/decode_jwt
+Content-Type: application/json
+
+{
+  "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iLCJTdGF0ZW1lbnREaWZmdXNpb25fVlB2MDEiXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKaGJHY2lPaUpGVXpJMU5rc2lMQ0owZVhBaU9pSktWMVFpZlEuZXlKMll5STZleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdk1qQXhPQzlqY21Wa1pXNTBhV0ZzY3k5Mk1TSXNJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTl1Y3k5amNtVmtaVzUwYVdGc2N5OTJNaUpkTENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lpd2lWa05RY21WelpXNTBZWFJwYjI0aUxDSldRMlp2Y2xOMFlYUmxiV1Z1ZEVScFptWjFjMmx2Ymw5V1VIWXdNU0pkTENKamNtVmtaVzUwYVdGc1UzVmlhbVZqZENJNmV5SnpkR0YwWlcxbGJuUmZkbU5mWTJsa1gyOXlYM1Z5YkNJNkltSmhabXR5WldsamQyZDFabXhzY0hwbWMySnRibVkyWW1vMk5tZDZhMk40TjNnMk5tTnllV3MyZG1jellXTm5jVFl5TldKbWFUZG9jbVkwSWl3aWNISmxkbDkyY0Y5MWRXbGtJam9pSWl3aWRYSnNYMjl5WDJOcFpGOXFkM1JmY0hKbGRpSTZJaUlzSW5SNWNHVWlPaUp2Y21sbmFXNGlMQ0pvYjNOMFgxVlNUQ0k2SW1FaUxDSmhjM05sY25ScGIyNGlPaUpVYUdseklGWlFJR2x6SUhOMVltMXBkSFJsWkNCaWVTQjBhR1VnYzNWaWFtVmpkQ0JoY3lCbGRtbGtaVzVqWlNCdlppQldReUJ3Y205d1lXZGhkR2x2YmlKOWZTd2ljM1ZpSWpvaU5HSTROMlpsTWpFdFpqTTNNQzAwTnpjeUxUa3hZemt0TXpNd00yWXlNREUwT1RSaElpd2libUptSWpveE56STNPRGcxTWpVNExDSnBjM01pT2lKa2FXUTZaWFJvY2pvd2VEZzNOelUwTlVVek9URXdOVFV3UTJVeU4yTXlZelV4UW1ReVJrWXhORGd6TjJGalFqWTFOallpZlEuUDNpMklwQl9idE1qZERCVGZVa09kVDI3enZ1akgwNUVsMTh3YWZ0bmRvZ1lNODNxN2N2bE1aVkR4VElWZm5EbndqT2lFUTJzU2IyXzlXN3ZhUEFmZXciXX0sImp0aSI6IjRiODdmZTIxLWYzNzAtNDc3Mi05MWM5LTMzMDNmMjAxNDk0YSIsIm5iZiI6MTcyNzg4NTI1OCwiaXNzIjoiZGlkOmV0aHI6MHg4Nzc1NDVFMzkxMDU1MENlMjdjMmM1MUJkMkZGMTQ4MzdhY0I2NTY2In0.Mu4oR5wR8wPPFpygHXJ_k31cfkI1EwX-RxIsu8sGn6dSHl0EsRNaxZPsWs020xVzAqnFan8ZO3m8kof9eUMIYQ"
+}
+
 
 
 
 # testing
+
 ### Issue Verifiable Presentation with Holder Claim
 
 POST http://localhost:3001/issue_verifiable_presentation/holder_claim
@@ -196,7 +217,6 @@ Content-Type: application/json
     "attribute1": "value1",
     "attribute2": "value2",
     "attribute3": "value3"
-
   },
   "store": true
 }
@@ -251,7 +271,9 @@ GET http://localhost:4201/retrieve?cid=bafkreihdqvrgncnmwzuggw2q6jgens3tzpwswkjl
 ###
 
 ### Request to /did_ethr_by_privkey
-GET http://localhost:3001/did_ethr_by_privkey?privatekey=d0fb78bbcf4a21f0b63e00369f3c8ffcc5738dace3352f2d7a6fdfd6d19356e5&walletaddr=0x90b1041EEfea68Ea564574f6C576bD3c902A8f32
+GET http://localhost:3001/did_ethr_by_privkey?
+    privatekey=d0fb78bbcf4a21f0b63e00369f3c8ffcc5738dace3352f2d7a6fdfd6d19356e5&
+    walletaddr=0x90b1041EEfea68Ea564574f6C576bD3c902A8f32
 Content-Type: application/json
 
 ### Request to /did_ethr_by_privkey
@@ -266,34 +288,35 @@ POST http://localhost:3001/verify
 Content-Type: application/json
 
 {
- "credential" : {
-   "issuanceDate": "2024-07-04T09:07:37.000Z",
-   "@context": [
-     "https://www.w3.org/2018/credentials/v1",
-     "https://www.w3.org/ns/credentials/v2"
-   ],
-   "type": [
-     "VerifiableCredential",
-     "ESCO_type_VerifiableCredential"
-   ],
-   "credentialSubject": {
-     "skills": [
-       [
-         "sas",
-         "sas"
-       ]
-     ],
-     "id": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32"
-   },
-   "issuer": {
-     "id": "did:ethr:sepolia:0x031b149813e8226c5518f8f8faf6773b804cf62f0102e385123f86f7442126bcda"
-   },
-   "proof": {
-     "type": "JwtProof2020",
-     "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiRVNDT190eXBlX1ZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7InNraWxscyI6W1sic2FzIiwic2FzIl1dfX0sInN1YiI6ImRpZDpldGhyOjB4OTBiMTA0MUVFZmVhNjhFYTU2NDU3NGY2QzU3NmJEM2M5MDJBOGYzMiIsIm5iZiI6MTcyMDA4NDA1NywiaXNzIjoiZGlkOmV0aHI6c2Vwb2xpYToweDAzMWIxNDk4MTNlODIyNmM1NTE4ZjhmOGZhZjY3NzNiODA0Y2Y2MmYwMTAyZTM4NTEyM2Y4NmY3NDQyMTI2YmNkYSJ9.QXHeh9rvVs7aVjVD79Y_1X2_iKbLiCO9vUpyEFDKKV1lsNicBzPdU305lgOQBvAzGTAINAwCb-LinpISmT3wjg"
-   }
- }
+  "credential": {
+    "issuanceDate": "2024-07-04T09:07:37.000Z",
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "ESCO_type_VerifiableCredential"
+    ],
+    "credentialSubject": {
+      "skills": [
+        [
+          "sas",
+          "sas"
+        ]
+      ],
+      "id": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32"
+    },
+    "issuer": {
+      "id": "did:ethr:sepolia:0x031b149813e8226c5518f8f8faf6773b804cf62f0102e385123f86f7442126bcda"
+    },
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiRVNDT190eXBlX1ZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7InNraWxscyI6W1sic2FzIiwic2FzIl1dfX0sInN1YiI6ImRpZDpldGhyOjB4OTBiMTA0MUVFZmVhNjhFYTU2NDU3NGY2QzU3NmJEM2M5MDJBOGYzMiIsIm5iZiI6MTcyMDA4NDA1NywiaXNzIjoiZGlkOmV0aHI6c2Vwb2xpYToweDAzMWIxNDk4MTNlODIyNmM1NTE4ZjhmOGZhZjY3NzNiODA0Y2Y2MmYwMTAyZTM4NTEyM2Y4NmY3NDQyMTI2YmNkYSJ9.QXHeh9rvVs7aVjVD79Y_1X2_iKbLiCO9vUpyEFDKKV1lsNicBzPdU305lgOQBvAzGTAINAwCb-LinpISmT3wjg"
+    }
+  }
 }
+
 ###
 POST http://localhost:4200/simulation/skillsfromtext
 Content-Type: application/json
@@ -301,3 +324,5 @@ Content-Type: application/json
 {
   "text": "helllloo"
 }
+
+

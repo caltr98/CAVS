@@ -1,10 +1,10 @@
-import { identity } from "deso-protocol";
-import {CryptoService } from "deso-protocol"
+import {identity} from "deso-protocol";
+import {CryptoService} from "deso-protocol"
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 
-const desoApp  = express();
+const desoApp = express();
 
 desoApp.use(cors());
 desoApp.use(bodyParser.json());
@@ -36,7 +36,7 @@ desoApp.get("/api/v0/get-key-pair", (req, res) => {
         });
     } catch (error) {
         console.log(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({error: error.message});
     }
 });
 

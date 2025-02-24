@@ -36,7 +36,7 @@ function App() {
             fetch(addressTextProcessor + "/api_extractor")
                 .then(response => response.json())
                 .then(data => {
-                    if(data.extractor_engines.length!==0) {
+                    if (data.extractor_engines.length !== 0) {
                         setExtractorEngines(data.extractor_engines);
                         setSelectedEngine(data.extractor_engines[0])
                     }
@@ -47,7 +47,7 @@ function App() {
             fetch(addressTextProcessor + "/api_enricher")
                 .then(response => response.json())
                 .then(data => {
-                    if(data.enricher_engines.length!==0) {
+                    if (data.enricher_engines.length !== 0) {
                         setEnricherEngines(data.enricher_engines);
                         setSelectedEnricherEngine(data.enricher_engines[0])
                     }
@@ -63,7 +63,7 @@ function App() {
             fetch(addressSkillProcessor + "/api_skills")
                 .then(response => response.json())
                 .then(data => {
-                    if(data.skills_engines.length!==0) {
+                    if (data.skills_engines.length !== 0) {
                         setSkillExtractorEngines(data.skills_engines);
                         setSelectedSkillExtractorEngine(data.skills_engines[0])
                     }
@@ -80,18 +80,18 @@ function App() {
     const processData = async event => {
         if (event.key === 'Enter' || event.type === 'click') {
             console.log("pre request")
-                let response = await axios.get(`${addressTextProcessor}/extract`, {
-                    timeout : 65000,
-                    params: {
-                        document: inputText,
-                        engine: selectedEngine
-                    }
-                });
-                console.log("post request")
+            let response = await axios.get(`${addressTextProcessor}/extract`, {
+                timeout: 65000,
+                params: {
+                    document: inputText,
+                    engine: selectedEngine
+                }
+            });
+            console.log("post request")
 
-                console.log(response.data)
-                setKeywords({keywords: response.data.keyword});
-            }
+            console.log(response.data)
+            setKeywords({keywords: response.data.keyword});
+        }
 
     };
 
@@ -100,9 +100,9 @@ function App() {
 
         if (event.key === 'Enter' || event.type === 'click') {
             console.log(selectedEnricherEngine)
-            if(addressTextProcessor && keywords.keywords) {
+            if (addressTextProcessor && keywords.keywords) {
                 let response = await axios.get(`${addressTextProcessor}/enrich_same_level`, {
-                    timeout : 65000*keywords.keywords.length,
+                    timeout: 65000 * keywords.keywords.length,
                     params: {
                         keywords: keywords.keywords,
                         engine: selectedEnricherEngine
@@ -111,7 +111,7 @@ function App() {
                 console.log(response.data)
                 setSameLevelKeywords({keywords: response.data.keyword})
                 response = await axios.get(`${addressTextProcessor}/enrich_upper_level`, {
-                    timeout : 65000*keywords.keywords.length,
+                    timeout: 65000 * keywords.keywords.length,
                     params: {
                         keywords: keywords.keywords,
                         engine: selectedEnricherEngine
@@ -143,7 +143,7 @@ function App() {
 
 
                 if (upperLevelKeywords.keywords) {
-                    console.log("upper level"+upperLevelKeywords.keywords)
+                    console.log("upper level" + upperLevelKeywords.keywords)
                     let response = await axios.get(`${addressSkillProcessor}/keyword_to_skills`, {
                         timeout: 95000 * upperLevelKeywords.keywords.length,
                         params: {
@@ -156,7 +156,7 @@ function App() {
                     setUpperLevelKeywordsSkills({skills: response.data.skills})
                 }
                 if (sameLevelKeywords.keywords) {
-                    console.log("upper level"+sameLevelKeywords.keywords)
+                    console.log("upper level" + sameLevelKeywords.keywords)
                     let response = await axios.get(`${addressSkillProcessor}/keyword_to_skills`, {
                         timeout: 95000 * sameLevelKeywords.keywords.length,
                         params: {
@@ -307,15 +307,8 @@ function App() {
                                     style={{
                                         color: 'blue',
                                         backgroundColor: 'lightgrey'
-                                    }}>Skill Code: </span> {skill[1][1]}
+                                    }}>Skill URI: </span> {skill[1][1]}
                                 </li>
-                                <li>
-                                    <span style={{color: 'blue', backgroundColor: 'lightgrey'}}>Skill URI: </span>
-                                    <a href={skill[1][2]} target="_blank" rel="noopener noreferrer">
-                                        {skill[1][2]}
-                                    </a>
-                                </li>
-
                             </ul>
                         ))}
                     </ul>
@@ -327,7 +320,7 @@ function App() {
                 </div>
             ) : (
                 <div className="keywords-data">
-                <p className="title-keywords-data">
+                    <p className="title-keywords-data">
                         Skills extracted for synonymous:
                     </p>
                     <ul className="keywords-list">
@@ -364,7 +357,7 @@ function App() {
             ) : (
                 <div className="keywords-data">
                     <p className="title-keywords-data">
-                    Skills extracted for more general context:
+                        Skills extracted for more general context:
                     </p>
                     <ul className="keywords-list">
                         {upperLevelKeywordsskills.skills.map((skill, i) => (

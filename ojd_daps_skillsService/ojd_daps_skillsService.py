@@ -13,7 +13,9 @@ model = {}
 
 def initialize_es_model():
 	global es
-	es = ExtractSkills(config_name="extract_skills_esco_special", local=True)  # instantiate with toy taxonomy configuration file
+	es = ExtractSkills(config_name="extract_skills_esco_special", local=True)
+
+
 	es.load()  # load necessary models
 
 	# Access the model attributes
@@ -50,11 +52,11 @@ def initialize_es_model():
 
 app = Flask(__name__)
 
-@app.route('/keyword_to_skills', methods=['GET'])
+@app.route('/keyword_to_skills', methods=['POST'])
 def get_skills_from_keywords():
 	global es, model
 	# Parse JSON data from the request body
-	request_data = request.args
+	request_data = request.json
 
 	print("request data")
 	print(request_data)
@@ -65,12 +67,14 @@ def get_skills_from_keywords():
 		return jsonify(error="Keywords not provided"), 400
 
 	# Extract the keywords text from the JSON argument
-	keywords_list = request_data['keywords']
-	keywords_dict = json.loads(keywords_list)
+	#keywords_list = request_data['keywords']
+	#keywords_dict = json.loads(keywords_list)
+
 
 	# Extract values and create an array
-	array_from_string = list(keywords_dict.values())
+	#array_from_string = list(keywords_dict.values())
 
+	array_from_string = request_data['keywords']
 	print(array_from_string)
 
 	skills_list_matched = es.map_skills(array_from_string)  # match formatted skills to taxonomy

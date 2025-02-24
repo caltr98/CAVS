@@ -30,13 +30,13 @@ const AuthorHolder = ({
 
     const [selectedCredentials, setSelectedCredentials] = useState([]);
     const [statementText, setStatementText] = useState("")
-    const [opFeedback,setOpFeedback] = useState("Ready to Request")
-    const [hostURLStatement,setHostURLStatement] = useState("")
-    const [categoryStatement,setCategoryStatement] = useState("")
-    const [typeStatement,setTypeStatement] = useState(["News","Article","Rumor","Comment","Opinion","Leak","Blog","Post"])
-    const [selectedTypeStatement,setSelectedTypeStatement] = useState(typeStatement[0])
+    const [opFeedback, setOpFeedback] = useState("Ready to Request")
+    const [hostURLStatement, setHostURLStatement] = useState("")
+    const [categoryStatement, setCategoryStatement] = useState("")
+    const [typeStatement, setTypeStatement] = useState(["News", "Article", "Rumor", "Comment", "Opinion", "Leak", "Blog", "Post"])
+    const [selectedTypeStatement, setSelectedTypeStatement] = useState(typeStatement[0])
 
-    const [listCIDs,setListCIDs] = useState([])
+    const [listCIDs, setListCIDs] = useState([])
 
 
     // Function to handle checkbox selection
@@ -55,7 +55,7 @@ const AuthorHolder = ({
     const sendToCavs = async () => {
         let credentials = []
         console.log(jsonDataVCSkills.at(0))
-        if (selectedCredentials.length === 0){
+        if (selectedCredentials.length === 0) {
             setOpFeedback("Please select VCs")
             return;
         }
@@ -69,12 +69,12 @@ const AuthorHolder = ({
             let response = await axios.post(
                 `${addressCAVS}/api/vc`,
                 {
-                    document:statementText,
-                    credentials:credentials,
-                    typeStatement:selectedTypeStatement,
-                    category:categoryStatement,
-                    hostURL:hostURLStatement,
-                    holderDID:selectedDid
+                    document: statementText,
+                    credentials: credentials,
+                    typeStatement: selectedTypeStatement,
+                    category: categoryStatement,
+                    hostURL: hostURLStatement,
+                    holderDID: selectedDid
                 },
                 {
                     headers: {
@@ -102,14 +102,13 @@ const AuthorHolder = ({
             setHostURLStatement("")
 
 
-
             setOpFeedback("Done")
 
         } catch (error) {
             console.error('Error obtain credentials:', error);
         }
     };
-    const fetchCredentials = async() => {
+    const fetchCredentials = async () => {
         try {
             const response = await axios.get(`${addressVeramoAgent}/list_verifiable_credentials_with_type`, {
                 timeout: 65000,
@@ -124,7 +123,7 @@ const AuthorHolder = ({
 
     };
 
-    const fetchStatementCredentials= async() => {
+    const fetchStatementCredentials = async () => {
         try {
             const response = await axios.get(`${addressVeramoAgent}/list_verifiable_credentials_with_type`, {
                 timeout: 65000,
@@ -139,13 +138,13 @@ const AuthorHolder = ({
 
     };
 
-    const ipfsPublish= async(id) => {
+    const ipfsPublish = async (id) => {
         try {
             let response = await axios.post(
                 `${addressIPFSAgent}/upload`,
                 {
                     //sending jwt
-                    text:jsonDataVCStatement[id].verifiableCredential.proof.jwt
+                    text: jsonDataVCStatement[id].verifiableCredential.proof.jwt
                 },
                 {
                     headers: {
@@ -155,7 +154,7 @@ const AuthorHolder = ({
                 }
             );
 
-            console.log("received response"+ response.data.CID)
+            console.log("received response" + response.data.CID)
             const updatedListCIDs = [...listCIDs]; // Create a copy of the array
             updatedListCIDs[id] = response.data.CID; // Update the value at the specified index
             console.log("id:" + id);
@@ -168,7 +167,7 @@ const AuthorHolder = ({
     };
 
     return (
-        <div className="dids-data" style={{textAlign:'center'}}>
+        <div className="dids-data" style={{textAlign: 'center'}}>
             <button className="process-button" onClick={fetchCredentials}>Fetch ESCO Skills Verifiable Credential
             </button>
             {jsonDataVCSkills && (
@@ -178,7 +177,7 @@ const AuthorHolder = ({
                     {jsonDataVCSkills.map((credential, index) => (
                         <div key={index} className="credential">
                             <input
-                                style={{width:'2vw', height:'2vw'}} // Set the width and height
+                                style={{width: '2vw', height: '2vw'}} // Set the width and height
                                 type="checkbox"
                                 checked={selectedCredentials.includes(index)}
                                 onChange={(event) => handleCheckboxChange(event, index)}
@@ -222,7 +221,9 @@ const AuthorHolder = ({
             <select
                 className="select-box"
                 value={selectedTypeStatement}
-                onChange={(e) => {setSelectedTypeStatement(e.target.value); }  }
+                onChange={(e) => {
+                    setSelectedTypeStatement(e.target.value);
+                }}
             >
                 {typeStatement.map((typeS, i) => (
                     <option key={i} value={typeS}>
@@ -257,7 +258,7 @@ const AuthorHolder = ({
                             </button>
 
                             <h3>Credential #{index + 1}</h3>
-                            {listCIDs[index]? (
+                            {listCIDs[index] ? (
                                 <h3>CID is defined: {listCIDs[index]}</h3>
                             ) : (
                                 <h3>CID is unkwown</h3>

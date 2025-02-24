@@ -1,6 +1,7 @@
 # CAVS
 
-CAVS (Credibility Assessment and Verification System) is a system for mitigating Fake News in Online Social Network through the use of Self-Sovereign Identity concepts such as Verifiable Credentials.
+CAVS (Credibility Assessment and Verification System) is a system for mitigating Fake News in Online Social Network
+through the use of Self-Sovereign Identity concepts such as Verifiable Credentials.
 It leverages Veramo for the SSI framework implementation.
 It leverages keyBert and Nesta Skill extractor for processing articles/statements.
 
@@ -23,20 +24,24 @@ To get started with CAVS, follow the instructions below.
    cd CAVS
    ```
 2. **Add Your OpenAI API Key**
-  To use the OpenAI service, you need to provide your own OpenAI API key. Create a file named openai_api_key.txt in the keyLLMService directory and add your API key to this file:
+   To use the OpenAI service, you need to provide your own OpenAI API key. Create a file named openai_api_key.txt in the
+   keyLLMService directory and add your API key to this file:
 
   ```bash
   echo "your_openai_api_key_here" > keyLLMService/openai_api_key.txt
   ```
-  Replace your_openai_api_key_here with your actual OpenAI API key.
 
+Replace your_openai_api_key_here with your actual OpenAI API key.
 
-  ### RUN
-  Run with Docker Compose
-  
-  Start the service using Docker Compose:
+### RUN
+
+Run with Docker Compose
+
+Start the service using Docker Compose:
+
   ```bash
   docker-compose up
   ```
-  This command will build and start all the CAVS composing microservices using Docker.
+
+This command will build and start all the CAVS composing microservices using Docker.
   

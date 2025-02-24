@@ -16,48 +16,49 @@ let fs;
 let definition;
 let globalKeyInfo;
 let globalPeerId;
-async function createNode(){
-    const {createHelia} = await  import('helia')
+
+async function createNode() {
+    const {createHelia} = await import('helia')
     const {unixfs} = await import("@helia/unixfs");
     const {FsBlockstore} = await import('blockstore-fs')
     const helia = await createHelia({
-        blockstore: new FsBlockstore ('./persisted')
+        blockstore: new FsBlockstore('./persisted')
     });
     fs = unixfs(helia); //init
     return fs;
 }
 
 app.get('/peer_id', async (req, res) => {
-    if(!fs) {
+    if (!fs) {
         await createNode();
     }
     console.log(globalPeerId)
-    res.send({peer_id:globalPeerId});
+    res.send({peer_id: globalPeerId});
 });
 
 app.get('/set_secrets', async (req, res) => {
     const usr = req.query.name
     const psw = req.query.psw
 
-    const json_query = {name:usr,password:psw}
+    const json_query = {name: usr, password: psw}
     const json_read = JSON.parse(filesystem.readFileSync('./secret.json'))
-    if(json_read.name && json_read.name == json_query.name){
-        if(json_read.password && json_read.password == json_query.password){ //password matched, send response
-            res.send({response:"OK"});
+    if (json_read.name && json_read.name == json_query.name) {
+        if (json_read.password && json_read.password == json_query.password) { //password matched, send response
+            res.send({response: "OK"});
             return;
         }
     }
     //password is changed, need to change key and peerID or first time creating
-    const file = JSON.stringify(json_query,null,2)
+    const file = JSON.stringify(json_query, null, 2)
     filesystem.writeFileSync("./secret.json", file);
     createNode()
-    res.send({response:"OK"});
+    res.send({response: "OK"});
 
 });
 
 
 app.post('/upload', async (req, res) => {
-    if(!fs) {
+    if (!fs) {
         await createNode();
     }
     const data = req.body.text;
@@ -69,7 +70,7 @@ app.post('/upload', async (req, res) => {
 
     // Create SHA-256 hash
     console.log("here pre")
-    const hash = crypto.createHash('sha256',secretJson.password);
+    const hash = crypto.createHash('sha256', secretJson.password);
     console.log("here post")
     hash.update(data);
     console.log("after")
@@ -79,12 +80,11 @@ app.post('/upload', async (req, res) => {
     console.log("afterafter")
 
     // we use the hash to check if a cid already exists
-    if(jsonData.hasOwnProperty(sha256Hash) && !force) { // if yes we can return the cid
+    if (jsonData.hasOwnProperty(sha256Hash) && !force) { // if yes we can return the cid
         // Retrieve the CIDs associated with the user
         const requesterCIDs = jsonData[sha256Hash];
-        res.status(200).send({CID:requesterCIDs})
-    }
-    else { // otherwise the upload to the node
+        res.status(200).send({CID: requesterCIDs})
+    } else { // otherwise the upload to the node
         const encoder = new TextEncoder();
         //store the data on node and obtain a cid
         const cid = (await fs.addBytes(encoder.encode(data))).toString();
@@ -95,11 +95,9 @@ app.post('/upload', async (req, res) => {
         // Write the JSON file
         filesystem.writeFileSync("indexing.json", JSON.stringify(jsonData));
         console.log(`returning CID ` + cid);
-        res.status(201).send({CID:cid})//201 because we created a resource
+        res.status(201).send({CID: cid})//201 because we created a resource
     }
 });
-
-
 
 
 /*
@@ -141,7 +139,7 @@ app.get('/fetch', async (req, res) => {
 });
 */
 async function retrieveByCID(cid) {
-    if(!fs){
+    if (!fs) {
         await createNode()
     }
     //check cid
@@ -156,7 +154,7 @@ async function retrieveByCID(cid) {
     });
     const fetch = (async () => {
         for await (const chunks of fs.cat(cid)) {
-            text = decoder.decode(chunks, { stream: true });
+            text = decoder.decode(chunks, {stream: true});
         }
         return text;
     })();
@@ -167,7 +165,7 @@ async function retrieveByCID(cid) {
     ])
         .then((text) => {
             //it won the fetch
-            console.log("text obtained"+text)
+            console.log("text obtained" + text)
             return text
         })
         .catch((error) => {
@@ -177,16 +175,14 @@ async function retrieveByCID(cid) {
 }
 
 
-
-app.get('/retrieve',async (req, res) => {
+app.get('/retrieve', async (req, res) => {
     const cid = req.query.cid;
 
-    let result =  await retrieveByCID(cid);
-    if(result){
+    let result = await retrieveByCID(cid);
+    if (result) {
         //returns {cid,path} json
         res.send({result})
-    }
-    else{
+    } else {
         res.status(500).send("Could not find in time(60sec)")
     }
 });
@@ -224,34 +220,33 @@ async function retrieveCIDByPeerID(peerID) {
 
 }
 
-app.get('ipns/retrieve',async (req, res) => {
+app.get('ipns/retrieve', async (req, res) => {
     const peerID = req.body.peer_id;
 
-    let result =  await retrieveCIDByPeerID(peerID);
-    if(result){
+    let result = await retrieveCIDByPeerID(peerID);
+    if (result) {
         //returns {cid,path} json
         res.send({result})
-    }
-    else{
+    } else {
         res.status(500).send("Could not find in time(60sec)")
     }
 });
 app.post('/ipns/append', async (req, res) => {
-    if(!fs) {
+    if (!fs) {
         await createNode();
     }
     let json_data = req.body.text; // Extracting the text from the request body
     let cid = await retrieveCIDByPeerID(globalPeerId);
     let json_array;
     let retrieved;
-    console.log("cid before all "+ cid)
+    console.log("cid before all " + cid)
 
-    if(cid){
-        console.log("cid before retrieve "+ cid)
+    if (cid) {
+        console.log("cid before retrieve " + cid)
         retrieved = await retrieveByCID(cid);
-        console.log("what is retrieved"+ retrieved)
-        if(retrieved) {
-            console.log("post insert" + JSON.stringify(retrieved,null,2));
+        console.log("what is retrieved" + retrieved)
+        if (retrieved) {
+            console.log("post insert" + JSON.stringify(retrieved, null, 2));
 
             json_array = JSON.parse(retrieved);
             json_array.data.push(json_data); // Add the new data to the existing JSON array
@@ -259,10 +254,10 @@ app.post('/ipns/append', async (req, res) => {
         }
     }
 
-    if(!cid || (cid && !retrieved)){
-        json_array = { data: [] }; // Create a new JSON array if CID is not found or retrieved is falsy
+    if (!cid || (cid && !retrieved)) {
+        json_array = {data: []}; // Create a new JSON array if CID is not found or retrieved is falsy
         json_array.data.push(json_data);
-        console.log("post init"+ JSON.stringify(json_array,null,2));
+        console.log("post init" + JSON.stringify(json_array, null, 2));
     }
 
     // Encode the JSON array into bytes
@@ -276,7 +271,7 @@ app.post('/ipns/append', async (req, res) => {
     await definition.publish(globalPeerId, cid);
 
     // Send response
-    res.status(201).send({ cid: cid });
+    res.status(201).send({cid: cid});
 });
 
 function startServer() {
@@ -286,7 +281,7 @@ function startServer() {
 
     // Event listener for unhandled exceptions
     process.on('uncaughtException', (error) => {
-        console.error('Uncaught Exception:'+ error);
+        console.error('Uncaught Exception:' + error);
         // Restart the server or take other appropriate action
         //startServer(); // Restart the server
     });
@@ -308,7 +303,6 @@ function startServer() {
 }
 
 
-
 // new way is try to assign a name
 
 // Start the server
@@ -327,13 +321,13 @@ async function createAndStoreKey() {
         }
 
         // PKCS field doesn't exist, create and store the key
-        const { createHelia } = await import('helia');
-        const { unixfs } = await import("@helia/unixfs");
-        const { FsBlockstore } = await import('blockstore-fs');
+        const {createHelia} = await import('helia');
+        const {unixfs} = await import("@helia/unixfs");
+        const {FsBlockstore} = await import('blockstore-fs');
         const helia = await createHelia({
             blockstore: new FsBlockstore('./persisted')
         });
-        const { ipns } = await import('@helia/ipns');
+        const {ipns} = await import('@helia/ipns');
         const definition = ipns(helia);
 
         // Create an RSA key with a valid name
@@ -341,7 +335,7 @@ async function createAndStoreKey() {
         console.log("RSA key created:", keyInfo);
 
         // Export the key and store it
-        console.log("secpas"+secretJson.password)
+        console.log("secpas" + secretJson.password)
         const exportedKey = await helia.libp2p.services.keychain.exportKey(secretJson.name, secretJson.password);
         console.log("Exported key:", exportedKey);
 
@@ -363,22 +357,21 @@ async function retrieveOrCreateKey() {
         // PKCS field does not exists, call createAndStoreKey to create it and add to keychain in this session
         console.log("PKCS field already exists in secret.json. Exiting...");
         createAndStoreKey()
-    }
-    else{
+    } else {
         // PKCS field exists, import the key
-        const { createHelia } = await import('helia');
-        const { unixfs } = await import("@helia/unixfs");
-        const { FsBlockstore } = await import('blockstore-fs');
+        const {createHelia} = await import('helia');
+        const {unixfs} = await import("@helia/unixfs");
+        const {FsBlockstore} = await import('blockstore-fs');
         const helia = await createHelia({
             blockstore: new FsBlockstore('./persisted')
         });
-        const { ipns } = await import('@helia/ipns');
+        const {ipns} = await import('@helia/ipns');
         const definition = ipns(helia);
 
-        const importedKey = await helia.libp2p.services.keychain.importKey(secretJson.name, secretJson.PKCS,secretJson.password);
+        const importedKey = await helia.libp2p.services.keychain.importKey(secretJson.name, secretJson.PKCS, secretJson.password);
         globalKeyInfo = importedKey
         console.log("Key imported:", importedKey);
-         // Exit the function after importing the key
+        // Exit the function after importing the key
     }
 }
 
@@ -386,17 +379,17 @@ async function retrieveOrCreateKey() {
 // Define the function to retrieve the key
 async function retrieveKey() {
     try {
-        const {createHelia} = await  import('helia')
+        const {createHelia} = await import('helia')
         const {unixfs} = await import("@helia/unixfs");
         const {FsBlockstore} = await import('blockstore-fs')
         const helia = await createHelia({
-            blockstore: new FsBlockstore ('./persisted')
+            blockstore: new FsBlockstore('./persisted')
         });
-        const { ipns } = await import( '@helia/ipns')
+        const {ipns} = await import( '@helia/ipns')
         definition = ipns(helia)
 
         // Get the key by its name
-        const keyInfo = await helia.libp2p.services.keychain.exportKey("local1","mypass");
+        const keyInfo = await helia.libp2p.services.keychain.exportKey("local1", "mypass");
         // Return the key information
         return keyInfo;
     } catch (error) {

@@ -1,0 +1,72 @@
+{
+  "name": {
+    "path": [
+      "name"
+    ],
+    "clearValue": "Alice1",
+    "nonce": "bde1d44236bdb9b7f751bd98b5d91f336b85035839cd12fc9f0a27e651c0ff9662db205e170abff2d6e721442ef5399d425d40cdf3544afe6bd92a542885c835"
+  },
+  "age": {
+    "path": [
+      "age"
+    ],
+    "clearValue": "29",
+    "nonce": "385467635ef46378fe0501c93a0b4e4613cfb624ebfb4b593ad748d9a565f14e90039d4dbed93a3ebe457dd1f8faf74ba1cb091e5f5a928b567fc32233aac0b6"
+  },
+  "email": {
+    "path": [
+      "email"
+    ],
+    "clearValue": "alice@example.com",
+    "nonce": "6196f1414fbc84a2f821655906feecb997553b82da6e9c8b28c2835f99a7af9bada471729efa247f6c4d86105e06e7a0a005158bb21bf7747e93f13398d96616"
+  },
+  "phone": {
+    "path": [
+      "phone"
+    ],
+    "clearValue": "555-12314",
+    "nonce": "3f9e7d1518fd1a576a28437d8f9bf7a3c5846c8d4c6e902720059696609ccc84be180bd34b26e5fe06fee4c67ecffde4430c76fbdd806a62f143c2e38c1001d5"
+  },
+  "address": {
+    "path": [
+      "address"
+    ],
+    "clearValue": "123 Main St",
+    "nonce": "3801438cdad9aa190a3ae77ff103752573a329a56ce4aa6bd7ec47faed28db2fe6f0c1d8d747fe7d4da68bcf8471744cd3d7975be6510c3fa11ea4baa5177f10"
+  },
+  "nationality": {
+    "path": [
+      "nationality"
+    ],
+    "clearValue": "American",
+    "nonce": "7278b80becec99408d45fa46c75deb6f8d0d3f1d54e6677ba3353cc04f588a5d022ebe02475ed25d55aba9153667dc771f66ed7da3e6321711859a8c621ccc0c"
+  },
+  "gender": {
+    "path": [
+      "gender"
+    ],
+    "clearValue": "male",
+    "nonce": "59236f754394c1ba546cae6420637f6d45d7b509592b15641b96d2625b7678e54551d050175a55d1edb4e7398aef5730fdc5063b689dc061e755e79f478e8099"
+  },
+  "maritalStatus": {
+    "path": [
+      "maritalStatus"
+    ],
+    "clearValue": "single",
+    "nonce": "631a6de87464bf7b19d8a26561d47decf9ca9737fdedb816dee9ae575dd9bc769f5ce86559b39968ccd6ed7d209ca11372cd896cd6a389c4b8b43b10718f9453"
+  },
+  "education": {
+    "path": [
+      "education"
+    ],
+    "clearValue": "Bachelor's",
+    "nonce": "792bd250613b0196598518e48b0e6e54493606a9666c7387f602be11d193868324e969deec7a2fc78c8ca3322758072790ceed3b0c10ddd38a92bc672cd9721b"
+  },
+  "occupation": {
+    "path": [
+      "occupation"
+    ],
+    "clearValue": "Software Engineer",
+    "nonce": "a9e070b6fb706d45f256e9ac00eacb27701c4c41e0f129dae4755864e62e0b8a53286a80db48182d196d8e79dfd3ccb683d46e36ae7db710e7a5cf27b5026ac6"
+  }
+}

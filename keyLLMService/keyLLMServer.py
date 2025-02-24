@@ -16,6 +16,7 @@ app = Flask(__name__)
 llm = None
 bert_model_checksum = None
 
+
 def initialize_openai_client():
 	global llm
 	try:
@@ -30,6 +31,7 @@ def initialize_openai_client():
 	except Exception as e:
 		print("Error initializing OpenAI client:", str(e))
 		llm = None
+
 
 def compute_bert_model_checksum():
 	global bert_model_checksum
@@ -47,6 +49,7 @@ def compute_bert_model_checksum():
 	torch.save(state_dict, buffer)
 	state_dict_bytes = buffer.getvalue()
 	bert_model_checksum = hashlib.sha256(state_dict_bytes).hexdigest()
+
 
 @app.route('/keywords_only_LMM', methods=['GET'])
 def get_keywords_only_LMM():
@@ -88,6 +91,7 @@ def get_keywords_only_LMM():
 			"seed": 123
 		}
 	)
+
 
 @app.route('/keywords_both', methods=['GET'])
 def get_keywords_both():
@@ -132,6 +136,7 @@ def get_keywords_both():
 		}
 	)
 
+
 @app.route('/upper_level_keywords', methods=['GET'])
 def get_upper_level_keywords():
 	global llm
@@ -148,19 +153,20 @@ def get_upper_level_keywords():
 		return jsonify(error="'keywords' parameter is missing"), 400
 
 	# Prompt for the AI model
-	prompt = ("You are an AI designed to extract upper-level keywords from specific terms. These terms can be technical terms, concepts, or product names. You will receive "
-          "information in a JSON format containing a \"term\" field:\n\n**Procedure:**\n1. **Term Analysis:** First, determine the broader categories or higher-level "
-          "keywords associated with the provided term. This involves understanding the context and domain in which the term is used.\n2. **Keyword Extraction:** Extract "
-          "one or more upper-level keywords that best generalize the provided term.\n3. **Example Terms and Their Upper-Level Keywords:**\n   - \"Bitcoin\" -> "
-          "[\"Blockchain\", \"Cryptocurrency\"]\n   - \"Ethereum\" -> [\"Blockchain\", \"Cryptocurrency\"]\n   - \"Java\" -> [\"Software Development\", \"Programming "
-          "Language\"]\n   - \"Python\" -> [\"Software Development\", \"Programming Language\"]\n   - \"TensorFlow\" -> [\"Machine Learning\", \"Artificial Intelligence\"]"
-          "\n   - \"Windows 10\" -> [\"Operating System\", \"Software\"]\n   - \"Galaxy S21\" -> [\"Smartphone\", \"Consumer Electronics\"]\n   - \"NVIDIA GTX 3080\" -> "
-          "[\"Graphics Card\", \"Hardware\"]\n   - \"The Great Gatsby\" -> [\"Literature\", \"Novel\"]\n   - \"Monet's Water Lilies\" -> [\"Art\", \"Painting\"]\n   - "
-          "\"Pythagorean Theorem\" -> [\"Mathematics\", \"Geometry\"]\n\n**Output Requirements:**\nThe output should be a {Keywords:JSON array of upper-level keywords}."
-          "\n\n**Example Input:**\n{\n  \"term\": \"Bitcoin\"\n}\n\n**Example Output:**\n[\"Blockchain\", \"Cryptocurrency\"]\n\n**Example Input:**\n{\n  \"term\": \"Java\"\n"
-          "}\n\n**Example Output:**\n[\"Software Development\", \"Programming Language\"]\n\n**Example Input:**\n{\n  \"term\": \"TensorFlow\"\n}\n\n**Example Output:**\n"
-          "[\"Machine Learning\", \"Artificial Intelligence\"]\n\n**Example Input:**\n{\n  \"term\": \"The Great Gatsby\"\n}\n\n**Example Output:**\n[\"Literature\", "
-          "\"Novel\"]\n\nBased on the above procedure and examples, extract the upper-level keywords for the provided term. Ensure the output is in JSON format {Keywords:jsonarray}")
+	prompt = (
+		"You are an AI designed to extract upper-level keywords from specific terms. These terms can be technical terms, concepts, or product names. You will receive "
+		"information in a JSON format containing a \"term\" field:\n\n**Procedure:**\n1. **Term Analysis:** First, determine the broader categories or higher-level "
+		"keywords associated with the provided term. This involves understanding the context and domain in which the term is used.\n2. **Keyword Extraction:** Extract "
+		"one or more upper-level keywords that best generalize the provided term.\n3. **Example Terms and Their Upper-Level Keywords:**\n   - \"Bitcoin\" -> "
+		"[\"Blockchain\", \"Cryptocurrency\"]\n   - \"Ethereum\" -> [\"Blockchain\", \"Cryptocurrency\"]\n   - \"Java\" -> [\"Software Development\", \"Programming "
+		"Language\"]\n   - \"Python\" -> [\"Software Development\", \"Programming Language\"]\n   - \"TensorFlow\" -> [\"Machine Learning\", \"Artificial Intelligence\"]"
+		"\n   - \"Windows 10\" -> [\"Operating System\", \"Software\"]\n   - \"Galaxy S21\" -> [\"Smartphone\", \"Consumer Electronics\"]\n   - \"NVIDIA GTX 3080\" -> "
+		"[\"Graphics Card\", \"Hardware\"]\n   - \"The Great Gatsby\" -> [\"Literature\", \"Novel\"]\n   - \"Monet's Water Lilies\" -> [\"Art\", \"Painting\"]\n   - "
+		"\"Pythagorean Theorem\" -> [\"Mathematics\", \"Geometry\"]\n\n**Output Requirements:**\nThe output should be a {Keywords:JSON array of upper-level keywords}."
+		"\n\n**Example Input:**\n{\n  \"term\": \"Bitcoin\"\n}\n\n**Example Output:**\n[\"Blockchain\", \"Cryptocurrency\"]\n\n**Example Input:**\n{\n  \"term\": \"Java\"\n"
+		"}\n\n**Example Output:**\n[\"Software Development\", \"Programming Language\"]\n\n**Example Input:**\n{\n  \"term\": \"TensorFlow\"\n}\n\n**Example Output:**\n"
+		"[\"Machine Learning\", \"Artificial Intelligence\"]\n\n**Example Input:**\n{\n  \"term\": \"The Great Gatsby\"\n}\n\n**Example Output:**\n[\"Literature\", "
+		"\"Novel\"]\n\nBased on the above procedure and examples, extract the upper-level keywords for the provided term. Ensure the output is in JSON format {Keywords:jsonarray}")
 
 	try:
 		# Try the completion with initial temperature
@@ -196,6 +202,7 @@ def get_upper_level_keywords():
 
 	except Exception as e:
 		return jsonify(error=str(e)), 500
+
 
 @app.route('/same_level_keywords', methods=['GET'])
 def get_synonymous_keywords():
@@ -212,16 +219,17 @@ def get_synonymous_keywords():
 	if not keywords:
 		return jsonify(error="'keywords' parameter is missing"), 400
 
-		prompt = ("You are an AI explorer tasked with uncovering synonymous companions for ONE specific term, that you will receive as text after this prompt with :->. "
-          "Embark on a linguistic odyssey to extract perfect synonyms that capture the essence of each term, navigating through the intricacies of language. "
-          "Ensure the output is in JSON format {'Keywords'(independent from prompt, it will be used for parsing,fix!):jsonarray} with many relevant keywords, including symbols if applicable. "
-          "Avoid upper-level concepts. "
-          "\n\nExamples for your guidance:\n"
-          "'Bitcoin' ->Output: {'Keywords':['B', 'BTC', '₿']}\n"
-          "'Java' ->Output: {'Keywords':['JDK']}\n"
-          "'TensorFlow' ->Output: {'Keywords':['TF']}\n"
-          "'The Great Gatsby' ->Output: {'Keywords':['Gatsby']}\n"
-          "\nYour quest awaits! The output is in format: {'Keywords' :jsonarray of keywords}  where 'Keywords' is the key of the response structure :->")
+		prompt = (
+			"You are an AI explorer tasked with uncovering synonymous companions for ONE specific term, that you will receive as text after this prompt with :->. "
+			"Embark on a linguistic odyssey to extract perfect synonyms that capture the essence of each term, navigating through the intricacies of language. "
+			"Ensure the output is in JSON format {'Keywords'(independent from prompt, it will be used for parsing,fix!):jsonarray} with many relevant keywords, including symbols if applicable. "
+			"Avoid upper-level concepts. "
+			"\n\nExamples for your guidance:\n"
+			"'Bitcoin' ->Output: {'Keywords':['B', 'BTC', '₿']}\n"
+			"'Java' ->Output: {'Keywords':['JDK']}\n"
+			"'TensorFlow' ->Output: {'Keywords':['TF']}\n"
+			"'The Great Gatsby' ->Output: {'Keywords':['Gatsby']}\n"
+			"\nYour quest awaits! The output is in format: {'Keywords' :jsonarray of keywords}  where 'Keywords' is the key of the response structure :->")
 
 	try:
 		# Try the completion with initial temperature
@@ -257,7 +265,6 @@ def get_synonymous_keywords():
 
 	except Exception as e:
 		return jsonify(error=str(e)), 500
-
 
 
 @app.route('/test_keywords_only_LMM', methods=['POST'])
@@ -299,7 +306,6 @@ def test_keywords_only_LMM():
 	)
 
 
-
 @app.route('/test_keywords_both', methods=['POST'])
 def test_keywords_both():
 	global llm, bert_model_checksum
@@ -337,6 +343,7 @@ def test_keywords_both():
 		average_time=avg_time,
 		standard_deviation=std_dev_time
 	)
+
 
 if __name__ == '__main__':
 	initialize_openai_client()

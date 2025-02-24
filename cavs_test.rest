@@ -1,0 +1,771 @@
+#### Test Issuing with 30 attributes PII and Skills
+POST http://localhost:3001/test/issue_verifiable_credential/selective_disclosure
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "ESCO_type_VerifiableCredential",
+  "attributes": {
+    "name": "Alice1",
+    "age": "29",
+    "email": "alice@example.com",
+    "phone": "555-12314",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "male",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer",
+    "languages": "English, Spanish",
+    "skill_assisting_and_caring": "fa9a8def29034eef134b9fc8ec82f2add93cb46757a8dd02e6b8483b47090dbf",
+    "skill_bio_medicine": "ecdd698a4b9455c59a0aeca39fa4ae0d48f22ff1ad4c8bcf01a3a19557c53460",
+    "skill_biomedical_science": "966fcfe9bb6653d87f72cbf4a33e07398c9aed6f6262429721931d9d3c65ee6b",
+    "skill_biomedical_sciences": "32186f982ce7568731176dd8f93048e8cf82eff56662ec45e9ec91b058587450",
+    "skill_drug_therapy": "7077ee2c03cec50be37d1db2fb54c09988fee79130d1c5bc0ee1ba1c9289995b",
+    "skill_fine_arts": "d209a415e6b5cb5cdd5e84d0fc04dd5b3a4d42699934e715d5605f6fc536856a",
+    "skill_health_care_system": "218a8185a93b53504b132b44cdd3cc39449db78bc7421cbf107601696a042334",
+    "skill_infectious_diseases": "f62447eeecb1683e60ee8bc4b3ae912c517f4a4302155a1a099957d523fa4a85",
+    "skill_medical_diagnostic_and_treatment_technology": "660905bed5985f7982167077ac970c069a4fbd672eb9067e9cf07d116cbd0128",
+    "skill_medicine": "1d251e177eeb96a58171bcef71d7417806165db0a0769c92e578fc42670ac203",
+    "skill_natural_science": "1f418f0c7b43c5c38c59abdea0dc6ff1d479035d43fc938559ccb7694fc28252",
+    "skill_nursing_and_midwifery": "1d727a8ae05e3ef230b36ed74983ae58c0cd7ff4b210c1ff3c55d9ead3104aa6",
+    "skill_pharmaceutical_industries": "739b89dab0885b28bc46b43137009753e7a7fe98fce22e83635e770ff7ecace8",
+    "skill_pharmaceutical_products": "0ec77e201a86b248745f68272bce17830c546daae0ffc80a4cd4f674234617a7",
+    "skill_play_therapies": "9631f66feeb869c1518947733cc81c60ab68aa00097c3ddc592277343faaa36e",
+    "skill_preventive_medicine": "96a78749544b88b8a9971615d1b30030f1a6becf5e21717538b71a61d57b7e37",
+    "skill_procedures_of_differential_diagnosis": "1b486fd4a82f7ad501fb9ef39d0867defa79835cfbe19fe748d1dcfd03f7935f",
+    "skill_surgery": "62a4387b7cbfa1f2caf675d270a0cb0677506b17e3a563b0b9a944c4545fd4a1",
+    "skill_therapy_and_rehabilitation": "618727c435e7626e5664c209a599fe3b9421bf73f3567ca424ea9a29474ff28e"
+  },
+  "store": false,
+  "numTrials": 1000
+}
+
+#### Test Issuing with 30 attributes PII and Skills
+POST http://localhost:3001/test_issue_verifiable_credential
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "ESCO_type_VerifiableCredential",
+  "attributes": {
+    "name": "Alice1",
+    "age": "29",
+    "email": "alice@example.com",
+    "phone": "555-12314",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "male",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer",
+    "languages": "English, Spanish",
+    "skill_assisting_and_caring": "fa9a8def29034eef134b9fc8ec82f2add93cb46757a8dd02e6b8483b47090dbf",
+    "skill_bio_medicine": "ecdd698a4b9455c59a0aeca39fa4ae0d48f22ff1ad4c8bcf01a3a19557c53460",
+    "skill_biomedical_science": "966fcfe9bb6653d87f72cbf4a33e07398c9aed6f6262429721931d9d3c65ee6b",
+    "skill_biomedical_sciences": "32186f982ce7568731176dd8f93048e8cf82eff56662ec45e9ec91b058587450",
+    "skill_drug_therapy": "7077ee2c03cec50be37d1db2fb54c09988fee79130d1c5bc0ee1ba1c9289995b",
+    "skill_fine_arts": "d209a415e6b5cb5cdd5e84d0fc04dd5b3a4d42699934e715d5605f6fc536856a",
+    "skill_health_care_system": "218a8185a93b53504b132b44cdd3cc39449db78bc7421cbf107601696a042334",
+    "skill_infectious_diseases": "f62447eeecb1683e60ee8bc4b3ae912c517f4a4302155a1a099957d523fa4a85",
+    "skill_medical_diagnostic_and_treatment_technology": "660905bed5985f7982167077ac970c069a4fbd672eb9067e9cf07d116cbd0128",
+    "skill_medicine": "1d251e177eeb96a58171bcef71d7417806165db0a0769c92e578fc42670ac203",
+    "skill_natural_science": "1f418f0c7b43c5c38c59abdea0dc6ff1d479035d43fc938559ccb7694fc28252",
+    "skill_nursing_and_midwifery": "1d727a8ae05e3ef230b36ed74983ae58c0cd7ff4b210c1ff3c55d9ead3104aa6",
+    "skill_pharmaceutical_industries": "739b89dab0885b28bc46b43137009753e7a7fe98fce22e83635e770ff7ecace8",
+    "skill_pharmaceutical_products": "0ec77e201a86b248745f68272bce17830c546daae0ffc80a4cd4f674234617a7",
+    "skill_play_therapies": "9631f66feeb869c1518947733cc81c60ab68aa00097c3ddc592277343faaa36e",
+    "skill_preventive_medicine": "96a78749544b88b8a9971615d1b30030f1a6becf5e21717538b71a61d57b7e37",
+    "skill_procedures_of_differential_diagnosis": "1b486fd4a82f7ad501fb9ef39d0867defa79835cfbe19fe748d1dcfd03f7935f",
+    "skill_surgery": "62a4387b7cbfa1f2caf675d270a0cb0677506b17e3a563b0b9a944c4545fd4a1",
+    "skill_therapy_and_rehabilitation": "618727c435e7626e5664c209a599fe3b9421bf73f3567ca424ea9a29474ff28e"
+  },
+  "store": false,
+  "numTrials": 1000
+}
+
+
+#### Test Issuing with 20 attributes PII and Skills
+POST http://localhost:3001/test/issue_verifiable_credential/selective_disclosure
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "ESCO_type_VerifiableCredential",
+  "attributes": {
+    "name": "Alice1",
+    "age": "29",
+    "email": "alice@example.com",
+    "phone": "555-12314",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "male",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer",
+    "languages": "English, Spanish",
+    "skill_assisting_and_caring": "fa9a8def29034eef134b9fc8ec82f2add93cb46757a8dd02e6b8483b47090dbf",
+    "skill_bio_medicine": "ecdd698a4b9455c59a0aeca39fa4ae0d48f22ff1ad4c8bcf01a3a19557c53460",
+    "skill_biomedical_science": "966fcfe9bb6653d87f72cbf4a33e07398c9aed6f6262429721931d9d3c65ee6b",
+    "skill_biomedical_sciences": "32186f982ce7568731176dd8f93048e8cf82eff56662ec45e9ec91b058587450",
+    "skill_drug_therapy": "7077ee2c03cec50be37d1db2fb54c09988fee79130d1c5bc0ee1ba1c9289995b",
+    "skill_fine_arts": "d209a415e6b5cb5cdd5e84d0fc04dd5b3a4d42699934e715d5605f6fc536856a",
+    "skill_health_care_system": "218a8185a93b53504b132b44cdd3cc39449db78bc7421cbf107601696a042334",
+    "skill_infectious_diseases": "f62447eeecb1683e60ee8bc4b3ae912c517f4a4302155a1a099957d523fa4a85",
+    "skill_medical_diagnostic_and_treatment_technology": "660905bed5985f7982167077ac970c069a4fbd672eb9067e9cf07d116cbd0128"
+  },
+  "store": false,
+  "numTrials": 50
+}
+
+#### Test Issuing with 20 attributes PII and Skills
+POST http://localhost:3001/test_issue_verifiable_credential
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "ESCO_type_VerifiableCredential",
+  "attributes": {
+    "name": "Alice1",
+    "age": "29",
+    "email": "alice@example.com",
+    "phone": "555-12314",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "male",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer",
+    "languages": "English, Spanish",
+    "skill_assisting_and_caring": "fa9a8def29034eef134b9fc8ec82f2add93cb46757a8dd02e6b8483b47090dbf",
+    "skill_bio_medicine": "ecdd698a4b9455c59a0aeca39fa4ae0d48f22ff1ad4c8bcf01a3a19557c53460",
+    "skill_biomedical_science": "966fcfe9bb6653d87f72cbf4a33e07398c9aed6f6262429721931d9d3c65ee6b",
+    "skill_biomedical_sciences": "32186f982ce7568731176dd8f93048e8cf82eff56662ec45e9ec91b058587450",
+    "skill_drug_therapy": "7077ee2c03cec50be37d1db2fb54c09988fee79130d1c5bc0ee1ba1c9289995b",
+    "skill_fine_arts": "d209a415e6b5cb5cdd5e84d0fc04dd5b3a4d42699934e715d5605f6fc536856a",
+    "skill_health_care_system": "218a8185a93b53504b132b44cdd3cc39449db78bc7421cbf107601696a042334",
+    "skill_infectious_diseases": "f62447eeecb1683e60ee8bc4b3ae912c517f4a4302155a1a099957d523fa4a85",
+    "skill_medical_diagnostic_and_treatment_technology": "660905bed5985f7982167077ac970c069a4fbd672eb9067e9cf07d116cbd0128"
+  },
+  "store": false,
+  "numTrials": 1000
+}
+
+#### Test Issuing with 10 attributes PII and Skills
+POST http://localhost:3001/test/issue_verifiable_credential/selective_disclosure
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "ESCO_type_VerifiableCredential",
+  "attributes": {
+    "name": "Alice1",
+    "age": "29",
+    "email": "alice@example.com",
+    "phone": "555-12314",
+    "address": "123 Main St",
+    "nationality": "American",
+    "skill_assisting_and_caring": "fa9a8def29034eef134b9fc8ec82f2add93cb46757a8dd02e6b8483b47090dbf",
+    "skill_bio_medicine": "ecdd698a4b9455c59a0aeca39fa4ae0d48f22ff1ad4c8bcf01a3a19557c53460",
+    "skill_biomedical_science": "966fcfe9bb6653d87f72cbf4a33e07398c9aed6f6262429721931d9d3c65ee6b",
+    "skill_biomedical_sciences": "32186f982ce7568731176dd8f93048e8cf82eff56662ec45e9ec91b058587450"
+  },
+  "store": false,
+  "numTrials": 1000
+}
+
+#### Test Issuing with 10 attributes PII and Skills
+POST http://localhost:3001/test_issue_verifiable_credential
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "ESCO_type_VerifiableCredential",
+  "attributes": {
+    "name": "Alice1",
+    "age": "29",
+    "email": "alice@example.com",
+    "phone": "555-12314",
+    "address": "123 Main St",
+    "nationality": "American",
+    "skill_assisting_and_caring": "fa9a8def29034eef134b9fc8ec82f2add93cb46757a8dd02e6b8483b47090dbf",
+    "skill_bio_medicine": "ecdd698a4b9455c59a0aeca39fa4ae0d48f22ff1ad4c8bcf01a3a19557c53460",
+    "skill_biomedical_science": "966fcfe9bb6653d87f72cbf4a33e07398c9aed6f6262429721931d9d3c65ee6b",
+    "skill_biomedical_sciences": "32186f982ce7568731176dd8f93048e8cf82eff56662ec45e9ec91b058587450"
+  },
+  "store": false,
+  "numTrials": 1000
+}
+
+###TEST selective disclosure verifiabl presentation disclosuing 16 attributes from VC of 18
+
+POST http://localhost:3001/test/issue_verifiable_presentation/selective_disclosure
+Content-Type: application/json
+
+{
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "VerifiablePresentation",
+  "attributes": {},
+  "toStore": true,
+  "attributesToDisclose": [
+    "skill_assisting and caring",
+    "skill_biomedical sciences",
+    "skill_medicine",
+    "skill_pharmaceutical industries",
+    "skill_fine arts",
+    "skill_therapy and rehabilitation",
+    "skill_biomedical science",
+    "skill_bio-medicine",
+    "skill_medical diagnostic and treatment technology",
+    "skill_preventive medicine",
+    "skill_health care system",
+    "skill_play therapies",
+    "skill_pharmaceutical products",
+    "skill_surgery",
+    "skill_natural science",
+    "skill_nursing and midwifery"
+  ],
+  "hashOfVCs": [
+    "QmWi4UoouPNczvnR5FGUTcs4mm4JqcLj7gJz2Sakk5sz2x"
+  ],
+  "numTrials": 1000
+}
+
+#### test with 8
+POST http://localhost:3001/test/issue_verifiable_presentation/selective_disclosure
+Content-Type: application/json
+
+{
+"holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+"type": "VerifiablePresentation",
+"attributes": {},
+"toStore": true,
+"attributesToDisclose": [
+"skill_medicine",
+"skill_pharmaceutical industries",
+"skill_fine arts",
+"skill_therapy and rehabilitation",
+"skill_biomedical science",
+"skill_health care system",
+"skill_surgery",
+"skill_nursing and midwifery"
+],
+"hashOfVCs": [
+"QmWi4UoouPNczvnR5FGUTcs4mm4JqcLj7gJz2Sakk5sz2x"
+],
+"numTrials": 1000
+}
+
+######## with 4
+POST http://localhost:3001/test/issue_verifiable_presentation/selective_disclosure
+Content-Type: application/json
+
+{
+"holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+"type": "VerifiablePresentation",
+"attributes": {},
+"toStore": true,
+"attributesToDisclose": [
+"skill_medicine",
+"skill_pharmaceutical industries",
+"skill_fine arts",
+"skill_therapy and rehabilitation"
+],
+"hashOfVCs": [
+"QmWi4UoouPNczvnR5FGUTcs4mm4JqcLj7gJz2Sakk5sz2x"
+],
+"numTrials": 1000
+}
+
+######## with 4 non test
+POST http://localhost:3001/issue_verifiable_presentation/selective_disclosure
+Content-Type: application/json
+
+{
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "VerifiablePresentation",
+  "attributes": {},
+  "toStore": true,
+  "attributesToDisclose": [
+    "skill_medicine",
+    "skill_pharmaceutical industries",
+    "skill_fine arts",
+    "skill_therapy and rehabilitation"
+  ],
+  "hashOfVCs": [
+    "QmWi4UoouPNczvnR5FGUTcs4mm4JqcLj7gJz2Sakk5sz2x"
+  ],
+  "numTrials": 1000
+}
+
+
+### verify correctness of VP Selective Disclosure with 4 disclosed attributes
+POST http://localhost:3001/test/verify/vp/selective_disclosure_correctness
+Content-Type: application/json
+
+{
+  "numTrials": 1000,
+  "vp": {
+    "attributes": [
+      {
+        "path": [
+          "skill_medicine"
+        ],
+        "clearValue": "medicine|http://data.europa.eu/esco/isced-f/0912",
+        "nonce": "d0af350e22b118a38a67598521e1866cb6c9efefcf33cf259d42050409b822c58a208632b0dcf665654bad471b0f420db9c1cf55fa0400e8807c48a9edfe4aee"
+      },
+      {
+        "path": [
+          "skill_pharmaceutical industries"
+        ],
+        "clearValue": "pharmaceutical industries|http://data.europa.eu/esco/skill/a1c72d66-3671-4a8e-840d-e8b28e237b6f",
+        "nonce": "12b532f1f7a373bc7ffd6d1e468d20034231e1af5a7b8bd6e26a04acf536cd4376e889001c207ddb38f039537a0f8539a40ea27b70bf70694aea2f9d5e69782a"
+      },
+      {
+        "path": [
+          "skill_fine arts"
+        ],
+        "clearValue": "fine arts|http://data.europa.eu/esco/isced-f/0213",
+        "nonce": "f1ce9439bfedc7f4eca7bd182e526d67f826cc6436724b1a59d70c2b367434cdc4db484a54b74e703fc27e08facee57f037dc89207d670caa75d1c0c282c5b10"
+      },
+      {
+        "path": [
+          "skill_therapy and rehabilitation"
+        ],
+        "clearValue": "therapy and rehabilitation|http://data.europa.eu/esco/isced-f/0915",
+        "nonce": "b48883aad454ae36a5b9a34fcf19f392ce70ee0f201bfaead298353ed7755c950e552d1ad317a83264a8aafb5a140e5e831b0d061b21d47e69b57d0f75f8bea3"
+      }
+    ],
+    "verifiableCredential": [
+      {
+        "credentialSubject": {
+          "skill_assisting and caring": "fa9a8def29034eef134b9fc8ec82f2add93cb46757a8dd02e6b8483b47090dbf",
+          "skill_biomedical sciences": "32186f982ce7568731176dd8f93048e8cf82eff56662ec45e9ec91b058587450",
+          "skill_medicine": "1d251e177eeb96a58171bcef71d7417806165db0a0769c92e578fc42670ac203",
+          "skill_pharmaceutical industries": "739b89dab0885b28bc46b43137009753e7a7fe98fce22e83635e770ff7ecace8",
+          "skill_fine arts": "d209a415e6b5cb5cdd5e84d0fc04dd5b3a4d42699934e715d5605f6fc536856a",
+          "skill_therapy and rehabilitation": "618727c435e7626e5664c209a599fe3b9421bf73f3567ca424ea9a29474ff28e",
+          "skill_biomedical science": "966fcfe9bb6653d87f72cbf4a33e07398c9aed6f6262429721931d9d3c65ee6b",
+          "skill_bio-medicine": "ecdd698a4b9455c59a0aeca39fa4ae0d48f22ff1ad4c8bcf01a3a19557c53460",
+          "skill_medical diagnostic and treatment technology": "660905bed5985f7982167077ac970c069a4fbd672eb9067e9cf07d116cbd0128",
+          "skill_preventive medicine": "96a78749544b88b8a9971615d1b30030f1a6becf5e21717538b71a61d57b7e37",
+          "skill_health care system": "218a8185a93b53504b132b44cdd3cc39449db78bc7421cbf107601696a042334",
+          "skill_play therapies": "9631f66feeb869c1518947733cc81c60ab68aa00097c3ddc592277343faaa36e",
+          "skill_pharmaceutical products": "0ec77e201a86b248745f68272bce17830c546daae0ffc80a4cd4f674234617a7",
+          "skill_surgery": "62a4387b7cbfa1f2caf675d270a0cb0677506b17e3a563b0b9a944c4545fd4a1",
+          "skill_natural science": "1f418f0c7b43c5c38c59abdea0dc6ff1d479035d43fc938559ccb7694fc28252",
+          "skill_procedures of differential diagnosis": "1b486fd4a82f7ad501fb9ef39d0867defa79835cfbe19fe748d1dcfd03f7935f",
+          "skill_nursing and midwifery": "1d727a8ae05e3ef230b36ed74983ae58c0cd7ff4b210c1ff3c55d9ead3104aa6",
+          "skill_infectious diseases": "f62447eeecb1683e60ee8bc4b3ae912c517f4a4302155a1a099957d523fa4a85",
+          "skill_drug therapy": "7077ee2c03cec50be37d1db2fb54c09988fee79130d1c5bc0ee1ba1c9289995b",
+          "id": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc"
+        },
+        "issuer": {
+          "id": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc"
+        },
+        "type": [
+          "VerifiableCredential",
+          "SelectiveDisclosure_ESCO_type_VerifiableCredential"
+        ],
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://www.w3.org/ns/credentials/v2"
+        ],
+        "issuanceDate": "2025-02-23T16:27:41.000Z",
+        "proof": {
+          "type": "JwtProof2020",
+          "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiU2VsZWN0aXZlRGlzY2xvc3VyZV9FU0NPX3R5cGVfVmVyaWZpYWJsZUNyZWRlbnRpYWwiXSwiY3JlZGVudGlhbFN1YmplY3QiOnsic2tpbGxfYXNzaXN0aW5nIGFuZCBjYXJpbmciOiJmYTlhOGRlZjI5MDM0ZWVmMTM0YjlmYzhlYzgyZjJhZGQ5M2NiNDY3NTdhOGRkMDJlNmI4NDgzYjQ3MDkwZGJmIiwic2tpbGxfYmlvbWVkaWNhbCBzY2llbmNlcyI6IjMyMTg2Zjk4MmNlNzU2ODczMTE3NmRkOGY5MzA0OGU4Y2Y4MmVmZjU2NjYyZWM0NWU5ZWM5MWIwNTg1ODc0NTAiLCJza2lsbF9tZWRpY2luZSI6IjFkMjUxZTE3N2VlYjk2YTU4MTcxYmNlZjcxZDc0MTc4MDYxNjVkYjBhMDc2OWM5MmU1NzhmYzQyNjcwYWMyMDMiLCJza2lsbF9waGFybWFjZXV0aWNhbCBpbmR1c3RyaWVzIjoiNzM5Yjg5ZGFiMDg4NWIyOGJjNDZiNDMxMzcwMDk3NTNlN2E3ZmU5OGZjZTIyZTgzNjM1ZTc3MGZmN2VjYWNlOCIsInNraWxsX2ZpbmUgYXJ0cyI6ImQyMDlhNDE1ZTZiNWNiNWNkZDVlODRkMGZjMDRkZDViM2E0ZDQyNjk5OTM0ZTcxNWQ1NjA1ZjZmYzUzNjg1NmEiLCJza2lsbF90aGVyYXB5IGFuZCByZWhhYmlsaXRhdGlvbiI6IjYxODcyN2M0MzVlNzYyNmU1NjY0YzIwOWE1OTlmZTNiOTQyMWJmNzNmMzU2N2NhNDI0ZWE5YTI5NDc0ZmYyOGUiLCJza2lsbF9iaW9tZWRpY2FsIHNjaWVuY2UiOiI5NjZmY2ZlOWJiNjY1M2Q4N2Y3MmNiZjRhMzNlMDczOThjOWFlZDZmNjI2MjQyOTcyMTkzMWQ5ZDNjNjVlZTZiIiwic2tpbGxfYmlvLW1lZGljaW5lIjoiZWNkZDY5OGE0Yjk0NTVjNTlhMGFlY2EzOWZhNGFlMGQ0OGYyMmZmMWFkNGM4YmNmMDFhM2ExOTU1N2M1MzQ2MCIsInNraWxsX21lZGljYWwgZGlhZ25vc3RpYyBhbmQgdHJlYXRtZW50IHRlY2hub2xvZ3kiOiI2NjA5MDViZWQ1OTg1Zjc5ODIxNjcwNzdhYzk3MGMwNjlhNGZiZDY3MmViOTA2N2U5Y2YwN2QxMTZjYmQwMTI4Iiwic2tpbGxfcHJldmVudGl2ZSBtZWRpY2luZSI6Ijk2YTc4NzQ5NTQ0Yjg4YjhhOTk3MTYxNWQxYjMwMDMwZjFhNmJlY2Y1ZTIxNzE3NTM4YjcxYTYxZDU3YjdlMzciLCJza2lsbF9oZWFsdGggY2FyZSBzeXN0ZW0iOiIyMThhODE4NWE5M2I1MzUwNGIxMzJiNDRjZGQzY2MzOTQ0OWRiNzhiYzc0MjFjYmYxMDc2MDE2OTZhMDQyMzM0Iiwic2tpbGxfcGxheSB0aGVyYXBpZXMiOiI5NjMxZjY2ZmVlYjg2OWMxNTE4OTQ3NzMzY2M4MWM2MGFiNjhhYTAwMDk3YzNkZGM1OTIyNzczNDNmYWFhMzZlIiwic2tpbGxfcGhhcm1hY2V1dGljYWwgcHJvZHVjdHMiOiIwZWM3N2UyMDFhODZiMjQ4NzQ1ZjY4MjcyYmNlMTc4MzBjNTQ2ZGFhZTBmZmM4MGE0Y2Q0ZjY3NDIzNDYxN2E3Iiwic2tpbGxfc3VyZ2VyeSI6IjYyYTQzODdiN2NiZmExZjJjYWY2NzVkMjcwYTBjYjA2Nzc1MDZiMTdlM2E1NjNiMGI5YTk0NGM0NTQ1ZmQ0YTEiLCJza2lsbF9uYXR1cmFsIHNjaWVuY2UiOiIxZjQxOGYwYzdiNDNjNWMzOGM1OWFiZGVhMGRjNmZmMWQ0NzkwMzVkNDNmYzkzODU1OWNjYjc2OTRmYzI4MjUyIiwic2tpbGxfcHJvY2VkdXJlcyBvZiBkaWZmZXJlbnRpYWwgZGlhZ25vc2lzIjoiMWI0ODZmZDRhODJmN2FkNTAxZmI5ZWYzOWQwODY3ZGVmYTc5ODM1Y2ZiZTE5ZmU3NDhkMWRjZmQwM2Y3OTM1ZiIsInNraWxsX251cnNpbmcgYW5kIG1pZHdpZmVyeSI6IjFkNzI3YThhZTA1ZTNlZjIzMGIzNmVkNzQ5ODNhZTU4YzBjZDdmZjRiMjEwYzFmZjNjNTVkOWVhZDMxMDRhYTYiLCJza2lsbF9pbmZlY3Rpb3VzIGRpc2Vhc2VzIjoiZjYyNDQ3ZWVlY2IxNjgzZTYwZWU4YmM0YjNhZTkxMmM1MTdmNGE0MzAyMTU1YTFhMDk5OTU3ZDUyM2ZhNGE4NSIsInNraWxsX2RydWcgdGhlcmFweSI6IjcwNzdlZTJjMDNjZWM1MGJlMzdkMWRiMmZiNTRjMDk5ODhmZWU3OTEzMGQxYzViYzBlZTFiYTFjOTI4OTk5NWIifX0sInN1YiI6ImRpZDpldGhyOnNlcG9saWE6MHgwMmFjNWE1MzJiNjg5Yzg4YmIwYWJhNjhjYjYyZWQ0OWFlNGEyYTc1NmQzYzUzZTA5MmIyZDFlMmJlNjI0YjQ3ZmMiLCJuYmYiOjE3NDAzMjgwNjEsImlzcyI6ImRpZDpldGhyOnNlcG9saWE6MHgwMmFjNWE1MzJiNjg5Yzg4YmIwYWJhNjhjYjYyZWQ0OWFlNGEyYTc1NmQzYzUzZTA5MmIyZDFlMmJlNjI0YjQ3ZmMifQ.TaW2EXZzQ3u4uyIK2cV2PZWzCl4S7i1D-zHcIN26X0FC4P1IZ9_6opm_F0BKnHURpGq2dek6lQgZXtmTPfxwNw"
+        }
+      }
+    ],
+    "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+    "id": "970f8663-d37a-4287-8f2d-ad144735242a",
+    "type": [
+      "VerifiablePresentation"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2025-02-23T17:25:04.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKaGJHY2lPaUpGVXpJMU5rc2lMQ0owZVhBaU9pSktWMVFpZlEuZXlKMll5STZleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdk1qQXhPQzlqY21Wa1pXNTBhV0ZzY3k5Mk1TSXNJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTl1Y3k5amNtVmtaVzUwYVdGc2N5OTJNaUpkTENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lpd2lVMlZzWldOMGFYWmxSR2x6WTJ4dmMzVnlaVjlGVTBOUFgzUjVjR1ZmVm1WeWFXWnBZV0pzWlVOeVpXUmxiblJwWVd3aVhTd2lZM0psWkdWdWRHbGhiRk4xWW1wbFkzUWlPbnNpYzJ0cGJHeGZZWE56YVhOMGFXNW5JR0Z1WkNCallYSnBibWNpT2lKbVlUbGhPR1JsWmpJNU1ETTBaV1ZtTVRNMFlqbG1ZemhsWXpneVpqSmhaR1E1TTJOaU5EWTNOVGRoT0dSa01ESmxObUk0TkRnellqUTNNRGt3WkdKbUlpd2ljMnRwYkd4ZlltbHZiV1ZrYVdOaGJDQnpZMmxsYm1ObGN5STZJak15TVRnMlpqazRNbU5sTnpVMk9EY3pNVEUzTm1Sa09HWTVNekEwT0dVNFkyWTRNbVZtWmpVMk5qWXlaV00wTldVNVpXTTVNV0l3TlRnMU9EYzBOVEFpTENKemEybHNiRjl0WldScFkybHVaU0k2SWpGa01qVXhaVEUzTjJWbFlqazJZVFU0TVRjeFltTmxaamN4WkRjME1UYzRNRFl4TmpWa1lqQmhNRGMyT1dNNU1tVTFOemhtWXpReU5qY3dZV015TURNaUxDSnphMmxzYkY5d2FHRnliV0ZqWlhWMGFXTmhiQ0JwYm1SMWMzUnlhV1Z6SWpvaU56TTVZamc1WkdGaU1EZzROV0l5T0dKak5EWmlORE14TXpjd01EazNOVE5sTjJFM1ptVTVPR1pqWlRJeVpUZ3pOak0xWlRjM01HWm1OMlZqWVdObE9DSXNJbk5yYVd4c1gyWnBibVVnWVhKMGN5STZJbVF5TURsaE5ERTFaVFppTldOaU5XTmtaRFZsT0RSa01HWmpNRFJrWkRWaU0yRTBaRFF5TmprNU9UTTBaVGN4TldRMU5qQTFaalptWXpVek5qZzFObUVpTENKemEybHNiRjkwYUdWeVlYQjVJR0Z1WkNCeVpXaGhZbWxzYVhSaGRHbHZiaUk2SWpZeE9EY3lOMk0wTXpWbE56WXlObVUxTmpZMFl6SXdPV0UxT1RsbVpUTmlPVFF5TVdKbU56Tm1NelUyTjJOaE5ESTBaV0U1WVRJNU5EYzBabVl5T0dVaUxDSnphMmxzYkY5aWFXOXRaV1JwWTJGc0lITmphV1Z1WTJVaU9pSTVOalptWTJabE9XSmlOalkxTTJRNE4yWTNNbU5pWmpSaE16TmxNRGN6T1Roak9XRmxaRFptTmpJMk1qUXlPVGN5TVRrek1XUTVaRE5qTmpWbFpUWmlJaXdpYzJ0cGJHeGZZbWx2TFcxbFpHbGphVzVsSWpvaVpXTmtaRFk1T0dFMFlqazBOVFZqTlRsaE1HRmxZMkV6T1daaE5HRmxNR1EwT0dZeU1tWm1NV0ZrTkdNNFltTm1NREZoTTJFeE9UVTFOMk0xTXpRMk1DSXNJbk5yYVd4c1gyMWxaR2xqWVd3Z1pHbGhaMjV2YzNScFl5QmhibVFnZEhKbFlYUnRaVzUwSUhSbFkyaHViMnh2WjNraU9pSTJOakE1TURWaVpXUTFPVGcxWmpjNU9ESXhOamN3TnpkaFl6azNNR013TmpsaE5HWmlaRFkzTW1WaU9UQTJOMlU1WTJZd04yUXhNVFpqWW1Rd01USTRJaXdpYzJ0cGJHeGZjSEpsZG1WdWRHbDJaU0J0WldScFkybHVaU0k2SWprMllUYzROelE1TlRRMFlqZzRZamhoT1RrM01UWXhOV1F4WWpNd01ETXdaakZoTm1KbFkyWTFaVEl4TnpFM05UTTRZamN4WVRZeFpEVTNZamRsTXpjaUxDSnphMmxzYkY5b1pXRnNkR2dnWTJGeVpTQnplWE4wWlcwaU9pSXlNVGhoT0RFNE5XRTVNMkkxTXpVd05HSXhNekppTkRSalpHUXpZMk16T1RRME9XUmlOemhpWXpjME1qRmpZbVl4TURjMk1ERTJPVFpoTURReU16TTBJaXdpYzJ0cGJHeGZjR3hoZVNCMGFHVnlZWEJwWlhNaU9pSTVOak14WmpZMlptVmxZamcyT1dNeE5URTRPVFEzTnpNelkyTTRNV00yTUdGaU5qaGhZVEF3TURrM1l6TmtaR00xT1RJeU56Y3pORE5tWVdGaE16WmxJaXdpYzJ0cGJHeGZjR2hoY20xaFkyVjFkR2xqWVd3Z2NISnZaSFZqZEhNaU9pSXdaV00zTjJVeU1ERmhPRFppTWpRNE56UTFaalk0TWpjeVltTmxNVGM0TXpCak5UUTJaR0ZoWlRCbVptTTRNR0UwWTJRMFpqWTNOREl6TkRZeE4yRTNJaXdpYzJ0cGJHeGZjM1Z5WjJWeWVTSTZJall5WVRRek9EZGlOMk5pWm1FeFpqSmpZV1kyTnpWa01qY3dZVEJqWWpBMk56YzFNRFppTVRkbE0yRTFOak5pTUdJNVlUazBOR00wTlRRMVptUTBZVEVpTENKemEybHNiRjl1WVhSMWNtRnNJSE5qYVdWdVkyVWlPaUl4WmpReE9HWXdZemRpTkROak5XTXpPR00xT1dGaVpHVmhNR1JqTm1abU1XUTBOemt3TXpWa05ETm1Zemt6T0RVMU9XTmpZamMyT1RSbVl6STRNalV5SWl3aWMydHBiR3hmY0hKdlkyVmtkWEpsY3lCdlppQmthV1ptWlhKbGJuUnBZV3dnWkdsaFoyNXZjMmx6SWpvaU1XSTBPRFptWkRSaE9ESm1OMkZrTlRBeFptSTVaV1l6T1dRd09EWTNaR1ZtWVRjNU9ETTFZMlppWlRFNVptVTNORGhrTVdSalptUXdNMlkzT1RNMVppSXNJbk5yYVd4c1gyNTFjbk5wYm1jZ1lXNWtJRzFwWkhkcFptVnllU0k2SWpGa056STNZVGhoWlRBMVpUTmxaakl6TUdJek5tVmtOelE1T0ROaFpUVTRZekJqWkRkbVpqUmlNakV3WXpGbVpqTmpOVFZrT1dWaFpETXhNRFJoWVRZaUxDSnphMmxzYkY5cGJtWmxZM1JwYjNWeklHUnBjMlZoYzJWeklqb2laall5TkRRM1pXVmxZMkl4TmpnelpUWXdaV1U0WW1NMFlqTmhaVGt4TW1NMU1UZG1OR0UwTXpBeU1UVTFZVEZoTURrNU9UVTNaRFV5TTJaaE5HRTROU0lzSW5OcmFXeHNYMlJ5ZFdjZ2RHaGxjbUZ3ZVNJNklqY3dOemRsWlRKak1ETmpaV00xTUdKbE16ZGtNV1JpTW1aaU5UUmpNRGs1T0RobVpXVTNPVEV6TUdReFl6VmlZekJsWlRGaVlURmpPVEk0T1RrNU5XSWlmWDBzSW5OMVlpSTZJbVJwWkRwbGRHaHlPbk5sY0c5c2FXRTZNSGd3TW1Gak5XRTFNekppTmpnNVl6ZzRZbUl3WVdKaE5qaGpZall5WldRME9XRmxOR0V5WVRjMU5tUXpZelV6WlRBNU1tSXlaREZsTW1KbE5qSTBZalEzWm1NaUxDSnVZbVlpT2pFM05EQXpNamd3TmpFc0ltbHpjeUk2SW1ScFpEcGxkR2h5T25ObGNHOXNhV0U2TUhnd01tRmpOV0UxTXpKaU5qZzVZemc0WW1Jd1lXSmhOamhqWWpZeVpXUTBPV0ZsTkdFeVlUYzFObVF6WXpVelpUQTVNbUl5WkRGbE1tSmxOakkwWWpRM1ptTWlmUS5UYVcyRVhaelEzdTR1eUlLMmNWMlBaV3pDbDRTN2kxRC16SGNJTjI2WDBGQzRQMUlaOV82b3BtX0YwQktuSFVScEdxMmRlazZsUWdaWHRtVFBmeHdOdyJdfSwiYXR0cmlidXRlcyI6W3sicGF0aCI6WyJza2lsbF9tZWRpY2luZSJdLCJjbGVhclZhbHVlIjoibWVkaWNpbmV8aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vaXNjZWQtZi8wOTEyIiwibm9uY2UiOiJkMGFmMzUwZTIyYjExOGEzOGE2NzU5ODUyMWUxODY2Y2I2YzllZmVmY2YzM2NmMjU5ZDQyMDUwNDA5YjgyMmM1OGEyMDg2MzJiMGRjZjY2NTY1NGJhZDQ3MWIwZjQyMGRiOWMxY2Y1NWZhMDQwMGU4ODA3YzQ4YTllZGZlNGFlZSJ9LHsicGF0aCI6WyJza2lsbF9waGFybWFjZXV0aWNhbCBpbmR1c3RyaWVzIl0sImNsZWFyVmFsdWUiOiJwaGFybWFjZXV0aWNhbCBpbmR1c3RyaWVzfGh0dHA6Ly9kYXRhLmV1cm9wYS5ldS9lc2NvL3NraWxsL2ExYzcyZDY2LTM2NzEtNGE4ZS04NDBkLWU4YjI4ZTIzN2I2ZiIsIm5vbmNlIjoiMTJiNTMyZjFmN2EzNzNiYzdmZmQ2ZDFlNDY4ZDIwMDM0MjMxZTFhZjVhN2I4YmQ2ZTI2YTA0YWNmNTM2Y2Q0Mzc2ZTg4OTAwMWMyMDdkZGIzOGYwMzk1MzdhMGY4NTM5YTQwZWEyN2I3MGJmNzA2OTRhZWEyZjlkNWU2OTc4MmEifSx7InBhdGgiOlsic2tpbGxfZmluZSBhcnRzIl0sImNsZWFyVmFsdWUiOiJmaW5lIGFydHN8aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vaXNjZWQtZi8wMjEzIiwibm9uY2UiOiJmMWNlOTQzOWJmZWRjN2Y0ZWNhN2JkMTgyZTUyNmQ2N2Y4MjZjYzY0MzY3MjRiMWE1OWQ3MGMyYjM2NzQzNGNkYzRkYjQ4NGE1NGI3NGU3MDNmYzI3ZTA4ZmFjZWU1N2YwMzdkYzg5MjA3ZDY3MGNhYTc1ZDFjMGMyODJjNWIxMCJ9LHsicGF0aCI6WyJza2lsbF90aGVyYXB5IGFuZCByZWhhYmlsaXRhdGlvbiJdLCJjbGVhclZhbHVlIjoidGhlcmFweSBhbmQgcmVoYWJpbGl0YXRpb258aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vaXNjZWQtZi8wOTE1Iiwibm9uY2UiOiJiNDg4ODNhYWQ0NTRhZTM2YTViOWEzNGZjZjE5ZjM5MmNlNzBlZTBmMjAxYmZhZWFkMjk4MzUzZWQ3NzU1Yzk1MGU1NTJkMWFkMzE3YTgzMjY0YThhYWZiNWExNDBlNWU4MzFiMGQwNjFiMjFkNDdlNjliNTdkMGY3NWY4YmVhMyJ9XSwianRpIjoiOTcwZjg2NjMtZDM3YS00Mjg3LThmMmQtYWQxNDQ3MzUyNDJhIiwibmJmIjoxNzQwMzMxNTA0LCJpc3MiOiJkaWQ6ZXRocjpzZXBvbGlhOjB4MDJhYzVhNTMyYjY4OWM4OGJiMGFiYTY4Y2I2MmVkNDlhZTRhMmE3NTZkM2M1M2UwOTJiMmQxZTJiZTYyNGI0N2ZjIn0.QC7YFdHp5y75g10qGegOReGUYBj2S9465CVAAfQlJjA3h80i6F9IBBPjzSLeeboksjt3ts4X8vHi5pejLANJBg"
+    }
+  }
+}
+
+
+
+
+#### with 8 non test
+
+#### test with 8
+POST http://localhost:3001/issue_verifiable_presentation/selective_disclosure
+Content-Type: application/json
+
+{
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "VerifiablePresentation",
+  "attributes": {},
+  "toStore": true,
+  "attributesToDisclose": [
+    "skill_medicine",
+    "skill_pharmaceutical industries",
+    "skill_fine arts",
+    "skill_therapy and rehabilitation",
+    "skill_biomedical science",
+    "skill_health care system",
+    "skill_surgery",
+    "skill_nursing and midwifery"
+  ],
+  "hashOfVCs": [
+    "QmWi4UoouPNczvnR5FGUTcs4mm4JqcLj7gJz2Sakk5sz2x"
+  ]
+}
+
+
+### verify correctness of VP Selective Disclosure with 8 disclosed attributes
+POST http://localhost:3001/test/verify/vp/selective_disclosure_correctness
+Content-Type: application/json
+
+{
+  "numTrials": 1000,
+  "vp": {
+    "attributes": [
+      {
+        "path": [
+          "skill_medicine"
+        ],
+        "clearValue": "medicine|http://data.europa.eu/esco/isced-f/0912",
+        "nonce": "d0af350e22b118a38a67598521e1866cb6c9efefcf33cf259d42050409b822c58a208632b0dcf665654bad471b0f420db9c1cf55fa0400e8807c48a9edfe4aee"
+      },
+      {
+        "path": [
+          "skill_pharmaceutical industries"
+        ],
+        "clearValue": "pharmaceutical industries|http://data.europa.eu/esco/skill/a1c72d66-3671-4a8e-840d-e8b28e237b6f",
+        "nonce": "12b532f1f7a373bc7ffd6d1e468d20034231e1af5a7b8bd6e26a04acf536cd4376e889001c207ddb38f039537a0f8539a40ea27b70bf70694aea2f9d5e69782a"
+      },
+      {
+        "path": [
+          "skill_fine arts"
+        ],
+        "clearValue": "fine arts|http://data.europa.eu/esco/isced-f/0213",
+        "nonce": "f1ce9439bfedc7f4eca7bd182e526d67f826cc6436724b1a59d70c2b367434cdc4db484a54b74e703fc27e08facee57f037dc89207d670caa75d1c0c282c5b10"
+      },
+      {
+        "path": [
+          "skill_therapy and rehabilitation"
+        ],
+        "clearValue": "therapy and rehabilitation|http://data.europa.eu/esco/isced-f/0915",
+        "nonce": "b48883aad454ae36a5b9a34fcf19f392ce70ee0f201bfaead298353ed7755c950e552d1ad317a83264a8aafb5a140e5e831b0d061b21d47e69b57d0f75f8bea3"
+      },
+      {
+        "path": [
+          "skill_biomedical science"
+        ],
+        "clearValue": "biomedical science|http://data.europa.eu/esco/skill/01e66e1c-97d9-4829-bee1-f3ab649161e8",
+        "nonce": "94415ce01915c0186d095af5569b6f3d73655ecfa619b2f53d75abfc2dc74a8c55d01b37a4ae1de56b66fd7408ad410c643bcd7218c0a5ef2e5599591302b2c6"
+      },
+      {
+        "path": [
+          "skill_health care system"
+        ],
+        "clearValue": "health care system|http://data.europa.eu/esco/skill/9b63d92b-5a3a-46b0-b2ba-c98b39ea5aaf",
+        "nonce": "738c541074953a8beb7e5ffd9fe31b6bb53b99385cd5ec47b5e4d4c51a46593e24b22763160c28567340a211f291101327a1694ef313b28978d3c8b2143614fb"
+      },
+      {
+        "path": [
+          "skill_surgery"
+        ],
+        "clearValue": "surgery|http://data.europa.eu/esco/skill/508f3b4c-799a-4742-b3ae-75f2ff11153d",
+        "nonce": "dec77656925f16a6fcf8bac0bc14336fd131c60e65d7e48af746e27262278a944720cdfc8c526efc6568e2e00393109a6f2fc74200100309dbd583395dec6b80"
+      },
+      {
+        "path": [
+          "skill_nursing and midwifery"
+        ],
+        "clearValue": "nursing and midwifery|http://data.europa.eu/esco/isced-f/0913",
+        "nonce": "cc23bcf28f5dcc9c69d6a97e0fed70f55309147042d98e7f90ce63bf14afd680037d8242be69803fee9ae8acaeb53c99e52f376e82c96cc6f04b0198a9f860bd"
+      }
+    ],
+    "verifiableCredential": [
+      {
+        "credentialSubject": {
+          "skill_assisting and caring": "fa9a8def29034eef134b9fc8ec82f2add93cb46757a8dd02e6b8483b47090dbf",
+          "skill_biomedical sciences": "32186f982ce7568731176dd8f93048e8cf82eff56662ec45e9ec91b058587450",
+          "skill_medicine": "1d251e177eeb96a58171bcef71d7417806165db0a0769c92e578fc42670ac203",
+          "skill_pharmaceutical industries": "739b89dab0885b28bc46b43137009753e7a7fe98fce22e83635e770ff7ecace8",
+          "skill_fine arts": "d209a415e6b5cb5cdd5e84d0fc04dd5b3a4d42699934e715d5605f6fc536856a",
+          "skill_therapy and rehabilitation": "618727c435e7626e5664c209a599fe3b9421bf73f3567ca424ea9a29474ff28e",
+          "skill_biomedical science": "966fcfe9bb6653d87f72cbf4a33e07398c9aed6f6262429721931d9d3c65ee6b",
+          "skill_bio-medicine": "ecdd698a4b9455c59a0aeca39fa4ae0d48f22ff1ad4c8bcf01a3a19557c53460",
+          "skill_medical diagnostic and treatment technology": "660905bed5985f7982167077ac970c069a4fbd672eb9067e9cf07d116cbd0128",
+          "skill_preventive medicine": "96a78749544b88b8a9971615d1b30030f1a6becf5e21717538b71a61d57b7e37",
+          "skill_health care system": "218a8185a93b53504b132b44cdd3cc39449db78bc7421cbf107601696a042334",
+          "skill_play therapies": "9631f66feeb869c1518947733cc81c60ab68aa00097c3ddc592277343faaa36e",
+          "skill_pharmaceutical products": "0ec77e201a86b248745f68272bce17830c546daae0ffc80a4cd4f674234617a7",
+          "skill_surgery": "62a4387b7cbfa1f2caf675d270a0cb0677506b17e3a563b0b9a944c4545fd4a1",
+          "skill_natural science": "1f418f0c7b43c5c38c59abdea0dc6ff1d479035d43fc938559ccb7694fc28252",
+          "skill_procedures of differential diagnosis": "1b486fd4a82f7ad501fb9ef39d0867defa79835cfbe19fe748d1dcfd03f7935f",
+          "skill_nursing and midwifery": "1d727a8ae05e3ef230b36ed74983ae58c0cd7ff4b210c1ff3c55d9ead3104aa6",
+          "skill_infectious diseases": "f62447eeecb1683e60ee8bc4b3ae912c517f4a4302155a1a099957d523fa4a85",
+          "skill_drug therapy": "7077ee2c03cec50be37d1db2fb54c09988fee79130d1c5bc0ee1ba1c9289995b",
+          "id": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc"
+        },
+        "issuer": {
+          "id": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc"
+        },
+        "type": [
+          "VerifiableCredential",
+          "SelectiveDisclosure_ESCO_type_VerifiableCredential"
+        ],
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://www.w3.org/ns/credentials/v2"
+        ],
+        "issuanceDate": "2025-02-23T16:27:41.000Z",
+        "proof": {
+          "type": "JwtProof2020",
+          "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiU2VsZWN0aXZlRGlzY2xvc3VyZV9FU0NPX3R5cGVfVmVyaWZpYWJsZUNyZWRlbnRpYWwiXSwiY3JlZGVudGlhbFN1YmplY3QiOnsic2tpbGxfYXNzaXN0aW5nIGFuZCBjYXJpbmciOiJmYTlhOGRlZjI5MDM0ZWVmMTM0YjlmYzhlYzgyZjJhZGQ5M2NiNDY3NTdhOGRkMDJlNmI4NDgzYjQ3MDkwZGJmIiwic2tpbGxfYmlvbWVkaWNhbCBzY2llbmNlcyI6IjMyMTg2Zjk4MmNlNzU2ODczMTE3NmRkOGY5MzA0OGU4Y2Y4MmVmZjU2NjYyZWM0NWU5ZWM5MWIwNTg1ODc0NTAiLCJza2lsbF9tZWRpY2luZSI6IjFkMjUxZTE3N2VlYjk2YTU4MTcxYmNlZjcxZDc0MTc4MDYxNjVkYjBhMDc2OWM5MmU1NzhmYzQyNjcwYWMyMDMiLCJza2lsbF9waGFybWFjZXV0aWNhbCBpbmR1c3RyaWVzIjoiNzM5Yjg5ZGFiMDg4NWIyOGJjNDZiNDMxMzcwMDk3NTNlN2E3ZmU5OGZjZTIyZTgzNjM1ZTc3MGZmN2VjYWNlOCIsInNraWxsX2ZpbmUgYXJ0cyI6ImQyMDlhNDE1ZTZiNWNiNWNkZDVlODRkMGZjMDRkZDViM2E0ZDQyNjk5OTM0ZTcxNWQ1NjA1ZjZmYzUzNjg1NmEiLCJza2lsbF90aGVyYXB5IGFuZCByZWhhYmlsaXRhdGlvbiI6IjYxODcyN2M0MzVlNzYyNmU1NjY0YzIwOWE1OTlmZTNiOTQyMWJmNzNmMzU2N2NhNDI0ZWE5YTI5NDc0ZmYyOGUiLCJza2lsbF9iaW9tZWRpY2FsIHNjaWVuY2UiOiI5NjZmY2ZlOWJiNjY1M2Q4N2Y3MmNiZjRhMzNlMDczOThjOWFlZDZmNjI2MjQyOTcyMTkzMWQ5ZDNjNjVlZTZiIiwic2tpbGxfYmlvLW1lZGljaW5lIjoiZWNkZDY5OGE0Yjk0NTVjNTlhMGFlY2EzOWZhNGFlMGQ0OGYyMmZmMWFkNGM4YmNmMDFhM2ExOTU1N2M1MzQ2MCIsInNraWxsX21lZGljYWwgZGlhZ25vc3RpYyBhbmQgdHJlYXRtZW50IHRlY2hub2xvZ3kiOiI2NjA5MDViZWQ1OTg1Zjc5ODIxNjcwNzdhYzk3MGMwNjlhNGZiZDY3MmViOTA2N2U5Y2YwN2QxMTZjYmQwMTI4Iiwic2tpbGxfcHJldmVudGl2ZSBtZWRpY2luZSI6Ijk2YTc4NzQ5NTQ0Yjg4YjhhOTk3MTYxNWQxYjMwMDMwZjFhNmJlY2Y1ZTIxNzE3NTM4YjcxYTYxZDU3YjdlMzciLCJza2lsbF9oZWFsdGggY2FyZSBzeXN0ZW0iOiIyMThhODE4NWE5M2I1MzUwNGIxMzJiNDRjZGQzY2MzOTQ0OWRiNzhiYzc0MjFjYmYxMDc2MDE2OTZhMDQyMzM0Iiwic2tpbGxfcGxheSB0aGVyYXBpZXMiOiI5NjMxZjY2ZmVlYjg2OWMxNTE4OTQ3NzMzY2M4MWM2MGFiNjhhYTAwMDk3YzNkZGM1OTIyNzczNDNmYWFhMzZlIiwic2tpbGxfcGhhcm1hY2V1dGljYWwgcHJvZHVjdHMiOiIwZWM3N2UyMDFhODZiMjQ4NzQ1ZjY4MjcyYmNlMTc4MzBjNTQ2ZGFhZTBmZmM4MGE0Y2Q0ZjY3NDIzNDYxN2E3Iiwic2tpbGxfc3VyZ2VyeSI6IjYyYTQzODdiN2NiZmExZjJjYWY2NzVkMjcwYTBjYjA2Nzc1MDZiMTdlM2E1NjNiMGI5YTk0NGM0NTQ1ZmQ0YTEiLCJza2lsbF9uYXR1cmFsIHNjaWVuY2UiOiIxZjQxOGYwYzdiNDNjNWMzOGM1OWFiZGVhMGRjNmZmMWQ0NzkwMzVkNDNmYzkzODU1OWNjYjc2OTRmYzI4MjUyIiwic2tpbGxfcHJvY2VkdXJlcyBvZiBkaWZmZXJlbnRpYWwgZGlhZ25vc2lzIjoiMWI0ODZmZDRhODJmN2FkNTAxZmI5ZWYzOWQwODY3ZGVmYTc5ODM1Y2ZiZTE5ZmU3NDhkMWRjZmQwM2Y3OTM1ZiIsInNraWxsX251cnNpbmcgYW5kIG1pZHdpZmVyeSI6IjFkNzI3YThhZTA1ZTNlZjIzMGIzNmVkNzQ5ODNhZTU4YzBjZDdmZjRiMjEwYzFmZjNjNTVkOWVhZDMxMDRhYTYiLCJza2lsbF9pbmZlY3Rpb3VzIGRpc2Vhc2VzIjoiZjYyNDQ3ZWVlY2IxNjgzZTYwZWU4YmM0YjNhZTkxMmM1MTdmNGE0MzAyMTU1YTFhMDk5OTU3ZDUyM2ZhNGE4NSIsInNraWxsX2RydWcgdGhlcmFweSI6IjcwNzdlZTJjMDNjZWM1MGJlMzdkMWRiMmZiNTRjMDk5ODhmZWU3OTEzMGQxYzViYzBlZTFiYTFjOTI4OTk5NWIifX0sInN1YiI6ImRpZDpldGhyOnNlcG9saWE6MHgwMmFjNWE1MzJiNjg5Yzg4YmIwYWJhNjhjYjYyZWQ0OWFlNGEyYTc1NmQzYzUzZTA5MmIyZDFlMmJlNjI0YjQ3ZmMiLCJuYmYiOjE3NDAzMjgwNjEsImlzcyI6ImRpZDpldGhyOnNlcG9saWE6MHgwMmFjNWE1MzJiNjg5Yzg4YmIwYWJhNjhjYjYyZWQ0OWFlNGEyYTc1NmQzYzUzZTA5MmIyZDFlMmJlNjI0YjQ3ZmMifQ.TaW2EXZzQ3u4uyIK2cV2PZWzCl4S7i1D-zHcIN26X0FC4P1IZ9_6opm_F0BKnHURpGq2dek6lQgZXtmTPfxwNw"
+        }
+      }
+    ],
+    "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+    "id": "7a8c0be6-c7ee-40a4-ade8-7c24d2c66c36",
+    "type": [
+      "VerifiablePresentation"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2025-02-23T17:29:57.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKaGJHY2lPaUpGVXpJMU5rc2lMQ0owZVhBaU9pSktWMVFpZlEuZXlKMll5STZleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdk1qQXhPQzlqY21Wa1pXNTBhV0ZzY3k5Mk1TSXNJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTl1Y3k5amNtVmtaVzUwYVdGc2N5OTJNaUpkTENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lpd2lVMlZzWldOMGFYWmxSR2x6WTJ4dmMzVnlaVjlGVTBOUFgzUjVjR1ZmVm1WeWFXWnBZV0pzWlVOeVpXUmxiblJwWVd3aVhTd2lZM0psWkdWdWRHbGhiRk4xWW1wbFkzUWlPbnNpYzJ0cGJHeGZZWE56YVhOMGFXNW5JR0Z1WkNCallYSnBibWNpT2lKbVlUbGhPR1JsWmpJNU1ETTBaV1ZtTVRNMFlqbG1ZemhsWXpneVpqSmhaR1E1TTJOaU5EWTNOVGRoT0dSa01ESmxObUk0TkRnellqUTNNRGt3WkdKbUlpd2ljMnRwYkd4ZlltbHZiV1ZrYVdOaGJDQnpZMmxsYm1ObGN5STZJak15TVRnMlpqazRNbU5sTnpVMk9EY3pNVEUzTm1Sa09HWTVNekEwT0dVNFkyWTRNbVZtWmpVMk5qWXlaV00wTldVNVpXTTVNV0l3TlRnMU9EYzBOVEFpTENKemEybHNiRjl0WldScFkybHVaU0k2SWpGa01qVXhaVEUzTjJWbFlqazJZVFU0TVRjeFltTmxaamN4WkRjME1UYzRNRFl4TmpWa1lqQmhNRGMyT1dNNU1tVTFOemhtWXpReU5qY3dZV015TURNaUxDSnphMmxzYkY5d2FHRnliV0ZqWlhWMGFXTmhiQ0JwYm1SMWMzUnlhV1Z6SWpvaU56TTVZamc1WkdGaU1EZzROV0l5T0dKak5EWmlORE14TXpjd01EazNOVE5sTjJFM1ptVTVPR1pqWlRJeVpUZ3pOak0xWlRjM01HWm1OMlZqWVdObE9DSXNJbk5yYVd4c1gyWnBibVVnWVhKMGN5STZJbVF5TURsaE5ERTFaVFppTldOaU5XTmtaRFZsT0RSa01HWmpNRFJrWkRWaU0yRTBaRFF5TmprNU9UTTBaVGN4TldRMU5qQTFaalptWXpVek5qZzFObUVpTENKemEybHNiRjkwYUdWeVlYQjVJR0Z1WkNCeVpXaGhZbWxzYVhSaGRHbHZiaUk2SWpZeE9EY3lOMk0wTXpWbE56WXlObVUxTmpZMFl6SXdPV0UxT1RsbVpUTmlPVFF5TVdKbU56Tm1NelUyTjJOaE5ESTBaV0U1WVRJNU5EYzBabVl5T0dVaUxDSnphMmxzYkY5aWFXOXRaV1JwWTJGc0lITmphV1Z1WTJVaU9pSTVOalptWTJabE9XSmlOalkxTTJRNE4yWTNNbU5pWmpSaE16TmxNRGN6T1Roak9XRmxaRFptTmpJMk1qUXlPVGN5TVRrek1XUTVaRE5qTmpWbFpUWmlJaXdpYzJ0cGJHeGZZbWx2TFcxbFpHbGphVzVsSWpvaVpXTmtaRFk1T0dFMFlqazBOVFZqTlRsaE1HRmxZMkV6T1daaE5HRmxNR1EwT0dZeU1tWm1NV0ZrTkdNNFltTm1NREZoTTJFeE9UVTFOMk0xTXpRMk1DSXNJbk5yYVd4c1gyMWxaR2xqWVd3Z1pHbGhaMjV2YzNScFl5QmhibVFnZEhKbFlYUnRaVzUwSUhSbFkyaHViMnh2WjNraU9pSTJOakE1TURWaVpXUTFPVGcxWmpjNU9ESXhOamN3TnpkaFl6azNNR013TmpsaE5HWmlaRFkzTW1WaU9UQTJOMlU1WTJZd04yUXhNVFpqWW1Rd01USTRJaXdpYzJ0cGJHeGZjSEpsZG1WdWRHbDJaU0J0WldScFkybHVaU0k2SWprMllUYzROelE1TlRRMFlqZzRZamhoT1RrM01UWXhOV1F4WWpNd01ETXdaakZoTm1KbFkyWTFaVEl4TnpFM05UTTRZamN4WVRZeFpEVTNZamRsTXpjaUxDSnphMmxzYkY5b1pXRnNkR2dnWTJGeVpTQnplWE4wWlcwaU9pSXlNVGhoT0RFNE5XRTVNMkkxTXpVd05HSXhNekppTkRSalpHUXpZMk16T1RRME9XUmlOemhpWXpjME1qRmpZbVl4TURjMk1ERTJPVFpoTURReU16TTBJaXdpYzJ0cGJHeGZjR3hoZVNCMGFHVnlZWEJwWlhNaU9pSTVOak14WmpZMlptVmxZamcyT1dNeE5URTRPVFEzTnpNelkyTTRNV00yTUdGaU5qaGhZVEF3TURrM1l6TmtaR00xT1RJeU56Y3pORE5tWVdGaE16WmxJaXdpYzJ0cGJHeGZjR2hoY20xaFkyVjFkR2xqWVd3Z2NISnZaSFZqZEhNaU9pSXdaV00zTjJVeU1ERmhPRFppTWpRNE56UTFaalk0TWpjeVltTmxNVGM0TXpCak5UUTJaR0ZoWlRCbVptTTRNR0UwWTJRMFpqWTNOREl6TkRZeE4yRTNJaXdpYzJ0cGJHeGZjM1Z5WjJWeWVTSTZJall5WVRRek9EZGlOMk5pWm1FeFpqSmpZV1kyTnpWa01qY3dZVEJqWWpBMk56YzFNRFppTVRkbE0yRTFOak5pTUdJNVlUazBOR00wTlRRMVptUTBZVEVpTENKemEybHNiRjl1WVhSMWNtRnNJSE5qYVdWdVkyVWlPaUl4WmpReE9HWXdZemRpTkROak5XTXpPR00xT1dGaVpHVmhNR1JqTm1abU1XUTBOemt3TXpWa05ETm1Zemt6T0RVMU9XTmpZamMyT1RSbVl6STRNalV5SWl3aWMydHBiR3hmY0hKdlkyVmtkWEpsY3lCdlppQmthV1ptWlhKbGJuUnBZV3dnWkdsaFoyNXZjMmx6SWpvaU1XSTBPRFptWkRSaE9ESm1OMkZrTlRBeFptSTVaV1l6T1dRd09EWTNaR1ZtWVRjNU9ETTFZMlppWlRFNVptVTNORGhrTVdSalptUXdNMlkzT1RNMVppSXNJbk5yYVd4c1gyNTFjbk5wYm1jZ1lXNWtJRzFwWkhkcFptVnllU0k2SWpGa056STNZVGhoWlRBMVpUTmxaakl6TUdJek5tVmtOelE1T0ROaFpUVTRZekJqWkRkbVpqUmlNakV3WXpGbVpqTmpOVFZrT1dWaFpETXhNRFJoWVRZaUxDSnphMmxzYkY5cGJtWmxZM1JwYjNWeklHUnBjMlZoYzJWeklqb2laall5TkRRM1pXVmxZMkl4TmpnelpUWXdaV1U0WW1NMFlqTmhaVGt4TW1NMU1UZG1OR0UwTXpBeU1UVTFZVEZoTURrNU9UVTNaRFV5TTJaaE5HRTROU0lzSW5OcmFXeHNYMlJ5ZFdjZ2RHaGxjbUZ3ZVNJNklqY3dOemRsWlRKak1ETmpaV00xTUdKbE16ZGtNV1JpTW1aaU5UUmpNRGs1T0RobVpXVTNPVEV6TUdReFl6VmlZekJsWlRGaVlURmpPVEk0T1RrNU5XSWlmWDBzSW5OMVlpSTZJbVJwWkRwbGRHaHlPbk5sY0c5c2FXRTZNSGd3TW1Gak5XRTFNekppTmpnNVl6ZzRZbUl3WVdKaE5qaGpZall5WldRME9XRmxOR0V5WVRjMU5tUXpZelV6WlRBNU1tSXlaREZsTW1KbE5qSTBZalEzWm1NaUxDSnVZbVlpT2pFM05EQXpNamd3TmpFc0ltbHpjeUk2SW1ScFpEcGxkR2h5T25ObGNHOXNhV0U2TUhnd01tRmpOV0UxTXpKaU5qZzVZemc0WW1Jd1lXSmhOamhqWWpZeVpXUTBPV0ZsTkdFeVlUYzFObVF6WXpVelpUQTVNbUl5WkRGbE1tSmxOakkwWWpRM1ptTWlmUS5UYVcyRVhaelEzdTR1eUlLMmNWMlBaV3pDbDRTN2kxRC16SGNJTjI2WDBGQzRQMUlaOV82b3BtX0YwQktuSFVScEdxMmRlazZsUWdaWHRtVFBmeHdOdyJdfSwiYXR0cmlidXRlcyI6W3sicGF0aCI6WyJza2lsbF9tZWRpY2luZSJdLCJjbGVhclZhbHVlIjoibWVkaWNpbmV8aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vaXNjZWQtZi8wOTEyIiwibm9uY2UiOiJkMGFmMzUwZTIyYjExOGEzOGE2NzU5ODUyMWUxODY2Y2I2YzllZmVmY2YzM2NmMjU5ZDQyMDUwNDA5YjgyMmM1OGEyMDg2MzJiMGRjZjY2NTY1NGJhZDQ3MWIwZjQyMGRiOWMxY2Y1NWZhMDQwMGU4ODA3YzQ4YTllZGZlNGFlZSJ9LHsicGF0aCI6WyJza2lsbF9waGFybWFjZXV0aWNhbCBpbmR1c3RyaWVzIl0sImNsZWFyVmFsdWUiOiJwaGFybWFjZXV0aWNhbCBpbmR1c3RyaWVzfGh0dHA6Ly9kYXRhLmV1cm9wYS5ldS9lc2NvL3NraWxsL2ExYzcyZDY2LTM2NzEtNGE4ZS04NDBkLWU4YjI4ZTIzN2I2ZiIsIm5vbmNlIjoiMTJiNTMyZjFmN2EzNzNiYzdmZmQ2ZDFlNDY4ZDIwMDM0MjMxZTFhZjVhN2I4YmQ2ZTI2YTA0YWNmNTM2Y2Q0Mzc2ZTg4OTAwMWMyMDdkZGIzOGYwMzk1MzdhMGY4NTM5YTQwZWEyN2I3MGJmNzA2OTRhZWEyZjlkNWU2OTc4MmEifSx7InBhdGgiOlsic2tpbGxfZmluZSBhcnRzIl0sImNsZWFyVmFsdWUiOiJmaW5lIGFydHN8aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vaXNjZWQtZi8wMjEzIiwibm9uY2UiOiJmMWNlOTQzOWJmZWRjN2Y0ZWNhN2JkMTgyZTUyNmQ2N2Y4MjZjYzY0MzY3MjRiMWE1OWQ3MGMyYjM2NzQzNGNkYzRkYjQ4NGE1NGI3NGU3MDNmYzI3ZTA4ZmFjZWU1N2YwMzdkYzg5MjA3ZDY3MGNhYTc1ZDFjMGMyODJjNWIxMCJ9LHsicGF0aCI6WyJza2lsbF90aGVyYXB5IGFuZCByZWhhYmlsaXRhdGlvbiJdLCJjbGVhclZhbHVlIjoidGhlcmFweSBhbmQgcmVoYWJpbGl0YXRpb258aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vaXNjZWQtZi8wOTE1Iiwibm9uY2UiOiJiNDg4ODNhYWQ0NTRhZTM2YTViOWEzNGZjZjE5ZjM5MmNlNzBlZTBmMjAxYmZhZWFkMjk4MzUzZWQ3NzU1Yzk1MGU1NTJkMWFkMzE3YTgzMjY0YThhYWZiNWExNDBlNWU4MzFiMGQwNjFiMjFkNDdlNjliNTdkMGY3NWY4YmVhMyJ9LHsicGF0aCI6WyJza2lsbF9iaW9tZWRpY2FsIHNjaWVuY2UiXSwiY2xlYXJWYWx1ZSI6ImJpb21lZGljYWwgc2NpZW5jZXxodHRwOi8vZGF0YS5ldXJvcGEuZXUvZXNjby9za2lsbC8wMWU2NmUxYy05N2Q5LTQ4MjktYmVlMS1mM2FiNjQ5MTYxZTgiLCJub25jZSI6Ijk0NDE1Y2UwMTkxNWMwMTg2ZDA5NWFmNTU2OWI2ZjNkNzM2NTVlY2ZhNjE5YjJmNTNkNzVhYmZjMmRjNzRhOGM1NWQwMWIzN2E0YWUxZGU1NmI2NmZkNzQwOGFkNDEwYzY0M2JjZDcyMThjMGE1ZWYyZTU1OTk1OTEzMDJiMmM2In0seyJwYXRoIjpbInNraWxsX2hlYWx0aCBjYXJlIHN5c3RlbSJdLCJjbGVhclZhbHVlIjoiaGVhbHRoIGNhcmUgc3lzdGVtfGh0dHA6Ly9kYXRhLmV1cm9wYS5ldS9lc2NvL3NraWxsLzliNjNkOTJiLTVhM2EtNDZiMC1iMmJhLWM5OGIzOWVhNWFhZiIsIm5vbmNlIjoiNzM4YzU0MTA3NDk1M2E4YmViN2U1ZmZkOWZlMzFiNmJiNTNiOTkzODVjZDVlYzQ3YjVlNGQ0YzUxYTQ2NTkzZTI0YjIyNzYzMTYwYzI4NTY3MzQwYTIxMWYyOTExMDEzMjdhMTY5NGVmMzEzYjI4OTc4ZDNjOGIyMTQzNjE0ZmIifSx7InBhdGgiOlsic2tpbGxfc3VyZ2VyeSJdLCJjbGVhclZhbHVlIjoic3VyZ2VyeXxodHRwOi8vZGF0YS5ldXJvcGEuZXUvZXNjby9za2lsbC81MDhmM2I0Yy03OTlhLTQ3NDItYjNhZS03NWYyZmYxMTE1M2QiLCJub25jZSI6ImRlYzc3NjU2OTI1ZjE2YTZmY2Y4YmFjMGJjMTQzMzZmZDEzMWM2MGU2NWQ3ZTQ4YWY3NDZlMjcyNjIyNzhhOTQ0NzIwY2RmYzhjNTI2ZWZjNjU2OGUyZTAwMzkzMTA5YTZmMmZjNzQyMDAxMDAzMDlkYmQ1ODMzOTVkZWM2YjgwIn0seyJwYXRoIjpbInNraWxsX251cnNpbmcgYW5kIG1pZHdpZmVyeSJdLCJjbGVhclZhbHVlIjoibnVyc2luZyBhbmQgbWlkd2lmZXJ5fGh0dHA6Ly9kYXRhLmV1cm9wYS5ldS9lc2NvL2lzY2VkLWYvMDkxMyIsIm5vbmNlIjoiY2MyM2JjZjI4ZjVkY2M5YzY5ZDZhOTdlMGZlZDcwZjU1MzA5MTQ3MDQyZDk4ZTdmOTBjZTYzYmYxNGFmZDY4MDAzN2Q4MjQyYmU2OTgwM2ZlZTlhZThhY2FlYjUzYzk5ZTUyZjM3NmU4MmM5NmNjNmYwNGIwMTk4YTlmODYwYmQifV0sImp0aSI6IjdhOGMwYmU2LWM3ZWUtNDBhNC1hZGU4LTdjMjRkMmM2NmMzNiIsIm5iZiI6MTc0MDMzMTc5NywiaXNzIjoiZGlkOmV0aHI6c2Vwb2xpYToweDAyYWM1YTUzMmI2ODljODhiYjBhYmE2OGNiNjJlZDQ5YWU0YTJhNzU2ZDNjNTNlMDkyYjJkMWUyYmU2MjRiNDdmYyJ9.MYGCAoL3AZ-3N4p0D7S7kwxjxQjCA3EH5wK-qFSg2D5Xoxl7dqCglg7UhCkJjPMIrs8QiGzOSS4LZFWCcLkl0w"
+    }
+  }
+}
+
+
+#### with 16 non test
+POST http://localhost:3001/issue_verifiable_presentation/selective_disclosure
+Content-Type: application/json
+
+{
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "VerifiablePresentation",
+  "attributes": {},
+  "toStore": true,
+  "attributesToDisclose": [
+    "skill_assisting and caring",
+    "skill_biomedical sciences",
+    "skill_medicine",
+    "skill_pharmaceutical industries",
+    "skill_fine arts",
+    "skill_therapy and rehabilitation",
+    "skill_biomedical science",
+    "skill_bio-medicine",
+    "skill_medical diagnostic and treatment technology",
+    "skill_preventive medicine",
+    "skill_health care system",
+    "skill_play therapies",
+    "skill_pharmaceutical products",
+    "skill_surgery",
+    "skill_natural science",
+    "skill_nursing and midwifery"
+  ],
+  "hashOfVCs": [
+    "QmWi4UoouPNczvnR5FGUTcs4mm4JqcLj7gJz2Sakk5sz2x"
+  ]
+}
+
+
+
+### verify correctness of VP Selective Disclosure with 16 disclosed attributes test
+POST http://localhost:3001/test/verify/vp/selective_disclosure_correctness
+Content-Type: application/json
+
+{
+  "numTrials": 1000,
+  "vp": {
+    "attributes": [
+      {
+        "path": [
+          "skill_assisting and caring"
+        ],
+        "clearValue": "assisting and caring|http://data.europa.eu/esco/skill/S3.0.0",
+        "nonce": "49f5c02a9d916a5072eace3e9ef4869d5fb145d7024e211261d1a8897fa30fdcf244bc31ac6945eb8b8bd1e1f09cb257780caff8959e85e1e1ed977a31d1df3e"
+      },
+      {
+        "path": [
+          "skill_biomedical sciences"
+        ],
+        "clearValue": "biomedical sciences|http://data.europa.eu/esco/skill/01e66e1c-97d9-4829-bee1-f3ab649161e8",
+        "nonce": "e1f32a7eb92bbb20ad21bfbffe148c622aa43a8294eeb53b6cb77b19f14a79ad3d74f398fddceafc38484253f266eea8fdf62052c766cd7abdb1a96fec52edab"
+      },
+      {
+        "path": [
+          "skill_medicine"
+        ],
+        "clearValue": "medicine|http://data.europa.eu/esco/isced-f/0912",
+        "nonce": "d0af350e22b118a38a67598521e1866cb6c9efefcf33cf259d42050409b822c58a208632b0dcf665654bad471b0f420db9c1cf55fa0400e8807c48a9edfe4aee"
+      },
+      {
+        "path": [
+          "skill_pharmaceutical industries"
+        ],
+        "clearValue": "pharmaceutical industries|http://data.europa.eu/esco/skill/a1c72d66-3671-4a8e-840d-e8b28e237b6f",
+        "nonce": "12b532f1f7a373bc7ffd6d1e468d20034231e1af5a7b8bd6e26a04acf536cd4376e889001c207ddb38f039537a0f8539a40ea27b70bf70694aea2f9d5e69782a"
+      },
+      {
+        "path": [
+          "skill_fine arts"
+        ],
+        "clearValue": "fine arts|http://data.europa.eu/esco/isced-f/0213",
+        "nonce": "f1ce9439bfedc7f4eca7bd182e526d67f826cc6436724b1a59d70c2b367434cdc4db484a54b74e703fc27e08facee57f037dc89207d670caa75d1c0c282c5b10"
+      },
+      {
+        "path": [
+          "skill_therapy and rehabilitation"
+        ],
+        "clearValue": "therapy and rehabilitation|http://data.europa.eu/esco/isced-f/0915",
+        "nonce": "b48883aad454ae36a5b9a34fcf19f392ce70ee0f201bfaead298353ed7755c950e552d1ad317a83264a8aafb5a140e5e831b0d061b21d47e69b57d0f75f8bea3"
+      },
+      {
+        "path": [
+          "skill_biomedical science"
+        ],
+        "clearValue": "biomedical science|http://data.europa.eu/esco/skill/01e66e1c-97d9-4829-bee1-f3ab649161e8",
+        "nonce": "94415ce01915c0186d095af5569b6f3d73655ecfa619b2f53d75abfc2dc74a8c55d01b37a4ae1de56b66fd7408ad410c643bcd7218c0a5ef2e5599591302b2c6"
+      },
+      {
+        "path": [
+          "skill_bio-medicine"
+        ],
+        "clearValue": "bio-medicine|http://data.europa.eu/esco/skill/10f08e82-ee2f-4790-a43d-5fd3f9b8a392",
+        "nonce": "e01175a280e51eb7d160ff54e6aca22c6f0c4d1cb6b8036c62393fad4b60ec3fd3fde81f5a7278a8414e16596f46ed76c62903243dbdf2dbc6615c9bbf6cc691"
+      },
+      {
+        "path": [
+          "skill_medical diagnostic and treatment technology"
+        ],
+        "clearValue": "medical diagnostic and treatment technology|http://data.europa.eu/esco/isced-f/0914",
+        "nonce": "f3e9b187086691b9cb84de227b70321a2d1ec054a27d910b1923565dbeada677437dac01c585926d973a5408e69d510a0117cabec6cfa0dfc7d7bff3043f781e"
+      },
+      {
+        "path": [
+          "skill_preventive medicine"
+        ],
+        "clearValue": "preventive medicine|http://data.europa.eu/esco/skill/08f85a8c-c50c-4c97-b456-2fdda7f6a973",
+        "nonce": "eadaa3bf7d32e528eb9258b90f00991919ac36ceff059986d1fe9dd22cf2ffe2dace048ecaf34390971858f8cde8cdff41ee76e353e579db4c2198a1ac59734e"
+      },
+      {
+        "path": [
+          "skill_health care system"
+        ],
+        "clearValue": "health care system|http://data.europa.eu/esco/skill/9b63d92b-5a3a-46b0-b2ba-c98b39ea5aaf",
+        "nonce": "738c541074953a8beb7e5ffd9fe31b6bb53b99385cd5ec47b5e4d4c51a46593e24b22763160c28567340a211f291101327a1694ef313b28978d3c8b2143614fb"
+      },
+      {
+        "path": [
+          "skill_play therapies"
+        ],
+        "clearValue": "play therapies|http://data.europa.eu/esco/skill/fecf050a-4349-481c-9e8a-26a55d99dc79",
+        "nonce": "00c407eb8aca1c6fcef10827b96b4439d01633457e44b8e9d5c296125d9c74f928a7da40a4d7867a98bdc2ece27672841355f950ca570551d6aea4193ce4f8c9"
+      },
+      {
+        "path": [
+          "skill_pharmaceutical products"
+        ],
+        "clearValue": "pharmaceutical products|http://data.europa.eu/esco/skill/16b1f191-eafd-4821-a08a-9f0cc4e5a71a",
+        "nonce": "6f095749b5b8c593bcd160575b76453c9cfe70a2445b05aba11e6291a7fa0448e83533cc38d16e7de2103fd30b172bb9bb4daa87e7ceb63b79e6cf52436d0cd9"
+      },
+      {
+        "path": [
+          "skill_surgery"
+        ],
+        "clearValue": "surgery|http://data.europa.eu/esco/skill/508f3b4c-799a-4742-b3ae-75f2ff11153d",
+        "nonce": "dec77656925f16a6fcf8bac0bc14336fd131c60e65d7e48af746e27262278a944720cdfc8c526efc6568e2e00393109a6f2fc74200100309dbd583395dec6b80"
+      },
+      {
+        "path": [
+          "skill_natural science"
+        ],
+        "clearValue": "natural science|http://data.europa.eu/esco/skill/692ace70-7f97-4214-92bd-88f7637d8a44",
+        "nonce": "b1671db87f0a67101408d42f6a9c208ddabeddb507004ee66b127786aa7193a5aa93cd0cadd1285e80f269a7287bc6501f7120383da051aa32dba22f7650da99"
+      },
+      {
+        "path": [
+          "skill_nursing and midwifery"
+        ],
+        "clearValue": "nursing and midwifery|http://data.europa.eu/esco/isced-f/0913",
+        "nonce": "cc23bcf28f5dcc9c69d6a97e0fed70f55309147042d98e7f90ce63bf14afd680037d8242be69803fee9ae8acaeb53c99e52f376e82c96cc6f04b0198a9f860bd"
+      }
+    ],
+    "verifiableCredential": [
+      {
+        "credentialSubject": {
+          "skill_assisting and caring": "fa9a8def29034eef134b9fc8ec82f2add93cb46757a8dd02e6b8483b47090dbf",
+          "skill_biomedical sciences": "32186f982ce7568731176dd8f93048e8cf82eff56662ec45e9ec91b058587450",
+          "skill_medicine": "1d251e177eeb96a58171bcef71d7417806165db0a0769c92e578fc42670ac203",
+          "skill_pharmaceutical industries": "739b89dab0885b28bc46b43137009753e7a7fe98fce22e83635e770ff7ecace8",
+          "skill_fine arts": "d209a415e6b5cb5cdd5e84d0fc04dd5b3a4d42699934e715d5605f6fc536856a",
+          "skill_therapy and rehabilitation": "618727c435e7626e5664c209a599fe3b9421bf73f3567ca424ea9a29474ff28e",
+          "skill_biomedical science": "966fcfe9bb6653d87f72cbf4a33e07398c9aed6f6262429721931d9d3c65ee6b",
+          "skill_bio-medicine": "ecdd698a4b9455c59a0aeca39fa4ae0d48f22ff1ad4c8bcf01a3a19557c53460",
+          "skill_medical diagnostic and treatment technology": "660905bed5985f7982167077ac970c069a4fbd672eb9067e9cf07d116cbd0128",
+          "skill_preventive medicine": "96a78749544b88b8a9971615d1b30030f1a6becf5e21717538b71a61d57b7e37",
+          "skill_health care system": "218a8185a93b53504b132b44cdd3cc39449db78bc7421cbf107601696a042334",
+          "skill_play therapies": "9631f66feeb869c1518947733cc81c60ab68aa00097c3ddc592277343faaa36e",
+          "skill_pharmaceutical products": "0ec77e201a86b248745f68272bce17830c546daae0ffc80a4cd4f674234617a7",
+          "skill_surgery": "62a4387b7cbfa1f2caf675d270a0cb0677506b17e3a563b0b9a944c4545fd4a1",
+          "skill_natural science": "1f418f0c7b43c5c38c59abdea0dc6ff1d479035d43fc938559ccb7694fc28252",
+          "skill_procedures of differential diagnosis": "1b486fd4a82f7ad501fb9ef39d0867defa79835cfbe19fe748d1dcfd03f7935f",
+          "skill_nursing and midwifery": "1d727a8ae05e3ef230b36ed74983ae58c0cd7ff4b210c1ff3c55d9ead3104aa6",
+          "skill_infectious diseases": "f62447eeecb1683e60ee8bc4b3ae912c517f4a4302155a1a099957d523fa4a85",
+          "skill_drug therapy": "7077ee2c03cec50be37d1db2fb54c09988fee79130d1c5bc0ee1ba1c9289995b",
+          "id": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc"
+        },
+        "issuer": {
+          "id": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc"
+        },
+        "type": [
+          "VerifiableCredential",
+          "SelectiveDisclosure_ESCO_type_VerifiableCredential"
+        ],
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://www.w3.org/ns/credentials/v2"
+        ],
+        "issuanceDate": "2025-02-23T16:27:41.000Z",
+        "proof": {
+          "type": "JwtProof2020",
+          "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiU2VsZWN0aXZlRGlzY2xvc3VyZV9FU0NPX3R5cGVfVmVyaWZpYWJsZUNyZWRlbnRpYWwiXSwiY3JlZGVudGlhbFN1YmplY3QiOnsic2tpbGxfYXNzaXN0aW5nIGFuZCBjYXJpbmciOiJmYTlhOGRlZjI5MDM0ZWVmMTM0YjlmYzhlYzgyZjJhZGQ5M2NiNDY3NTdhOGRkMDJlNmI4NDgzYjQ3MDkwZGJmIiwic2tpbGxfYmlvbWVkaWNhbCBzY2llbmNlcyI6IjMyMTg2Zjk4MmNlNzU2ODczMTE3NmRkOGY5MzA0OGU4Y2Y4MmVmZjU2NjYyZWM0NWU5ZWM5MWIwNTg1ODc0NTAiLCJza2lsbF9tZWRpY2luZSI6IjFkMjUxZTE3N2VlYjk2YTU4MTcxYmNlZjcxZDc0MTc4MDYxNjVkYjBhMDc2OWM5MmU1NzhmYzQyNjcwYWMyMDMiLCJza2lsbF9waGFybWFjZXV0aWNhbCBpbmR1c3RyaWVzIjoiNzM5Yjg5ZGFiMDg4NWIyOGJjNDZiNDMxMzcwMDk3NTNlN2E3ZmU5OGZjZTIyZTgzNjM1ZTc3MGZmN2VjYWNlOCIsInNraWxsX2ZpbmUgYXJ0cyI6ImQyMDlhNDE1ZTZiNWNiNWNkZDVlODRkMGZjMDRkZDViM2E0ZDQyNjk5OTM0ZTcxNWQ1NjA1ZjZmYzUzNjg1NmEiLCJza2lsbF90aGVyYXB5IGFuZCByZWhhYmlsaXRhdGlvbiI6IjYxODcyN2M0MzVlNzYyNmU1NjY0YzIwOWE1OTlmZTNiOTQyMWJmNzNmMzU2N2NhNDI0ZWE5YTI5NDc0ZmYyOGUiLCJza2lsbF9iaW9tZWRpY2FsIHNjaWVuY2UiOiI5NjZmY2ZlOWJiNjY1M2Q4N2Y3MmNiZjRhMzNlMDczOThjOWFlZDZmNjI2MjQyOTcyMTkzMWQ5ZDNjNjVlZTZiIiwic2tpbGxfYmlvLW1lZGljaW5lIjoiZWNkZDY5OGE0Yjk0NTVjNTlhMGFlY2EzOWZhNGFlMGQ0OGYyMmZmMWFkNGM4YmNmMDFhM2ExOTU1N2M1MzQ2MCIsInNraWxsX21lZGljYWwgZGlhZ25vc3RpYyBhbmQgdHJlYXRtZW50IHRlY2hub2xvZ3kiOiI2NjA5MDViZWQ1OTg1Zjc5ODIxNjcwNzdhYzk3MGMwNjlhNGZiZDY3MmViOTA2N2U5Y2YwN2QxMTZjYmQwMTI4Iiwic2tpbGxfcHJldmVudGl2ZSBtZWRpY2luZSI6Ijk2YTc4NzQ5NTQ0Yjg4YjhhOTk3MTYxNWQxYjMwMDMwZjFhNmJlY2Y1ZTIxNzE3NTM4YjcxYTYxZDU3YjdlMzciLCJza2lsbF9oZWFsdGggY2FyZSBzeXN0ZW0iOiIyMThhODE4NWE5M2I1MzUwNGIxMzJiNDRjZGQzY2MzOTQ0OWRiNzhiYzc0MjFjYmYxMDc2MDE2OTZhMDQyMzM0Iiwic2tpbGxfcGxheSB0aGVyYXBpZXMiOiI5NjMxZjY2ZmVlYjg2OWMxNTE4OTQ3NzMzY2M4MWM2MGFiNjhhYTAwMDk3YzNkZGM1OTIyNzczNDNmYWFhMzZlIiwic2tpbGxfcGhhcm1hY2V1dGljYWwgcHJvZHVjdHMiOiIwZWM3N2UyMDFhODZiMjQ4NzQ1ZjY4MjcyYmNlMTc4MzBjNTQ2ZGFhZTBmZmM4MGE0Y2Q0ZjY3NDIzNDYxN2E3Iiwic2tpbGxfc3VyZ2VyeSI6IjYyYTQzODdiN2NiZmExZjJjYWY2NzVkMjcwYTBjYjA2Nzc1MDZiMTdlM2E1NjNiMGI5YTk0NGM0NTQ1ZmQ0YTEiLCJza2lsbF9uYXR1cmFsIHNjaWVuY2UiOiIxZjQxOGYwYzdiNDNjNWMzOGM1OWFiZGVhMGRjNmZmMWQ0NzkwMzVkNDNmYzkzODU1OWNjYjc2OTRmYzI4MjUyIiwic2tpbGxfcHJvY2VkdXJlcyBvZiBkaWZmZXJlbnRpYWwgZGlhZ25vc2lzIjoiMWI0ODZmZDRhODJmN2FkNTAxZmI5ZWYzOWQwODY3ZGVmYTc5ODM1Y2ZiZTE5ZmU3NDhkMWRjZmQwM2Y3OTM1ZiIsInNraWxsX251cnNpbmcgYW5kIG1pZHdpZmVyeSI6IjFkNzI3YThhZTA1ZTNlZjIzMGIzNmVkNzQ5ODNhZTU4YzBjZDdmZjRiMjEwYzFmZjNjNTVkOWVhZDMxMDRhYTYiLCJza2lsbF9pbmZlY3Rpb3VzIGRpc2Vhc2VzIjoiZjYyNDQ3ZWVlY2IxNjgzZTYwZWU4YmM0YjNhZTkxMmM1MTdmNGE0MzAyMTU1YTFhMDk5OTU3ZDUyM2ZhNGE4NSIsInNraWxsX2RydWcgdGhlcmFweSI6IjcwNzdlZTJjMDNjZWM1MGJlMzdkMWRiMmZiNTRjMDk5ODhmZWU3OTEzMGQxYzViYzBlZTFiYTFjOTI4OTk5NWIifX0sInN1YiI6ImRpZDpldGhyOnNlcG9saWE6MHgwMmFjNWE1MzJiNjg5Yzg4YmIwYWJhNjhjYjYyZWQ0OWFlNGEyYTc1NmQzYzUzZTA5MmIyZDFlMmJlNjI0YjQ3ZmMiLCJuYmYiOjE3NDAzMjgwNjEsImlzcyI6ImRpZDpldGhyOnNlcG9saWE6MHgwMmFjNWE1MzJiNjg5Yzg4YmIwYWJhNjhjYjYyZWQ0OWFlNGEyYTc1NmQzYzUzZTA5MmIyZDFlMmJlNjI0YjQ3ZmMifQ.TaW2EXZzQ3u4uyIK2cV2PZWzCl4S7i1D-zHcIN26X0FC4P1IZ9_6opm_F0BKnHURpGq2dek6lQgZXtmTPfxwNw"
+        }
+      }
+    ],
+    "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+    "id": "77cc0cf8-4104-45d3-a733-761a7958d238",
+    "type": [
+      "VerifiablePresentation"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2025-02-23T17:33:24.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKaGJHY2lPaUpGVXpJMU5rc2lMQ0owZVhBaU9pSktWMVFpZlEuZXlKMll5STZleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdk1qQXhPQzlqY21Wa1pXNTBhV0ZzY3k5Mk1TSXNJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTl1Y3k5amNtVmtaVzUwYVdGc2N5OTJNaUpkTENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lpd2lVMlZzWldOMGFYWmxSR2x6WTJ4dmMzVnlaVjlGVTBOUFgzUjVjR1ZmVm1WeWFXWnBZV0pzWlVOeVpXUmxiblJwWVd3aVhTd2lZM0psWkdWdWRHbGhiRk4xWW1wbFkzUWlPbnNpYzJ0cGJHeGZZWE56YVhOMGFXNW5JR0Z1WkNCallYSnBibWNpT2lKbVlUbGhPR1JsWmpJNU1ETTBaV1ZtTVRNMFlqbG1ZemhsWXpneVpqSmhaR1E1TTJOaU5EWTNOVGRoT0dSa01ESmxObUk0TkRnellqUTNNRGt3WkdKbUlpd2ljMnRwYkd4ZlltbHZiV1ZrYVdOaGJDQnpZMmxsYm1ObGN5STZJak15TVRnMlpqazRNbU5sTnpVMk9EY3pNVEUzTm1Sa09HWTVNekEwT0dVNFkyWTRNbVZtWmpVMk5qWXlaV00wTldVNVpXTTVNV0l3TlRnMU9EYzBOVEFpTENKemEybHNiRjl0WldScFkybHVaU0k2SWpGa01qVXhaVEUzTjJWbFlqazJZVFU0TVRjeFltTmxaamN4WkRjME1UYzRNRFl4TmpWa1lqQmhNRGMyT1dNNU1tVTFOemhtWXpReU5qY3dZV015TURNaUxDSnphMmxzYkY5d2FHRnliV0ZqWlhWMGFXTmhiQ0JwYm1SMWMzUnlhV1Z6SWpvaU56TTVZamc1WkdGaU1EZzROV0l5T0dKak5EWmlORE14TXpjd01EazNOVE5sTjJFM1ptVTVPR1pqWlRJeVpUZ3pOak0xWlRjM01HWm1OMlZqWVdObE9DSXNJbk5yYVd4c1gyWnBibVVnWVhKMGN5STZJbVF5TURsaE5ERTFaVFppTldOaU5XTmtaRFZsT0RSa01HWmpNRFJrWkRWaU0yRTBaRFF5TmprNU9UTTBaVGN4TldRMU5qQTFaalptWXpVek5qZzFObUVpTENKemEybHNiRjkwYUdWeVlYQjVJR0Z1WkNCeVpXaGhZbWxzYVhSaGRHbHZiaUk2SWpZeE9EY3lOMk0wTXpWbE56WXlObVUxTmpZMFl6SXdPV0UxT1RsbVpUTmlPVFF5TVdKbU56Tm1NelUyTjJOaE5ESTBaV0U1WVRJNU5EYzBabVl5T0dVaUxDSnphMmxzYkY5aWFXOXRaV1JwWTJGc0lITmphV1Z1WTJVaU9pSTVOalptWTJabE9XSmlOalkxTTJRNE4yWTNNbU5pWmpSaE16TmxNRGN6T1Roak9XRmxaRFptTmpJMk1qUXlPVGN5TVRrek1XUTVaRE5qTmpWbFpUWmlJaXdpYzJ0cGJHeGZZbWx2TFcxbFpHbGphVzVsSWpvaVpXTmtaRFk1T0dFMFlqazBOVFZqTlRsaE1HRmxZMkV6T1daaE5HRmxNR1EwT0dZeU1tWm1NV0ZrTkdNNFltTm1NREZoTTJFeE9UVTFOMk0xTXpRMk1DSXNJbk5yYVd4c1gyMWxaR2xqWVd3Z1pHbGhaMjV2YzNScFl5QmhibVFnZEhKbFlYUnRaVzUwSUhSbFkyaHViMnh2WjNraU9pSTJOakE1TURWaVpXUTFPVGcxWmpjNU9ESXhOamN3TnpkaFl6azNNR013TmpsaE5HWmlaRFkzTW1WaU9UQTJOMlU1WTJZd04yUXhNVFpqWW1Rd01USTRJaXdpYzJ0cGJHeGZjSEpsZG1WdWRHbDJaU0J0WldScFkybHVaU0k2SWprMllUYzROelE1TlRRMFlqZzRZamhoT1RrM01UWXhOV1F4WWpNd01ETXdaakZoTm1KbFkyWTFaVEl4TnpFM05UTTRZamN4WVRZeFpEVTNZamRsTXpjaUxDSnphMmxzYkY5b1pXRnNkR2dnWTJGeVpTQnplWE4wWlcwaU9pSXlNVGhoT0RFNE5XRTVNMkkxTXpVd05HSXhNekppTkRSalpHUXpZMk16T1RRME9XUmlOemhpWXpjME1qRmpZbVl4TURjMk1ERTJPVFpoTURReU16TTBJaXdpYzJ0cGJHeGZjR3hoZVNCMGFHVnlZWEJwWlhNaU9pSTVOak14WmpZMlptVmxZamcyT1dNeE5URTRPVFEzTnpNelkyTTRNV00yTUdGaU5qaGhZVEF3TURrM1l6TmtaR00xT1RJeU56Y3pORE5tWVdGaE16WmxJaXdpYzJ0cGJHeGZjR2hoY20xaFkyVjFkR2xqWVd3Z2NISnZaSFZqZEhNaU9pSXdaV00zTjJVeU1ERmhPRFppTWpRNE56UTFaalk0TWpjeVltTmxNVGM0TXpCak5UUTJaR0ZoWlRCbVptTTRNR0UwWTJRMFpqWTNOREl6TkRZeE4yRTNJaXdpYzJ0cGJHeGZjM1Z5WjJWeWVTSTZJall5WVRRek9EZGlOMk5pWm1FeFpqSmpZV1kyTnpWa01qY3dZVEJqWWpBMk56YzFNRFppTVRkbE0yRTFOak5pTUdJNVlUazBOR00wTlRRMVptUTBZVEVpTENKemEybHNiRjl1WVhSMWNtRnNJSE5qYVdWdVkyVWlPaUl4WmpReE9HWXdZemRpTkROak5XTXpPR00xT1dGaVpHVmhNR1JqTm1abU1XUTBOemt3TXpWa05ETm1Zemt6T0RVMU9XTmpZamMyT1RSbVl6STRNalV5SWl3aWMydHBiR3hmY0hKdlkyVmtkWEpsY3lCdlppQmthV1ptWlhKbGJuUnBZV3dnWkdsaFoyNXZjMmx6SWpvaU1XSTBPRFptWkRSaE9ESm1OMkZrTlRBeFptSTVaV1l6T1dRd09EWTNaR1ZtWVRjNU9ETTFZMlppWlRFNVptVTNORGhrTVdSalptUXdNMlkzT1RNMVppSXNJbk5yYVd4c1gyNTFjbk5wYm1jZ1lXNWtJRzFwWkhkcFptVnllU0k2SWpGa056STNZVGhoWlRBMVpUTmxaakl6TUdJek5tVmtOelE1T0ROaFpUVTRZekJqWkRkbVpqUmlNakV3WXpGbVpqTmpOVFZrT1dWaFpETXhNRFJoWVRZaUxDSnphMmxzYkY5cGJtWmxZM1JwYjNWeklHUnBjMlZoYzJWeklqb2laall5TkRRM1pXVmxZMkl4TmpnelpUWXdaV1U0WW1NMFlqTmhaVGt4TW1NMU1UZG1OR0UwTXpBeU1UVTFZVEZoTURrNU9UVTNaRFV5TTJaaE5HRTROU0lzSW5OcmFXeHNYMlJ5ZFdjZ2RHaGxjbUZ3ZVNJNklqY3dOemRsWlRKak1ETmpaV00xTUdKbE16ZGtNV1JpTW1aaU5UUmpNRGs1T0RobVpXVTNPVEV6TUdReFl6VmlZekJsWlRGaVlURmpPVEk0T1RrNU5XSWlmWDBzSW5OMVlpSTZJbVJwWkRwbGRHaHlPbk5sY0c5c2FXRTZNSGd3TW1Gak5XRTFNekppTmpnNVl6ZzRZbUl3WVdKaE5qaGpZall5WldRME9XRmxOR0V5WVRjMU5tUXpZelV6WlRBNU1tSXlaREZsTW1KbE5qSTBZalEzWm1NaUxDSnVZbVlpT2pFM05EQXpNamd3TmpFc0ltbHpjeUk2SW1ScFpEcGxkR2h5T25ObGNHOXNhV0U2TUhnd01tRmpOV0UxTXpKaU5qZzVZemc0WW1Jd1lXSmhOamhqWWpZeVpXUTBPV0ZsTkdFeVlUYzFObVF6WXpVelpUQTVNbUl5WkRGbE1tSmxOakkwWWpRM1ptTWlmUS5UYVcyRVhaelEzdTR1eUlLMmNWMlBaV3pDbDRTN2kxRC16SGNJTjI2WDBGQzRQMUlaOV82b3BtX0YwQktuSFVScEdxMmRlazZsUWdaWHRtVFBmeHdOdyJdfSwiYXR0cmlidXRlcyI6W3sicGF0aCI6WyJza2lsbF9hc3Npc3RpbmcgYW5kIGNhcmluZyJdLCJjbGVhclZhbHVlIjoiYXNzaXN0aW5nIGFuZCBjYXJpbmd8aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vc2tpbGwvUzMuMC4wIiwibm9uY2UiOiI0OWY1YzAyYTlkOTE2YTUwNzJlYWNlM2U5ZWY0ODY5ZDVmYjE0NWQ3MDI0ZTIxMTI2MWQxYTg4OTdmYTMwZmRjZjI0NGJjMzFhYzY5NDVlYjhiOGJkMWUxZjA5Y2IyNTc3ODBjYWZmODk1OWU4NWUxZTFlZDk3N2EzMWQxZGYzZSJ9LHsicGF0aCI6WyJza2lsbF9iaW9tZWRpY2FsIHNjaWVuY2VzIl0sImNsZWFyVmFsdWUiOiJiaW9tZWRpY2FsIHNjaWVuY2VzfGh0dHA6Ly9kYXRhLmV1cm9wYS5ldS9lc2NvL3NraWxsLzAxZTY2ZTFjLTk3ZDktNDgyOS1iZWUxLWYzYWI2NDkxNjFlOCIsIm5vbmNlIjoiZTFmMzJhN2ViOTJiYmIyMGFkMjFiZmJmZmUxNDhjNjIyYWE0M2E4Mjk0ZWViNTNiNmNiNzdiMTlmMTRhNzlhZDNkNzRmMzk4ZmRkY2VhZmMzODQ4NDI1M2YyNjZlZWE4ZmRmNjIwNTJjNzY2Y2Q3YWJkYjFhOTZmZWM1MmVkYWIifSx7InBhdGgiOlsic2tpbGxfbWVkaWNpbmUiXSwiY2xlYXJWYWx1ZSI6Im1lZGljaW5lfGh0dHA6Ly9kYXRhLmV1cm9wYS5ldS9lc2NvL2lzY2VkLWYvMDkxMiIsIm5vbmNlIjoiZDBhZjM1MGUyMmIxMThhMzhhNjc1OTg1MjFlMTg2NmNiNmM5ZWZlZmNmMzNjZjI1OWQ0MjA1MDQwOWI4MjJjNThhMjA4NjMyYjBkY2Y2NjU2NTRiYWQ0NzFiMGY0MjBkYjljMWNmNTVmYTA0MDBlODgwN2M0OGE5ZWRmZTRhZWUifSx7InBhdGgiOlsic2tpbGxfcGhhcm1hY2V1dGljYWwgaW5kdXN0cmllcyJdLCJjbGVhclZhbHVlIjoicGhhcm1hY2V1dGljYWwgaW5kdXN0cmllc3xodHRwOi8vZGF0YS5ldXJvcGEuZXUvZXNjby9za2lsbC9hMWM3MmQ2Ni0zNjcxLTRhOGUtODQwZC1lOGIyOGUyMzdiNmYiLCJub25jZSI6IjEyYjUzMmYxZjdhMzczYmM3ZmZkNmQxZTQ2OGQyMDAzNDIzMWUxYWY1YTdiOGJkNmUyNmEwNGFjZjUzNmNkNDM3NmU4ODkwMDFjMjA3ZGRiMzhmMDM5NTM3YTBmODUzOWE0MGVhMjdiNzBiZjcwNjk0YWVhMmY5ZDVlNjk3ODJhIn0seyJwYXRoIjpbInNraWxsX2ZpbmUgYXJ0cyJdLCJjbGVhclZhbHVlIjoiZmluZSBhcnRzfGh0dHA6Ly9kYXRhLmV1cm9wYS5ldS9lc2NvL2lzY2VkLWYvMDIxMyIsIm5vbmNlIjoiZjFjZTk0MzliZmVkYzdmNGVjYTdiZDE4MmU1MjZkNjdmODI2Y2M2NDM2NzI0YjFhNTlkNzBjMmIzNjc0MzRjZGM0ZGI0ODRhNTRiNzRlNzAzZmMyN2UwOGZhY2VlNTdmMDM3ZGM4OTIwN2Q2NzBjYWE3NWQxYzBjMjgyYzViMTAifSx7InBhdGgiOlsic2tpbGxfdGhlcmFweSBhbmQgcmVoYWJpbGl0YXRpb24iXSwiY2xlYXJWYWx1ZSI6InRoZXJhcHkgYW5kIHJlaGFiaWxpdGF0aW9ufGh0dHA6Ly9kYXRhLmV1cm9wYS5ldS9lc2NvL2lzY2VkLWYvMDkxNSIsIm5vbmNlIjoiYjQ4ODgzYWFkNDU0YWUzNmE1YjlhMzRmY2YxOWYzOTJjZTcwZWUwZjIwMWJmYWVhZDI5ODM1M2VkNzc1NWM5NTBlNTUyZDFhZDMxN2E4MzI2NGE4YWFmYjVhMTQwZTVlODMxYjBkMDYxYjIxZDQ3ZTY5YjU3ZDBmNzVmOGJlYTMifSx7InBhdGgiOlsic2tpbGxfYmlvbWVkaWNhbCBzY2llbmNlIl0sImNsZWFyVmFsdWUiOiJiaW9tZWRpY2FsIHNjaWVuY2V8aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vc2tpbGwvMDFlNjZlMWMtOTdkOS00ODI5LWJlZTEtZjNhYjY0OTE2MWU4Iiwibm9uY2UiOiI5NDQxNWNlMDE5MTVjMDE4NmQwOTVhZjU1NjliNmYzZDczNjU1ZWNmYTYxOWIyZjUzZDc1YWJmYzJkYzc0YThjNTVkMDFiMzdhNGFlMWRlNTZiNjZmZDc0MDhhZDQxMGM2NDNiY2Q3MjE4YzBhNWVmMmU1NTk5NTkxMzAyYjJjNiJ9LHsicGF0aCI6WyJza2lsbF9iaW8tbWVkaWNpbmUiXSwiY2xlYXJWYWx1ZSI6ImJpby1tZWRpY2luZXxodHRwOi8vZGF0YS5ldXJvcGEuZXUvZXNjby9za2lsbC8xMGYwOGU4Mi1lZTJmLTQ3OTAtYTQzZC01ZmQzZjliOGEzOTIiLCJub25jZSI6ImUwMTE3NWEyODBlNTFlYjdkMTYwZmY1NGU2YWNhMjJjNmYwYzRkMWNiNmI4MDM2YzYyMzkzZmFkNGI2MGVjM2ZkM2ZkZTgxZjVhNzI3OGE4NDE0ZTE2NTk2ZjQ2ZWQ3NmM2MjkwMzI0M2RiZGYyZGJjNjYxNWM5YmJmNmNjNjkxIn0seyJwYXRoIjpbInNraWxsX21lZGljYWwgZGlhZ25vc3RpYyBhbmQgdHJlYXRtZW50IHRlY2hub2xvZ3kiXSwiY2xlYXJWYWx1ZSI6Im1lZGljYWwgZGlhZ25vc3RpYyBhbmQgdHJlYXRtZW50IHRlY2hub2xvZ3l8aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vaXNjZWQtZi8wOTE0Iiwibm9uY2UiOiJmM2U5YjE4NzA4NjY5MWI5Y2I4NGRlMjI3YjcwMzIxYTJkMWVjMDU0YTI3ZDkxMGIxOTIzNTY1ZGJlYWRhNjc3NDM3ZGFjMDFjNTg1OTI2ZDk3M2E1NDA4ZTY5ZDUxMGEwMTE3Y2FiZWM2Y2ZhMGRmYzdkN2JmZjMwNDNmNzgxZSJ9LHsicGF0aCI6WyJza2lsbF9wcmV2ZW50aXZlIG1lZGljaW5lIl0sImNsZWFyVmFsdWUiOiJwcmV2ZW50aXZlIG1lZGljaW5lfGh0dHA6Ly9kYXRhLmV1cm9wYS5ldS9lc2NvL3NraWxsLzA4Zjg1YThjLWM1MGMtNGM5Ny1iNDU2LTJmZGRhN2Y2YTk3MyIsIm5vbmNlIjoiZWFkYWEzYmY3ZDMyZTUyOGViOTI1OGI5MGYwMDk5MTkxOWFjMzZjZWZmMDU5OTg2ZDFmZTlkZDIyY2YyZmZlMmRhY2UwNDhlY2FmMzQzOTA5NzE4NThmOGNkZThjZGZmNDFlZTc2ZTM1M2U1NzlkYjRjMjE5OGExYWM1OTczNGUifSx7InBhdGgiOlsic2tpbGxfaGVhbHRoIGNhcmUgc3lzdGVtIl0sImNsZWFyVmFsdWUiOiJoZWFsdGggY2FyZSBzeXN0ZW18aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vc2tpbGwvOWI2M2Q5MmItNWEzYS00NmIwLWIyYmEtYzk4YjM5ZWE1YWFmIiwibm9uY2UiOiI3MzhjNTQxMDc0OTUzYThiZWI3ZTVmZmQ5ZmUzMWI2YmI1M2I5OTM4NWNkNWVjNDdiNWU0ZDRjNTFhNDY1OTNlMjRiMjI3NjMxNjBjMjg1NjczNDBhMjExZjI5MTEwMTMyN2ExNjk0ZWYzMTNiMjg5NzhkM2M4YjIxNDM2MTRmYiJ9LHsicGF0aCI6WyJza2lsbF9wbGF5IHRoZXJhcGllcyJdLCJjbGVhclZhbHVlIjoicGxheSB0aGVyYXBpZXN8aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vc2tpbGwvZmVjZjA1MGEtNDM0OS00ODFjLTllOGEtMjZhNTVkOTlkYzc5Iiwibm9uY2UiOiIwMGM0MDdlYjhhY2ExYzZmY2VmMTA4MjdiOTZiNDQzOWQwMTYzMzQ1N2U0NGI4ZTlkNWMyOTYxMjVkOWM3NGY5MjhhN2RhNDBhNGQ3ODY3YTk4YmRjMmVjZTI3NjcyODQxMzU1Zjk1MGNhNTcwNTUxZDZhZWE0MTkzY2U0ZjhjOSJ9LHsicGF0aCI6WyJza2lsbF9waGFybWFjZXV0aWNhbCBwcm9kdWN0cyJdLCJjbGVhclZhbHVlIjoicGhhcm1hY2V1dGljYWwgcHJvZHVjdHN8aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vc2tpbGwvMTZiMWYxOTEtZWFmZC00ODIxLWEwOGEtOWYwY2M0ZTVhNzFhIiwibm9uY2UiOiI2ZjA5NTc0OWI1YjhjNTkzYmNkMTYwNTc1Yjc2NDUzYzljZmU3MGEyNDQ1YjA1YWJhMTFlNjI5MWE3ZmEwNDQ4ZTgzNTMzY2MzOGQxNmU3ZGUyMTAzZmQzMGIxNzJiYjliYjRkYWE4N2U3Y2ViNjNiNzllNmNmNTI0MzZkMGNkOSJ9LHsicGF0aCI6WyJza2lsbF9zdXJnZXJ5Il0sImNsZWFyVmFsdWUiOiJzdXJnZXJ5fGh0dHA6Ly9kYXRhLmV1cm9wYS5ldS9lc2NvL3NraWxsLzUwOGYzYjRjLTc5OWEtNDc0Mi1iM2FlLTc1ZjJmZjExMTUzZCIsIm5vbmNlIjoiZGVjNzc2NTY5MjVmMTZhNmZjZjhiYWMwYmMxNDMzNmZkMTMxYzYwZTY1ZDdlNDhhZjc0NmUyNzI2MjI3OGE5NDQ3MjBjZGZjOGM1MjZlZmM2NTY4ZTJlMDAzOTMxMDlhNmYyZmM3NDIwMDEwMDMwOWRiZDU4MzM5NWRlYzZiODAifSx7InBhdGgiOlsic2tpbGxfbmF0dXJhbCBzY2llbmNlIl0sImNsZWFyVmFsdWUiOiJuYXR1cmFsIHNjaWVuY2V8aHR0cDovL2RhdGEuZXVyb3BhLmV1L2VzY28vc2tpbGwvNjkyYWNlNzAtN2Y5Ny00MjE0LTkyYmQtODhmNzYzN2Q4YTQ0Iiwibm9uY2UiOiJiMTY3MWRiODdmMGE2NzEwMTQwOGQ0MmY2YTljMjA4ZGRhYmVkZGI1MDcwMDRlZTY2YjEyNzc4NmFhNzE5M2E1YWE5M2NkMGNhZGQxMjg1ZTgwZjI2OWE3Mjg3YmM2NTAxZjcxMjAzODNkYTA1MWFhMzJkYmEyMmY3NjUwZGE5OSJ9LHsicGF0aCI6WyJza2lsbF9udXJzaW5nIGFuZCBtaWR3aWZlcnkiXSwiY2xlYXJWYWx1ZSI6Im51cnNpbmcgYW5kIG1pZHdpZmVyeXxodHRwOi8vZGF0YS5ldXJvcGEuZXUvZXNjby9pc2NlZC1mLzA5MTMiLCJub25jZSI6ImNjMjNiY2YyOGY1ZGNjOWM2OWQ2YTk3ZTBmZWQ3MGY1NTMwOTE0NzA0MmQ5OGU3ZjkwY2U2M2JmMTRhZmQ2ODAwMzdkODI0MmJlNjk4MDNmZWU5YWU4YWNhZWI1M2M5OWU1MmYzNzZlODJjOTZjYzZmMDRiMDE5OGE5Zjg2MGJkIn1dLCJqdGkiOiI3N2NjMGNmOC00MTA0LTQ1ZDMtYTczMy03NjFhNzk1OGQyMzgiLCJuYmYiOjE3NDAzMzIwMDQsImlzcyI6ImRpZDpldGhyOnNlcG9saWE6MHgwMmFjNWE1MzJiNjg5Yzg4YmIwYWJhNjhjYjYyZWQ0OWFlNGEyYTc1NmQzYzUzZTA5MmIyZDFlMmJlNjI0YjQ3ZmMifQ.ZLjWZqhQDQl-FzgzWVbimUMR0XlEwba93lVcZtnGdL9wfKo0GIWipgmyfe-1Qjt-3OxsZRoOrOg5MJm_xBPe2w"
+    }
+  }
+}
