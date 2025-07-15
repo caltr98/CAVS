@@ -43,7 +43,7 @@ import {DataSource} from 'typeorm'
 const DATABASE_FILE = 'database.sqlite1'
 
 // You will need to get a project ID from infura https://www.infura.io I DID PUT THERE THE API KEY
-const INFURA_PROJECT_ID = '05dfd704449d432ead7fdc7a2ee1fc4f'
+const INFURA_PROJECT_ID = '77b6397329f849c0b5746b7da777c7dd'
 
 // This will be the secret key for the KMS (replace this with your secret key)
 const KMS_SECRET_KEY = 'eb4aaf0408d8af22cdb8e63913a6ce49d898451fb949490b4a82d0018d9bf9d4'
