@@ -26,7 +26,7 @@ const serviceKeywordsEndpoint = config.serviceKeywordsEndpoint;
 const serviceSkillsEndpoint = config.serviceSkillsEndpoint;
 const veramoAgentEndpoint = config.veramoAgentEndpoint;
 
-let selectiveDisclosureMode = true;
+let selectiveDisclosureMode = false;
 
 let selectiveDisclousureRequests = {};
 app.use(cors(), express.json());
