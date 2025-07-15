@@ -246,6 +246,7 @@ function App() {
 
                 setOpFeedback("Got VC Statement, storing in wallet of " + selectedDid);
 
+
                 // Start time for storing the VC credential
                 let startStoreTime = new Date();
                 response = await axios.post(
@@ -1785,7 +1786,7 @@ function App() {
         const decodeJWTVerifiablePresentationsText = async () => {
             if (inputJWT) {
                 try {
-                    const response = await axios.get(`${addressVeramoAgent}/decode_jwt`, { //TODO
+                    const response = await axios.get(`${addressVeramoAgent}/decode_jwt`, {
                         timeout: 65000,
                         params: {
                             jwt: inputJWT
@@ -2003,9 +2004,6 @@ function App() {
                                     verifiableCredentialStatement.map((vc, index) => (
                                         <div key={`cred-${index}`} className="credential">
                                             <h3>Statement Verifiable Credential #{index + 1}</h3>
-
-                                            {<button className="action-button"
-                                                     onClick={() => fetchSkillsFromVC(vc)}>Fetch Skills VC</button>}
                                             <div><p></p></div>
                                             <button className="action-button" onClick={() => verifyStatementVC(vc)}>
                                                 Verify Statement Verifiable Credential
