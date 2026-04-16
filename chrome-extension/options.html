@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CAVS over Reddit (Options)</title>
+    <style>
+      body {
+        font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        margin: 20px;
+        max-width: 900px;
+      }
+      label {
+        display: block;
+        margin: 10px 0 6px;
+        font-weight: 600;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 8px 10px;
+        font: inherit;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .muted {
+        color: #555;
+      }
+      .actions {
+        margin-top: 16px;
+        display: flex;
+        gap: 10px;
+      }
+      button {
+        padding: 8px 12px;
+        font: inherit;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 10px;
+      }
+      code {
+        background: #f2f2f2;
+        padding: 1px 4px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>CAVS over Reddit (Experimental)</h1>
+    <p class="muted">
+      Default setup assumes CAVSBackend at <code>http://127.0.0.1:4200</code> and (optional) ULTRAEXPERIMENTS queue at
+      <code>http://127.0.0.1:20000</code>.
+    </p>
+
+    <div class="row">
+      <div>
+        <label for="cavsMode">Mode</label>
+        <select id="cavsMode">
+          <option value="cavs">CAVS pipeline (/api/extract)</option>
+          <option value="oracle">Oracle consensus (ULTRAEXPERIMENTS queue)</option>
+        </select>
+      </div>
+      <div>
+        <label for="autoAnalyze">Auto-analyze posts</label>
+        <select id="autoAnalyze">
+          <option value="false">Off (double-click badge to analyze)</option>
+          <option value="true">On (rate-limited)</option>
+        </select>
+      </div>
+    </div>
+
+    <label for="cavsBaseUrl">CAVS base URL</label>
+    <input id="cavsBaseUrl" placeholder="http://127.0.0.1:4200" />
+
+    <label for="cavsSkillMappingMode">Skill mapping mode</label>
+    <select id="cavsSkillMappingMode">
+      <option value="extract">extract (OJD-DAPS directly from post text)</option>
+      <option value="keywords">keywords (keyword+enrichment pipeline)</option>
+    </select>
+
+    <label for="oracleQueueBaseUrl">Oracle queue base URL (ULTRAEXPERIMENTS)</label>
+    <input id="oracleQueueBaseUrl" placeholder="http://127.0.0.1:20000" />
+
+    <div class="row">
+      <div>
+        <label for="oracleMaxWaitMs">Oracle max wait (ms)</label>
+        <input id="oracleMaxWaitMs" type="number" min="1000" step="500" />
+      </div>
+      <div>
+        <label for="oraclePollIntervalMs">Oracle poll interval (ms)</label>
+        <input id="oraclePollIntervalMs" type="number" min="250" step="250" />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="save">Save</button>
+      <button id="reset">Reset</button>
+    </div>
+    <div id="status" class="muted"></div>
+
+    <script src="options.js"></script>
+  </body>
+</html>
+

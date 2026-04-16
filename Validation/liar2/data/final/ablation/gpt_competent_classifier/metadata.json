@@ -1,0 +1,20 @@
+{
+  "family": "gpt_competent_classifier",
+  "provenance": "restored from old_Validation review artifacts",
+  "grouped_source": "/home/cal/componentsCAVS/Validation/liar2/data/final/ablation/gpt_competent_classifier/grouped_source.json",
+  "flat_csv": "/home/cal/componentsCAVS/Validation/liar2/data/final/ablation/gpt_competent_classifier/flat.csv",
+  "split_outputs": {
+    "train": "/home/cal/componentsCAVS/Validation/liar2/data/final/ablation/gpt_competent_classifier/train_augmented.csv",
+    "valid": "/home/cal/componentsCAVS/Validation/liar2/data/final/ablation/gpt_competent_classifier/valid_augmented.csv",
+    "test": "/home/cal/componentsCAVS/Validation/liar2/data/final/ablation/gpt_competent_classifier/test_augmented.csv"
+  },
+  "grouped_author_count": 4661,
+  "grouped_article_count": 22933,
+  "split_row_counts": {
+    "train": 18369,
+    "valid": 2297,
+    "test": 2296
+  },
+  "matching_key": "speaker_statement",
+  "notes": "This folder preserves the historical grouped JSON used to build the shipped GPT augmented CSVs."
+}

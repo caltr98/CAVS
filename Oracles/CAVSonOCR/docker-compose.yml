@@ -1,0 +1,523 @@
+x-ocr-build: &ocr-build
+  context: ../..
+  dockerfile: Oracles/CAVSonOCR/Dockerfile
+  additional_contexts:
+    go_mod_download_cache: ${HOME}/go/pkg/mod/cache/download
+
+services:
+  queue:
+    profiles: ["centralized"]
+    build: *ocr-build
+    entrypoint: ["/cavs-queue"]
+    command:
+      - -queue_addr=0.0.0.0:20000
+    ports:
+      - "20000:20000"
+
+  bootstrap:
+    profiles: ["centralized", "smart-contract"]
+    build: *ocr-build
+    entrypoint: ["/cavs-oracle"]
+    depends_on: [cavs0]
+    volumes:
+      - ocr-did-registry:/registry
+    command:
+      - -mode=bootstrap
+      - -n=4
+      - -f=1
+      - -seed=${OCR_SEED:?set OCR_SEED}
+      - -oracle_seeds=${OCR_ORACLE0_SEED:-101},${OCR_ORACLE1_SEED:-202},${OCR_ORACLE2_SEED:-303},${OCR_ORACLE3_SEED:-404}
+      - -bootstrap_listen=0.0.0.0:19900
+      - -bootstrap_announce=bootstrap:19900
+      - -skill_extractor_url=http://cavs0:4200
+
+  cavs0:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../..
+      dockerfile: veramoAgent/CAVSDockerfile
+    working_dir: /usr/src/app/CAVSBackend
+    entrypoint: ["node", "CAVSService.js"]
+    depends_on: [gptcomp0, veramo0]
+    environment:
+      - ORACLE_ID=0
+      - PORT=4200
+      - OJD_ENDPOINT=http://nesta0:5005
+      - VERAMO_ENDPOINT=http://veramo0:3001
+      - GPT_COMP_ENDPOINT=http://gptcomp0:3030
+      - CAVS_COMPETENCE_MODE=${CAVS_COMPETENCE_MODE:-nesta}
+      - ESCO_JSONL_PATH=/usr/src/app/esco-v1.2.1.jsonl
+    expose:
+      - "4200"
+    volumes:
+      - ../../veramoAgent/CAVSBackend:/usr/src/app/CAVSBackend
+
+  cavs1:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../..
+      dockerfile: veramoAgent/CAVSDockerfile
+    working_dir: /usr/src/app/CAVSBackend
+    entrypoint: ["node", "CAVSService.js"]
+    depends_on: [gptcomp1, veramo1]
+    environment:
+      - ORACLE_ID=1
+      - PORT=4200
+      - OJD_ENDPOINT=http://nesta1:5005
+      - VERAMO_ENDPOINT=http://veramo1:3001
+      - GPT_COMP_ENDPOINT=http://gptcomp1:3030
+      - CAVS_COMPETENCE_MODE=${CAVS_COMPETENCE_MODE:-nesta}
+      - ESCO_JSONL_PATH=/usr/src/app/esco-v1.2.1.jsonl
+    expose:
+      - "4200"
+    volumes:
+      - ../../veramoAgent/CAVSBackend:/usr/src/app/CAVSBackend
+
+  cavs2:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../..
+      dockerfile: veramoAgent/CAVSDockerfile
+    working_dir: /usr/src/app/CAVSBackend
+    entrypoint: ["node", "CAVSService.js"]
+    depends_on: [gptcomp2, veramo2]
+    environment:
+      - ORACLE_ID=2
+      - PORT=4200
+      - OJD_ENDPOINT=http://nesta2:5005
+      - VERAMO_ENDPOINT=http://veramo2:3001
+      - GPT_COMP_ENDPOINT=http://gptcomp2:3030
+      - CAVS_COMPETENCE_MODE=${CAVS_COMPETENCE_MODE:-nesta}
+      - ESCO_JSONL_PATH=/usr/src/app/esco-v1.2.1.jsonl
+    expose:
+      - "4200"
+    volumes:
+      - ../../veramoAgent/CAVSBackend:/usr/src/app/CAVSBackend
+
+  cavs3:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../..
+      dockerfile: veramoAgent/CAVSDockerfile
+    working_dir: /usr/src/app/CAVSBackend
+    entrypoint: ["node", "CAVSService.js"]
+    depends_on: [gptcomp3, veramo3]
+    environment:
+      - ORACLE_ID=3
+      - PORT=4200
+      - OJD_ENDPOINT=http://nesta3:5005
+      - VERAMO_ENDPOINT=http://veramo3:3001
+      - GPT_COMP_ENDPOINT=http://gptcomp3:3030
+      - CAVS_COMPETENCE_MODE=${CAVS_COMPETENCE_MODE:-nesta}
+      - ESCO_JSONL_PATH=/usr/src/app/esco-v1.2.1.jsonl
+    expose:
+      - "4200"
+    volumes:
+      - ../../veramoAgent/CAVSBackend:/usr/src/app/CAVSBackend
+
+  nesta0:
+    image: ojddapsservice1:latest-basic
+    build: ../../ojd_daps_skillsService
+    profiles: ["nesta"]
+    environment:
+      - PORT=5005
+    expose:
+      - "5005"
+    volumes:
+      - nesta0-cache:/root/.cache
+
+  nesta1:
+    image: ojddapsservice1:latest-basic
+    build: ../../ojd_daps_skillsService
+    profiles: ["nesta"]
+    environment:
+      - PORT=5005
+    expose:
+      - "5005"
+    volumes:
+      - nesta1-cache:/root/.cache
+
+  nesta2:
+    image: ojddapsservice1:latest-basic
+    build: ../../ojd_daps_skillsService
+    profiles: ["nesta"]
+    environment:
+      - PORT=5005
+    expose:
+      - "5005"
+    volumes:
+      - nesta2-cache:/root/.cache
+
+  nesta3:
+    image: ojddapsservice1:latest-basic
+    build: ../../ojd_daps_skillsService
+    profiles: ["nesta"]
+    environment:
+      - PORT=5005
+    expose:
+      - "5005"
+    volumes:
+      - nesta3-cache:/root/.cache
+
+  oracle0:
+    profiles: ["centralized"]
+    build: *ocr-build
+    entrypoint: ["/cavs-oracle"]
+    depends_on: [queue, bootstrap, cavs0]
+    volumes:
+      - ocr-did-registry:/registry
+    command:
+      - -mode=oracle
+      - -oracle_id=0
+      - -n=4
+      - -f=1
+      - -seed=${OCR_SEED:?set OCR_SEED}
+      - -oracle_seed=${OCR_ORACLE0_SEED:-101}
+      - -request_source=queue
+      - -queue_url=http://queue:20000
+      - -bootstrap_addr=bootstrap:19900
+      - -p2p_listen=0.0.0.0:20010
+      - -p2p_announce=oracle0:20010
+      - -skill_extractor_url=http://cavs0:4200
+      - -competence_mode=${CAVS_COMPETENCE_MODE:-nesta}
+      - -vc_issuer_url=http://cavs0:4200
+
+  oracle1:
+    profiles: ["centralized"]
+    build: *ocr-build
+    entrypoint: ["/cavs-oracle"]
+    depends_on: [queue, bootstrap, cavs1]
+    volumes:
+      - ocr-did-registry:/registry
+    command:
+      - -mode=oracle
+      - -oracle_id=1
+      - -n=4
+      - -f=1
+      - -seed=${OCR_SEED:?set OCR_SEED}
+      - -oracle_seed=${OCR_ORACLE1_SEED:-202}
+      - -request_source=queue
+      - -queue_url=http://queue:20000
+      - -bootstrap_addr=bootstrap:19900
+      - -p2p_listen=0.0.0.0:20010
+      - -p2p_announce=oracle1:20010
+      - -skill_extractor_url=http://cavs1:4200
+      - -competence_mode=${CAVS_COMPETENCE_MODE:-nesta}
+      - -vc_issuer_url=http://cavs1:4200
+
+  oracle2:
+    profiles: ["centralized"]
+    build: *ocr-build
+    entrypoint: ["/cavs-oracle"]
+    depends_on: [queue, bootstrap, cavs2]
+    volumes:
+      - ocr-did-registry:/registry
+    command:
+      - -mode=oracle
+      - -oracle_id=2
+      - -n=4
+      - -f=1
+      - -seed=${OCR_SEED:?set OCR_SEED}
+      - -oracle_seed=${OCR_ORACLE2_SEED:-303}
+      - -request_source=queue
+      - -queue_url=http://queue:20000
+      - -bootstrap_addr=bootstrap:19900
+      - -p2p_listen=0.0.0.0:20010
+      - -p2p_announce=oracle2:20010
+      - -skill_extractor_url=http://cavs2:4200
+      - -competence_mode=${CAVS_COMPETENCE_MODE:-nesta}
+      - -vc_issuer_url=http://cavs2:4200
+
+  oracle3:
+    profiles: ["centralized"]
+    build: *ocr-build
+    entrypoint: ["/cavs-oracle"]
+    depends_on: [queue, bootstrap, cavs3]
+    volumes:
+      - ocr-did-registry:/registry
+    command:
+      - -mode=oracle
+      - -oracle_id=3
+      - -n=4
+      - -f=1
+      - -seed=${OCR_SEED:?set OCR_SEED}
+      - -oracle_seed=${OCR_ORACLE3_SEED:-404}
+      - -request_source=queue
+      - -queue_url=http://queue:20000
+      - -bootstrap_addr=bootstrap:19900
+      - -p2p_listen=0.0.0.0:20010
+      - -p2p_announce=oracle3:20010
+      - -skill_extractor_url=http://cavs3:4200
+      - -competence_mode=${CAVS_COMPETENCE_MODE:-nesta}
+      - -vc_issuer_url=http://cavs3:4200
+
+  queue0-contract:
+    profiles: ["smart-contract"]
+    build: *ocr-build
+    entrypoint: ["/cavs-queue"]
+    command:
+      - -queue_addr=0.0.0.0:20000
+      - -queue_mode=direct
+    ports:
+      - "21000:20000"
+
+  queue1-contract:
+    profiles: ["smart-contract"]
+    build: *ocr-build
+    entrypoint: ["/cavs-queue"]
+    command:
+      - -queue_addr=0.0.0.0:20000
+      - -queue_mode=direct
+    ports:
+      - "21001:20000"
+
+  queue2-contract:
+    profiles: ["smart-contract"]
+    build: *ocr-build
+    entrypoint: ["/cavs-queue"]
+    command:
+      - -queue_addr=0.0.0.0:20000
+      - -queue_mode=direct
+    ports:
+      - "21002:20000"
+
+  queue3-contract:
+    profiles: ["smart-contract"]
+    build: *ocr-build
+    entrypoint: ["/cavs-queue"]
+    command:
+      - -queue_addr=0.0.0.0:20000
+      - -queue_mode=direct
+    ports:
+      - "21003:20000"
+
+  oracle0-contract:
+    profiles: ["smart-contract"]
+    build: *ocr-build
+    entrypoint: ["/cavs-oracle"]
+    depends_on: [bootstrap, cavs0, queue0-contract]
+    volumes:
+      - ocr-did-registry:/registry
+    networks:
+      default:
+        aliases: [oracle0]
+    command:
+      - -mode=oracle
+      - -oracle_id=0
+      - -n=4
+      - -f=1
+      - -seed=${OCR_SEED:?set OCR_SEED}
+      - -oracle_seed=${OCR_ORACLE0_SEED:-101}
+      - -request_source=contract
+      - -queue_url=http://queue0-contract:20000
+      - -contract_rpc_url=${OCR_CONTRACT_RPC_URL:-}
+      - -contract_address=${OCR_CONTRACT_ADDRESS:-}
+      - -oracle_public_endpoint=${OCR_ORACLE0_PUBLIC_ENDPOINT:-http://127.0.0.1:21000/requests}
+      - -bootstrap_addr=bootstrap:19900
+      - -p2p_listen=0.0.0.0:20010
+      - -p2p_announce=oracle0:20010
+      - -skill_extractor_url=http://cavs0:4200
+      - -competence_mode=${CAVS_COMPETENCE_MODE:-nesta}
+      - -vc_issuer_url=http://cavs0:4200
+
+  oracle1-contract:
+    profiles: ["smart-contract"]
+    build: *ocr-build
+    entrypoint: ["/cavs-oracle"]
+    depends_on: [bootstrap, cavs1, queue1-contract]
+    volumes:
+      - ocr-did-registry:/registry
+    networks:
+      default:
+        aliases: [oracle1]
+    command:
+      - -mode=oracle
+      - -oracle_id=1
+      - -n=4
+      - -f=1
+      - -seed=${OCR_SEED:?set OCR_SEED}
+      - -oracle_seed=${OCR_ORACLE1_SEED:-202}
+      - -request_source=contract
+      - -queue_url=http://queue1-contract:20000
+      - -contract_rpc_url=${OCR_CONTRACT_RPC_URL:-}
+      - -contract_address=${OCR_CONTRACT_ADDRESS:-}
+      - -oracle_public_endpoint=${OCR_ORACLE1_PUBLIC_ENDPOINT:-http://127.0.0.1:21001/requests}
+      - -bootstrap_addr=bootstrap:19900
+      - -p2p_listen=0.0.0.0:20010
+      - -p2p_announce=oracle1:20010
+      - -skill_extractor_url=http://cavs1:4200
+      - -competence_mode=${CAVS_COMPETENCE_MODE:-nesta}
+      - -vc_issuer_url=http://cavs1:4200
+
+  oracle2-contract:
+    profiles: ["smart-contract"]
+    build: *ocr-build
+    entrypoint: ["/cavs-oracle"]
+    depends_on: [bootstrap, cavs2, queue2-contract]
+    volumes:
+      - ocr-did-registry:/registry
+    networks:
+      default:
+        aliases: [oracle2]
+    command:
+      - -mode=oracle
+      - -oracle_id=2
+      - -n=4
+      - -f=1
+      - -seed=${OCR_SEED:?set OCR_SEED}
+      - -oracle_seed=${OCR_ORACLE2_SEED:-303}
+      - -request_source=contract
+      - -queue_url=http://queue2-contract:20000
+      - -contract_rpc_url=${OCR_CONTRACT_RPC_URL:-}
+      - -contract_address=${OCR_CONTRACT_ADDRESS:-}
+      - -oracle_public_endpoint=${OCR_ORACLE2_PUBLIC_ENDPOINT:-http://127.0.0.1:21002/requests}
+      - -bootstrap_addr=bootstrap:19900
+      - -p2p_listen=0.0.0.0:20010
+      - -p2p_announce=oracle2:20010
+      - -skill_extractor_url=http://cavs2:4200
+      - -competence_mode=${CAVS_COMPETENCE_MODE:-nesta}
+      - -vc_issuer_url=http://cavs2:4200
+
+  oracle3-contract:
+    profiles: ["smart-contract"]
+    build: *ocr-build
+    entrypoint: ["/cavs-oracle"]
+    depends_on: [bootstrap, cavs3, queue3-contract]
+    volumes:
+      - ocr-did-registry:/registry
+    networks:
+      default:
+        aliases: [oracle3]
+    command:
+      - -mode=oracle
+      - -oracle_id=3
+      - -n=4
+      - -f=1
+      - -seed=${OCR_SEED:?set OCR_SEED}
+      - -oracle_seed=${OCR_ORACLE3_SEED:-404}
+      - -request_source=contract
+      - -queue_url=http://queue3-contract:20000
+      - -contract_rpc_url=${OCR_CONTRACT_RPC_URL:-}
+      - -contract_address=${OCR_CONTRACT_ADDRESS:-}
+      - -oracle_public_endpoint=${OCR_ORACLE3_PUBLIC_ENDPOINT:-http://127.0.0.1:21003/requests}
+      - -bootstrap_addr=bootstrap:19900
+      - -p2p_listen=0.0.0.0:20010
+      - -p2p_announce=oracle3:20010
+      - -skill_extractor_url=http://cavs3:4200
+      - -competence_mode=${CAVS_COMPETENCE_MODE:-nesta}
+      - -vc_issuer_url=http://cavs3:4200
+
+  veramo0:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../../veramoAgent
+      dockerfile: Dockerfile
+    entrypoint: ["/usr/src/app/start.sh"]
+    ports:
+      - "3001:3001"
+    volumes:
+      - veramo0-data:/usr/src/app/data
+
+  veramo1:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../../veramoAgent
+      dockerfile: Dockerfile
+    entrypoint: ["/usr/src/app/start.sh"]
+    ports:
+      - "3002:3001"
+    volumes:
+      - veramo1-data:/usr/src/app/data
+
+  veramo2:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../../veramoAgent
+      dockerfile: Dockerfile
+    entrypoint: ["/usr/src/app/start.sh"]
+    ports:
+      - "3003:3001"
+    volumes:
+      - veramo2-data:/usr/src/app/data
+
+  veramo3:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../../veramoAgent
+      dockerfile: Dockerfile
+    entrypoint: ["/usr/src/app/start.sh"]
+    ports:
+      - "3004:3001"
+    volumes:
+      - veramo3-data:/usr/src/app/data
+
+  gptcomp0:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../..
+      dockerfile: GPT_COMP_CHECK/Dockerfile
+    environment:
+      - OPENAI_COMPETENCE_API_KEY=${OPENAI_COMPETENCE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_COMPETENCE_BASE_URL:-https://api.openai.com/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0}
+      - OPENAI_TIMEOUT_S=${OPENAI_TIMEOUT_S:-60}
+    expose:
+      - "3030"
+
+  gptcomp1:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../..
+      dockerfile: GPT_COMP_CHECK/Dockerfile
+    environment:
+      - OPENAI_COMPETENCE_API_KEY=${OPENAI_COMPETENCE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_COMPETENCE_BASE_URL:-https://api.openai.com/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0}
+      - OPENAI_TIMEOUT_S=${OPENAI_TIMEOUT_S:-60}
+    expose:
+      - "3030"
+
+  gptcomp2:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../..
+      dockerfile: GPT_COMP_CHECK/Dockerfile
+    environment:
+      - OPENAI_COMPETENCE_API_KEY=${OPENAI_COMPETENCE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_COMPETENCE_BASE_URL:-https://api.openai.com/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0}
+      - OPENAI_TIMEOUT_S=${OPENAI_TIMEOUT_S:-60}
+    expose:
+      - "3030"
+
+  gptcomp3:
+    profiles: ["centralized", "smart-contract"]
+    build:
+      context: ../..
+      dockerfile: GPT_COMP_CHECK/Dockerfile
+    environment:
+      - OPENAI_COMPETENCE_API_KEY=${OPENAI_COMPETENCE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_COMPETENCE_BASE_URL:-https://api.openai.com/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0}
+      - OPENAI_TIMEOUT_S=${OPENAI_TIMEOUT_S:-60}
+    expose:
+      - "3030"
+
+volumes:
+  ocr-did-registry:
+  nesta0-cache:
+  nesta1-cache:
+  nesta2-cache:
+  nesta3-cache:
+  veramo0-data:
+  veramo1-data:
+  veramo2-data:
+  veramo3-data:

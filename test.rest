@@ -1,0 +1,328 @@
+
+
+###
+//send request
+GET http://localhost:13000
+
+##
+//send request
+POST http://localhost:13000
+Content-Type: application/json
+
+{
+  "name": "james",
+  "location": "Pisa"
+}
+
+###
+//REQUEST TO YAGO
+//send request upper hierarchy
+GET http://localhost:13000/queryUpperHierarchy
+Content-Type: application/json
+
+{
+  "element": "Red Bull"
+}
+
+###
+
+//REQUEST TO YAGO
+//send request same level hierarchy
+GET http://localhost:13000/querySameLevelHierarchy
+Content-Type: application/json
+
+{
+  "element": "Coca Cola"
+}
+
+
+###
+// Request to keyBertService
+
+GET http://localhost:13001/keywords
+Content-Type: application/json
+
+{
+  "doc": "Coca-Cola is the most popular and biggest-selling soft drink as well as one of the most recognizable brands in the world. It the only brand that is found in my fridge for my weekend parties"
+}
+
+###
+
+GET http://172.17.0.1:5055/keywords
+Content-Type: application/json
+
+{
+  "doc": "Coca Cola is the most popular and biggest-selling soft drink as well as one of the most recognizable brands in the world. It the only brand that is found in my fridge for my weekend parties. Supervised learning is the machine learning task of learning a function that maps an input to an output based on example input-output pairs. It infers a function from labeled training data consisting of a set of training examples. In supervised learning, each example is a pair consisting of an input object (typically a vector) and a desired output value (also called the supervisory signal). A supervised learning algorithm analyzes the training data and produces an inferred function, which can be used for mapping new examples. An optimal scenario will allow for the algorithm to correctly determine the class labels for unseen instances. This requires the learning algorithm to generalize from the training data to unseen situations in a 'reasonable' way (see inductive bias). "
+}
+
+
+###
+
+// keyLMMService test
+GET http://localhost:5080/keywords_only_LMM
+Content-Type: application/json
+
+{
+  "doc": "Pepsi Cola and Coca Cola, versus Machine Learning Algorithms and Extractors. An optimal scenario will allow for the algorithm to correctly determine the class labels for unseen instances "
+}
+
+
+### keyLMMService BERT+LMM test
+GET http://locìalhost:5080/keywords_both
+Content-Type: application/json
+
+{
+  "doc": "Pepsi Cola and Coca Cola, versus Machine Learning Algorithms and Extractors. An optimal scenario will allow for the algorithm to correctly determine the class labels for unseen instances. Hello, sayonara "
+}
+
+
+
+###
+//test keywords to skill
+POST http://localhost:5005/keyword_to_skills
+Content-Type: application/json
+
+{
+  "keywords": [
+    "Blockchain",
+    "Blockchain consensus mechanism",
+    "working with computers",
+    "playing the piano",
+    "playing the violin play"
+  ]
+}
+
+###
+//test keywords to UPPERLEVEL
+GET http://localhost:5002/same_level_keywords?keywords="persona"
+
+
+###
+//test keywords to UPPERLEVEL
+GET http://localhost:5002/upper_level_keywords?keywords="persona"
+
+###
+//test keywords to skill
+GET http://localhost:5005/text_to_skills
+Content-Type: application/json
+
+{
+  "doc": "Dario was playing the piano"
+}
+
+
+###
+###
+GET http://localhost:3000/create_did_by_alias?alias="ciao"
+
+###
+// test evramo
+GET http://localhost:3001/get_own_did
+
+###
+GET http://localhost:3001/get_did_doc?
+    did=did:ethr:goerli:0x034e4ecfb60a1a922c027c356480eab896c21f9eb95feabdb6e8408492c81c3f84
+Content-Type: application/json
+
+###
+GET http://localhost:3001/get_verifiable_credential?hash_cred=QmWa7wJ1LJx2hfyRpFmNjXTgfeuGuZjeHS7mtdURXCr6KW
+
+
+###
+GET http://localhost:3001/issue_verifiable_credential?
+    issuer=did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1&
+    holder=did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1&
+    attributes={"hi":"hello"}&store=true
+Content-Type: application/json
+
+
+
+###
+GET http://localhost:3001/list_verifiable_presentations
+
+###
+GET http://localhost:3001/get_qr_code?hash=QmXvBCqkEFw6Tc14ct8TRReAZ7UkruJzFwPaSi8RFKj7rR
+
+###
+GET http://localhost:3001/verify
+
+
+### Test extract API ###
+
+# POST request to /api/extract
+POST http://localhost:4200/api/extract
+Content-Type: application/json
+
+{
+  "document": "The study explores the impact of climate change on coral reef ecosystems."
+}
+
+
+### Test Helia API ###
+
+# POST request to /publish
+POST http://localhost:4201/publish
+Content-Type: application/json
+
+{
+  "toStore": "hello12"
+}
+
+
+###
+# GET read from cit
+GET http://localhost:4201/read_cid?requestedCid=/bafkreifhe7tyc6aspx6oroqultlew6jjumh2ykgh5ajua5q672q4lgxobe
+
+
+###
+
+# POST request to /publish
+POST http://localhost:4201/upload
+Content-Type: application/json
+
+{
+  "text": "haaas<aeeaallaalloo"
+}
+
+###
+
+# POST request to /publish
+GET http://localhost:4201/fetch?gotCID=bafkreidicqo66z47ytwi4zobwzxuckpenl7epmtm7yd37lkd53milfz2ni
+
+
+
+###
+
+POST http://localhost:3001/decode_jwt
+Content-Type: application/json
+
+{
+  "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iLCJTdGF0ZW1lbnREaWZmdXNpb25fVlB2MDEiXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKaGJHY2lPaUpGVXpJMU5rc2lMQ0owZVhBaU9pSktWMVFpZlEuZXlKMll5STZleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdk1qQXhPQzlqY21Wa1pXNTBhV0ZzY3k5Mk1TSXNJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTl1Y3k5amNtVmtaVzUwYVdGc2N5OTJNaUpkTENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lpd2lWa05RY21WelpXNTBZWFJwYjI0aUxDSldRMlp2Y2xOMFlYUmxiV1Z1ZEVScFptWjFjMmx2Ymw5V1VIWXdNU0pkTENKamNtVmtaVzUwYVdGc1UzVmlhbVZqZENJNmV5SnpkR0YwWlcxbGJuUmZkbU5mWTJsa1gyOXlYM1Z5YkNJNkltSmhabXR5WldsamQyZDFabXhzY0hwbWMySnRibVkyWW1vMk5tZDZhMk40TjNnMk5tTnllV3MyZG1jellXTm5jVFl5TldKbWFUZG9jbVkwSWl3aWNISmxkbDkyY0Y5MWRXbGtJam9pSWl3aWRYSnNYMjl5WDJOcFpGOXFkM1JmY0hKbGRpSTZJaUlzSW5SNWNHVWlPaUp2Y21sbmFXNGlMQ0pvYjNOMFgxVlNUQ0k2SW1FaUxDSmhjM05sY25ScGIyNGlPaUpVYUdseklGWlFJR2x6SUhOMVltMXBkSFJsWkNCaWVTQjBhR1VnYzNWaWFtVmpkQ0JoY3lCbGRtbGtaVzVqWlNCdlppQldReUJ3Y205d1lXZGhkR2x2YmlKOWZTd2ljM1ZpSWpvaU5HSTROMlpsTWpFdFpqTTNNQzAwTnpjeUxUa3hZemt0TXpNd00yWXlNREUwT1RSaElpd2libUptSWpveE56STNPRGcxTWpVNExDSnBjM01pT2lKa2FXUTZaWFJvY2pvd2VEZzNOelUwTlVVek9URXdOVFV3UTJVeU4yTXlZelV4UW1ReVJrWXhORGd6TjJGalFqWTFOallpZlEuUDNpMklwQl9idE1qZERCVGZVa09kVDI3enZ1akgwNUVsMTh3YWZ0bmRvZ1lNODNxN2N2bE1aVkR4VElWZm5EbndqT2lFUTJzU2IyXzlXN3ZhUEFmZXciXX0sImp0aSI6IjRiODdmZTIxLWYzNzAtNDc3Mi05MWM5LTMzMDNmMjAxNDk0YSIsIm5iZiI6MTcyNzg4NTI1OCwiaXNzIjoiZGlkOmV0aHI6MHg4Nzc1NDVFMzkxMDU1MENlMjdjMmM1MUJkMkZGMTQ4MzdhY0I2NTY2In0.Mu4oR5wR8wPPFpygHXJ_k31cfkI1EwX-RxIsu8sGn6dSHl0EsRNaxZPsWs020xVzAqnFan8ZO3m8kof9eUMIYQ"
+}
+
+
+
+
+# testing
+
+### Issue Verifiable Presentation with Holder Claim
+
+POST http://localhost:3001/issue_verifiable_presentation/holder_claim
+Content-Type: application/json
+
+{
+  "holder": "did:ethr:sepolia:0x0242ccfbd55f4e1816ce6aec889161764227c48f2234feac158ecacd9cb94836a1",
+  "type": "ExampleTypeVP",
+  "attributes": {
+    "attribute1": "value1",
+    "attribute2": "value2",
+    "attribute3": "value3"
+  },
+  "store": true
+}
+
+
+### List vp
+
+GET http://localhost:3001/list_verifiable_presentations
+
+
+### List vp
+
+GET http://localhost:3001/get_qr_code
+
+
+
+### Test extract API ###
+
+# POST request to /upploa
+POST http://localhost:4201/upload/map
+Content-Type: application/json
+
+{
+  "text": "attir1ae"
+}
+
+
+
+### API
+
+GET http://localhost:4201/peer_id
+
+### API
+
+GET http://localhost:4201/set_secrets?name=hello&psw=aa
+
+### retrieve
+
+
+POST http://localhost:4201/ipns/append
+Content-Type: application/json
+
+{
+  "text": "hopefornext"
+}
+
+
+### getting
+
+GET http://localhost:4201/retrieve?cid=bafkreihdqvrgncnmwzuggw2q6jgens3tzpwswkjl35bf4p3v2zgzn5dspm
+
+###
+
+### Request to /did_ethr_by_privkey
+GET http://localhost:3001/did_ethr_by_privkey?
+    privatekey=d0fb78bbcf4a21f0b63e00369f3c8ffcc5738dace3352f2d7a6fdfd6d19356e5&
+    walletaddr=0x90b1041EEfea68Ea564574f6C576bD3c902A8f32
+Content-Type: application/json
+
+### Request to /did_ethr_by_privkey
+GET http://localhost:3001/get_own_did_eth/
+Content-Type: application/json
+
+
+###  TRY
+
+### Verify Credential
+POST http://localhost:3001/verify
+Content-Type: application/json
+
+{
+  "credential": {
+    "issuanceDate": "2024-07-04T09:07:37.000Z",
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "ESCO_type_VerifiableCredential"
+    ],
+    "credentialSubject": {
+      "skills": [
+        [
+          "sas",
+          "sas"
+        ]
+      ],
+      "id": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32"
+    },
+    "issuer": {
+      "id": "did:ethr:sepolia:0x031b149813e8226c5518f8f8faf6773b804cf62f0102e385123f86f7442126bcda"
+    },
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiRVNDT190eXBlX1ZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7InNraWxscyI6W1sic2FzIiwic2FzIl1dfX0sInN1YiI6ImRpZDpldGhyOjB4OTBiMTA0MUVFZmVhNjhFYTU2NDU3NGY2QzU3NmJEM2M5MDJBOGYzMiIsIm5iZiI6MTcyMDA4NDA1NywiaXNzIjoiZGlkOmV0aHI6c2Vwb2xpYToweDAzMWIxNDk4MTNlODIyNmM1NTE4ZjhmOGZhZjY3NzNiODA0Y2Y2MmYwMTAyZTM4NTEyM2Y4NmY3NDQyMTI2YmNkYSJ9.QXHeh9rvVs7aVjVD79Y_1X2_iKbLiCO9vUpyEFDKKV1lsNicBzPdU305lgOQBvAzGTAINAwCb-LinpISmT3wjg"
+    }
+  }
+}
+
+###
+POST http://localhost:4200/simulation/skillsfromtext
+Content-Type: application/json
+
+{
+  "text": "helllloo"
+}
+
+

@@ -1,0 +1,15 @@
+# Core dependencies for the Validation/liar2 pipeline and ablation scripts.
+#
+# Note on PyTorch:
+# - `torch` is listed here so the environment is complete.
+# - If you need a CUDA-specific wheel, install the matching PyTorch build first
+#   from the official PyTorch index, then install the rest of this file.
+
+numpy
+openai
+pandas
+requests
+scikit-learn
+torch
+tqdm
+transformers

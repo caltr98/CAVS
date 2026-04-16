@@ -1,0 +1,63 @@
+
+
+Thu Apr 16 23:26:50 2026
+Command line: TestDisk
+
+TestDisk 7.1, Data Recovery Utility, July 2019
+Christophe GRENIER <grenier@cgsecurity.org>
+https://www.cgsecurity.org
+OS: Linux, kernel 5.15.167.4-microsoft-standard-WSL2 (#1 SMP Tue Nov 5 00:21:55 UTC 2024) x86_64
+Compiler: GCC 11.2
+ext2fs lib: 1.46.5, ntfs lib: libntfs-3g, reiserfs lib: none, ewf lib: none, curses lib: ncurses 6.3
+Warning: can't get size for Disk /dev/mapper/control - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop0 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop1 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop2 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop3 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop4 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop5 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop6 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop7 - 0 B - 0 sectors, sector size=512
+Hard disk list
+Disk /dev/sda - 407 MB / 388 MiB - CHS 49 255 63 (RO), sector size=512 - Msft Virtual Disk, FW:1.0
+Disk /dev/sdb - 4294 MB / 4096 MiB - CHS 522 255 63, sector size=512 - Msft Virtual Disk, FW:1.0
+Disk /dev/sdc - 274 GB / 256 GiB - CHS 33418 255 63, sector size=512 - Msft Virtual Disk, FW:1.0
+
+Partition table type (auto): None
+Media is opened in read-only.
+Disk /dev/sda - 407 MB / 388 MiB (RO) - Msft Virtual Disk
+Partition table type: None
+
+Interface Advanced
+
+recover_EXT2: s_block_group_nr=0/3, s_mnt_count=0/0, s_blocks_per_group=32768, s_inodes_per_group=3200
+recover_EXT2: s_blocksize=4096
+recover_EXT2: s_blocks_count 99438
+recover_EXT2: part_size 795504
+   P ext4                     0   0  1    49 132  3     795504
+     ext4 blocksize=4096 Large_file, 407 MB / 388 MiB
+search_superblock
+
+recover_EXT2: s_block_group_nr=0/3, s_mnt_count=0/0, s_blocks_per_group=32768, s_inodes_per_group=3200
+recover_EXT2: s_blocksize=4096
+recover_EXT2: s_blocks_count 99438
+recover_EXT2: part_size 795504
+Ext2 superblock found at sector 2 (block=0, blocksize=4096)
+  ext4                     0   0  1    49 132  3     795504
+superblock 0, blocksize=4096 []
+
+To repair the filesystem using alternate superblock, run
+fsck.ext4 -p -b superblock -B blocksize device
+search_superblock
+
+recover_EXT2: s_block_group_nr=0/3, s_mnt_count=0/0, s_blocks_per_group=32768, s_inodes_per_group=3200
+recover_EXT2: s_blocksize=4096
+recover_EXT2: s_blocks_count 99438
+recover_EXT2: part_size 795504
+Ext2 superblock found at sector 2 (block=0, blocksize=4096)
+  ext4                     0   0  1    49 132  3     795504
+superblock 0, blocksize=4096 []
+
+To repair the filesystem using alternate superblock, run
+fsck.ext4 -p -b superblock -B blocksize device
+SIGINT detected! TestDisk has been killed.

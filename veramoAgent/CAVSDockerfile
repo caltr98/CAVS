@@ -1,0 +1,19 @@
+FROM node:20-bullseye
+
+WORKDIR /usr/src/app
+
+COPY veramoAgent/package.json veramoAgent/yarn.lock veramoAgent/tsconfig.json veramoAgent/veramoRestAgent.js veramoAgent/veramoRestAgent.ts ./
+COPY veramoAgent/src ./src
+COPY veramoAgent/MultiSignatureVeramo ./MultiSignatureVeramo
+COPY veramoAgent/CAVSBackend ./CAVSBackend
+COPY veramoAgent/start.sh .
+COPY esco-v1.2.1.jsonl ./esco-v1.2.1.jsonl
+
+RUN yarn install --frozen-lockfile
+
+ENV TS_NODE_TRANSPILE_ONLY=1
+ENV ESCO_JSONL_PATH=/usr/src/app/esco-v1.2.1.jsonl
+EXPOSE 3001
+EXPOSE 4200
+
+ENTRYPOINT ["/usr/src/app/start.sh"]

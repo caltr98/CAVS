@@ -1,0 +1,18 @@
+# Runtime data
+volumes/
+**/volumes/
+CAVSonOCRLegacy/
+
+# Local secrets and environment overrides
+.env
+**/.env
+
+# Node/Hardhat generated files
+**/node_modules/
+**/cache/
+**/artifacts/
+**/typechain-types/
+
+# Go build/test output
+*.test
+coverage.out

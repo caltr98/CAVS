@@ -1,0 +1,19 @@
+{
+  "family": "roberta_nesta",
+  "provenance": "materialized from canonical grouped roberta+nesta JSON",
+  "grouped_source": "/home/cal/componentsCAVS/Validation/liar2/data/final/ablation/roberta_nesta/grouped_source.json",
+  "flat_csv": "/home/cal/componentsCAVS/Validation/liar2/data/final/ablation/roberta_nesta/flat.csv",
+  "split_outputs": {
+    "train": "/home/cal/componentsCAVS/Validation/liar2/data/final/ablation/roberta_nesta/train_augmented.csv",
+    "valid": "/home/cal/componentsCAVS/Validation/liar2/data/final/ablation/roberta_nesta/valid_augmented.csv",
+    "test": "/home/cal/componentsCAVS/Validation/liar2/data/final/ablation/roberta_nesta/test_augmented.csv"
+  },
+  "grouped_author_count": 4661,
+  "grouped_article_count": 22962,
+  "split_row_counts": {
+    "train": 18369,
+    "valid": 2297,
+    "test": 2296
+  },
+  "matching_key": "liar2_id"
+}

@@ -1,0 +1,10 @@
+{
+  "keywordExtractorServiceEndpoint": "http://RobertaPhraseService:5004",
+  "keyBertServiceEndpoint": "http://KeyBertService:5003",
+  "keyLLMServiceEndpoint": "http://KeyLLMService:5002",
+  "yagoServiceEndpoint": "http://YagoSC:13000",
+  "ojdDapsSkillsEndpoint": "http://Ojd_service1:5005",
+  "veramoAgentEndpoint": "http://VeramoAgent:3001",
+  "gptCompServiceEndpoint": "http://gptcomp:3030",
+  "competenceMode": "nesta"
+}

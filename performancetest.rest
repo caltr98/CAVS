@@ -1,0 +1,1134 @@
+### Test keywords_only_LMM
+POST http://localhost:5002/test_keywords_only_LMM
+Content-Type: application/json
+
+{
+  "doc": "Digital illustration plays a pivotal role in modern marketing strategies. With tools like Adobe Illustrator and Photoshop, designers can create intricate and vibrant illustrations that capture the audience's attention. Isabella's proficiency in digital illustration allows her to produce high-quality visuals that enhance marketing campaigns. Techniques such as vector graphics and digital painting provide versatility and precision in the creation of marketing materials. These innovations enable the seamless integration of illustrations into various digital media, making marketing content more engaging and visually appealing.",
+  "times": 10
+}
+
+
+### Test keywords_both
+POST http://localhost:5002/test_keywords_both
+Content-Type: application/json
+
+{
+  "doc": "Digital illustration plays a pivotal role in modern marketing strategies. With tools like Adobe Illustrator and Photoshop, designers can create intricate and vibrant illustrations that capture the audience's attention. Isabella's proficiency in digital illustration allows her to produce high-quality visuals that enhance marketing campaigns. Techniques such as vector graphics and digital painting provide versatility and precision in the creation of marketing materials. These innovations enable the seamless integration of illustrations into various digital media, making marketing content more engaging and visually appealing.",
+  "times": 10
+}
+
+
+### Test keywords
+POST http://localhost:5003/test_keywords
+Content-Type: application/json
+
+{
+  "doc": "Digital illustration plays a pivotal role in modern marketing strategies. With tools like Adobe Illustrator and Photoshop, designers can create intricate and vibrant illustrations that capture the audience's attention. Isabella's proficiency in digital illustration allows her to produce high-quality visuals that enhance marketing campaigns. Techniques such as vector graphics and digital painting provide versatility and precision in the creation of marketing materials. These innovations enable the seamless integration of illustrations into various digital media, making marketing content more engaging and visually appealing.",
+  "times": 10
+}
+
+### Test with double length of text
+POST http://localhost:5002/test_keywords_only_LMM
+Content-Type: application/json
+
+{
+  "doc": "Digital illustration plays a pivotal role in modern marketing strategies. With tools like Adobe Illustrator and Photoshop, designers can create intricate and vibrant illustrations that capture the audience's attention. Isabella's proficiency in digital illustration allows her to produce high-quality visuals that enhance marketing campaigns. Techniques such as vector graphics and digital painting provide versatility and precision in the creation of marketing materials. These innovations enable the seamless integration of illustrations into various digital media, making marketing content more engaging and visually appealing. Optimizing network performance requires advanced network architecture that can handle high volumes of data and ensure continuous operation. Tools like Cisco IOS and expertise in protocols such as TCP/IP, BGP, and OSPF are essential for designing robust networks. Lucas leverages these tools and protocols to create scalable and reliable network infrastructures. By implementing advanced routing techniques, load balancing, and redundancy, network engineers can prevent bottlenecks and ensure seamless data flow. Regular performance assessments and updates are crucial for maintaining a network that meets the demands of modern digital environments.",
+  "times": 10
+}
+
+
+### Test keywords_both double length of text
+POST http://localhost:5002/test_keywords_both
+Content-Type: application/json
+
+{
+  "doc": "Digital illustration plays a pivotal role in modern marketing strategies. With tools like Adobe Illustrator and Photoshop, designers can create intricate and vibrant illustrations that capture the audience's attention. Isabella's proficiency in digital illustration allows her to produce high-quality visuals that enhance marketing campaigns. Techniques such as vector graphics and digital painting provide versatility and precision in the creation of marketing materials. These innovations enable the seamless integration of illustrations into various digital media, making marketing content more engaging and visually appealing.Optimizing network performance requires advanced network architecture that can handle high volumes of data and ensure continuous operation. Tools like Cisco IOS and expertise in protocols such as TCP/IP, BGP, and OSPF are essential for designing robust networks. Lucas leverages these tools and protocols to create scalable and reliable network infrastructures. By implementing advanced routing techniques, load balancing, and redundancy, network engineers can prevent bottlenecks and ensure seamless data flow. Regular performance assessments and updates are crucial for maintaining a network that meets the demands of modern digital environments.",
+  "times": 10
+}
+
+
+### Test keywords double length of text
+POST http://localhost:5003/test_keywords
+Content-Type: application/json
+
+{
+  "doc": "Digital illustration plays a pivotal role in modern marketing strategies. With tools like Adobe Illustrator and Photoshop, designers can create intricate and vibrant illustrations that capture the audience's attention. Isabella's proficiency in digital illustration allows her to produce high-quality visuals that enhance marketing campaigns. Techniques such as vector graphics and digital painting provide versatility and precision in the creation of marketing materials. These innovations enable the seamless integration of illustrations into various digital media, making marketing content more engaging and visually appealing. Optimizing network performance requires advanced network architecture that can handle high volumes of data and ensure continuous operation. Tools like Cisco IOS and expertise in protocols such as TCP/IP, BGP, and OSPF are essential for designing robust networks. Lucas leverages these tools and protocols to create scalable and reliable network infrastructures. By implementing advanced routing techniques, load balancing, and redundancy, network engineers can prevent bottlenecks and ensure seamless data flow. Regular performance assessments and updates are crucial for maintaining a network that meets the demands of modern digital environments.",
+  "times": 10
+}
+
+
+### Test with 5 Keywords Mapping
+GET http://localhost:5005/keyword_to_skills?
+    keywords={"keyword1":"digital drawing","keyword2":"illustration","keyword3":"Java","keyword4":"ICT","keyword5":"medicine"}
+
+### Test with 10 Keywords Mapping
+GET http://localhost:5005/test_keyword_to_skills?trials=1&
+    keywords={"keyword1":"digital drawing","keyword2":"illustration","keyword3":"Java","keyword4":"ICT","keyword5":"medicine","keyword6":"machine learning","keyword7":"data science","keyword8":"blockchain","keyword9":"cloud computing","keyword10":"cybersecurity"}
+
+### Test with 15 Keywords Mapping
+GET http://localhost:5005/test_keyword_to_skills?trials=5&
+    keywords={"keyword1":"digital drawing","keyword2":"illustration","keyword3":"Java","keyword4":"ICT","keyword5":"medicine","keyword6":"machine learning","keyword7":"data science","keyword8":"blockchain","keyword9":"cloud computing","keyword10":"cybersecurity","keyword11":"artificial intelligence","keyword12":"web development","keyword13":"software engineering","keyword14":"network security","keyword15":"robotics"}
+
+
+#### LIST OF DID
+
+GET http://localhost:3001/get_own_did
+
+
+
+#### LIST OF CREDENTIALS
+
+GET http://localhost:3001/api/v0/list-verifiable-credentials
+
+
+#### Test ISSUING FOR SELECTIVE DISCLOUSURE
+POST http://localhost:3001/issue_verifiable_credential/selective_disclosure
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634",
+  "holder": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634",
+  "type": "VerifiableCredential",
+  "attributes": {
+    "name": "Alice1",
+    "age": "29",
+    "email": "alice@example.com",
+    "phone": "555-12314",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "male",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer"
+  },
+  "store": false
+}
+
+
+
+###### TEST WITH TRIALS ON ISSUING FOR SELECTIVE DISCLOUSURE WITH 10 ATTRIBUTES
+POST http://localhost:3001/test/issue_verifiable_credential/selective_disclosure
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634",
+  "holder": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634",
+  "type": "VerifiableCredential",
+  "attributes": {
+    "name": "Alice1",
+    "age": "29",
+    "email": "alice@example.com",
+    "phone": "555-12314",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "male",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer"
+  },
+  "store": false,
+  "numTrials": 50
+}
+
+###### TEST WITH TRIALS ON ISSUING FOR SELECTIVE DISCLOUSURE WITH 20 ATTRIBUTES
+POST http://localhost:3001/test/issue_verifiable_credential/selective_disclosure
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "holder": "did:ethr:sepolia:0x02ac5a532b689c88bb0aba68cb62ed49ae4a2a756d3c53e092b2d1e2be624b47fc",
+  "type": "VerifiableCredential",
+  "attributes": {
+    "name": "Alice",
+    "age": "29",
+    "email": "alice@example.com",
+    "phone": "555-1234",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "female",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer",
+    "company": "Tech Corp",
+    "salary": "100000",
+    "experience": "5 years",
+    "languages": "English, Spanish",
+    "passportNumber": "X12345678",
+    "drivingLicense": "Y987654321",
+    "height": "5'7",
+    "weight": "140 lbs",
+    "bloodType": "O+",
+    "allergies": "None"
+  },
+  "store": false,
+  "numTrials": 50
+}
+
+###### TEST WITH TRIALS ON ISSUING FOR SELECTIVE DISCLOUSURE WITH 50 ATTRIBUTES
+POST http://localhost:3001/test/issue_verifiable_credential/selective_disclosure
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634",
+  "holder": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634",
+  "type": "VerifiableCredential",
+  "attributes": {
+    "name": "Alice",
+    "age": "29",
+    "email": "alice@example.com",
+    "phone": "555-1234",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "female",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer",
+    "company": "Tech Corp",
+    "salary": "100000",
+    "experience": "5 years",
+    "languages": "English, Spanish",
+    "passportNumber": "X12345678",
+    "drivingLicense": "Y987654321",
+    "height": "5'7",
+    "weight": "140 lbs",
+    "bloodType": "O+",
+    "allergies": "None",
+    "insuranceNumber": "123-456-789",
+    "emergencyContact": "Bob Smith",
+    "birthDate": "1990-01-01",
+    "socialSecurityNumber": "123-45-6789",
+    "medicalHistory": "None",
+    "bankAccount": "987654321",
+    "creditCard": "1234 5678 9012 3456",
+    "cryptoWallet": "0x12345ABCDE",
+    "githubUsername": "alice-dev",
+    "linkedInProfile": "linkedin.com/in/alice",
+    "twitterHandle": "@alice123",
+    "instagramHandle": "@alice_in_wonderland",
+    "favoriteColor": "blue",
+    "favoriteFood": "pizza",
+    "pets": "cat",
+    "carModel": "Tesla Model 3",
+    "licensePlate": "XYZ 1234",
+    "favoriteSport": "soccer",
+    "hobby": "photography",
+    "shoeSize": "7",
+    "eyeColor": "brown",
+    "hairColor": "black",
+    "favoriteMovie": "Inception",
+    "favoriteBook": "1984"
+  },
+  "store": false,
+  "numTrials": 50
+}
+
+
+#### Test Issuing Verifiable Presentation for Selective Disclosure
+
+POST http://localhost:3001/issue_verifiable_presentation/selective_disclosure
+Content-Type: application/json
+
+{
+  "holder": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634",
+  "type": "VerifiablePresentation",
+  "attributes": {},
+  "toStore": true,
+  "attributesToDisclose": ["name","age","email"],
+  "hashOfVCs": ["QmPWepN8kn6krZ9djg2r8PEKKSHmEodzuGMWyCLmNoECec"]
+}
+#### Test Issuing Verifiable Presentation for Selective Disclosure with 10 attributes VC and 10 attributes to disclose
+
+POST http://localhost:3001/test/issue_verifiable_presentation/selective_disclosure
+content-type: application/json
+
+{
+  "holder": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634",
+  "type": "VerifiablePresentation",
+  "attributes": {},
+  "toStore": true,
+  "attributesToDisclose": ["name","age","email","phone","address","nationality","gender","maritalStatus","education","occupation"],
+  "hashOfVCs": ["QmPWepN8kn6krZ9djg2r8PEKKSHmEodzuGMWyCLmNoECec"]
+}
+
+
+
+##### TEST VERIFICATION VP SELECTIVE DISCLOUSURE
+
+POST http://localhost:3001/verify/vp/selective_disclosure
+Content-Type: application/json
+
+{
+  "vp": {
+    "attributes": [
+      {
+        "path": [
+          "name"
+        ],
+        "clearValue": "Alice1",
+        "nonce": "bde1d44236bdb9b7f751bd98b5d91f336b85035839cd12fc9f0a27e651c0ff9662db205e170abff2d6e721442ef5399d425d40cdf3544afe6bd92a542885c835"
+      },
+      {
+        "path": [
+          "age"
+        ],
+        "clearValue": "29",
+        "nonce": "385467635ef46378fe0501c93a0b4e4613cfb624ebfb4b593ad748d9a565f14e90039d4dbed93a3ebe457dd1f8faf74ba1cb091e5f5a928b567fc32233aac0b6"
+      },
+      {
+        "path": [
+          "email"
+        ],
+        "clearValue": "alice@example.com",
+        "nonce": "6196f1414fbc84a2f821655906feecb997553b82da6e9c8b28c2835f99a7af9bada471729efa247f6c4d86105e06e7a0a005158bb21bf7747e93f13398d96616"
+      }
+    ],
+    "verifiableCredential": [
+      {
+        "credentialSubject": {
+          "name": "9068ee8e3b893c0ef18e9eb6cff5b7559129fd7d2d42937c50a02743a9c4c021",
+          "age": "7854ac2e0a327d293ad0f350f12a026ca9e65c025e462ad33bdafd7a34eb5f89",
+          "email": "26193dadc5063c389e8120366d7c3302e5b55bcfc44e3eee301a0bcc13d1ec36",
+          "phone": "09dba45e2b7123ccdb27c2e9f0c5e6b32100407440140c6bcb2d7bd77050f3a1",
+          "address": "7903b8093e7be9b778e826de132f7428d494ad015ce98cf7291aea2503dee54d",
+          "nationality": "9d71ea932df05699b4a0426aae8786f883760d8639bcb5154b1647b3ec96afaa",
+          "gender": "e3e2eba3535553a8b2f0161221afa05b5c204e9ba4db6c1994bb5c8f5c92d432",
+          "maritalStatus": "de0849a3055d3a2a7416413f78f6eec8ef09465bbb83fdf6d3b1c339bf0776c8",
+          "education": "1f45d4a6b2d0c29f259d37c6e25c9c954263b7b84b70d69f233ba29e28034999",
+          "occupation": "46df2099378b941987d16b118008135f479051fe3bb48e63bcd7ee9be9f8edd0",
+          "id": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634"
+        },
+        "issuer": {
+          "id": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634"
+        },
+        "type": [
+          "VerifiableCredential"
+        ],
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://www.w3.org/ns/credentials/v2"
+        ],
+        "issuanceDate": "2025-02-06T16:22:22.000Z",
+        "proof": {
+          "type": "JwtProof2020",
+          "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiI5MDY4ZWU4ZTNiODkzYzBlZjE4ZTllYjZjZmY1Yjc1NTkxMjlmZDdkMmQ0MjkzN2M1MGEwMjc0M2E5YzRjMDIxIiwiYWdlIjoiNzg1NGFjMmUwYTMyN2QyOTNhZDBmMzUwZjEyYTAyNmNhOWU2NWMwMjVlNDYyYWQzM2JkYWZkN2EzNGViNWY4OSIsImVtYWlsIjoiMjYxOTNkYWRjNTA2M2MzODllODEyMDM2NmQ3YzMzMDJlNWI1NWJjZmM0NGUzZWVlMzAxYTBiY2MxM2QxZWMzNiIsInBob25lIjoiMDlkYmE0NWUyYjcxMjNjY2RiMjdjMmU5ZjBjNWU2YjMyMTAwNDA3NDQwMTQwYzZiY2IyZDdiZDc3MDUwZjNhMSIsImFkZHJlc3MiOiI3OTAzYjgwOTNlN2JlOWI3NzhlODI2ZGUxMzJmNzQyOGQ0OTRhZDAxNWNlOThjZjcyOTFhZWEyNTAzZGVlNTRkIiwibmF0aW9uYWxpdHkiOiI5ZDcxZWE5MzJkZjA1Njk5YjRhMDQyNmFhZTg3ODZmODgzNzYwZDg2MzliY2I1MTU0YjE2NDdiM2VjOTZhZmFhIiwiZ2VuZGVyIjoiZTNlMmViYTM1MzU1NTNhOGIyZjAxNjEyMjFhZmEwNWI1YzIwNGU5YmE0ZGI2YzE5OTRiYjVjOGY1YzkyZDQzMiIsIm1hcml0YWxTdGF0dXMiOiJkZTA4NDlhMzA1NWQzYTJhNzQxNjQxM2Y3OGY2ZWVjOGVmMDk0NjViYmI4M2ZkZjZkM2IxYzMzOWJmMDc3NmM4IiwiZWR1Y2F0aW9uIjoiMWY0NWQ0YTZiMmQwYzI5ZjI1OWQzN2M2ZTI1YzljOTU0MjYzYjdiODRiNzBkNjlmMjMzYmEyOWUyODAzNDk5OSIsIm9jY3VwYXRpb24iOiI0NmRmMjA5OTM3OGI5NDE5ODdkMTZiMTE4MDA4MTM1ZjQ3OTA1MWZlM2JiNDhlNjNiY2Q3ZWU5YmU5ZjhlZGQwIn19LCJzdWIiOiJkaWQ6ZXRocjpzZXBvbGlhOjB4MDI4MTI0NjcxY2YyZGEzMWE3ZTNiZmZkM2RmOGIyY2FmYjFmOGM2YzdmMjVjYTIyYjJhYTM0YTE0MjhhZTMxNjM0IiwibmJmIjoxNzM4ODU4OTQyLCJpc3MiOiJkaWQ6ZXRocjpzZXBvbGlhOjB4MDI4MTI0NjcxY2YyZGEzMWE3ZTNiZmZkM2RmOGIyY2FmYjFmOGM2YzdmMjVjYTIyYjJhYTM0YTE0MjhhZTMxNjM0In0.BVxq9nqu1RosFj-K12LvBv4T7M_ehbPUQW-BrudI2wZUXpg1mNuSa07gstD-Ykbloc_LH3gBX5ZI05sPq0Vi4A"
+        }
+      }
+    ],
+    "holder": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634",
+    "id": "d8e6f580-2fa7-4786-9676-1a9f46785440",
+    "type": [
+      "VerifiablePresentation"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2025-02-07T09:42:59.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKaGJHY2lPaUpGVXpJMU5rc2lMQ0owZVhBaU9pSktWMVFpZlEuZXlKMll5STZleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdk1qQXhPQzlqY21Wa1pXNTBhV0ZzY3k5Mk1TSXNJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTl1Y3k5amNtVmtaVzUwYVdGc2N5OTJNaUpkTENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lsMHNJbU55WldSbGJuUnBZV3hUZFdKcVpXTjBJanA3SW01aGJXVWlPaUk1TURZNFpXVTRaVE5pT0Rrell6QmxaakU0WlRsbFlqWmpabVkxWWpjMU5Ua3hNamxtWkRka01tUTBNamt6TjJNMU1HRXdNamMwTTJFNVl6UmpNREl4SWl3aVlXZGxJam9pTnpnMU5HRmpNbVV3WVRNeU4yUXlPVE5oWkRCbU16VXdaakV5WVRBeU5tTmhPV1UyTldNd01qVmxORFl5WVdRek0ySmtZV1prTjJFek5HVmlOV1k0T1NJc0ltVnRZV2xzSWpvaU1qWXhPVE5rWVdSak5UQTJNMk16T0RsbE9ERXlNRE0yTm1RM1l6TXpNREpsTldJMU5XSmpabU0wTkdVelpXVmxNekF4WVRCaVkyTXhNMlF4WldNek5pSXNJbkJvYjI1bElqb2lNRGxrWW1FME5XVXlZamN4TWpOalkyUmlNamRqTW1VNVpqQmpOV1UyWWpNeU1UQXdOREEzTkRRd01UUXdZelppWTJJeVpEZGlaRGMzTURVd1pqTmhNU0lzSW1Ga1pISmxjM01pT2lJM09UQXpZamd3T1RObE4ySmxPV0kzTnpobE9ESTJaR1V4TXpKbU56UXlPR1EwT1RSaFpEQXhOV05sT1RoalpqY3lPVEZoWldFeU5UQXpaR1ZsTlRSa0lpd2libUYwYVc5dVlXeHBkSGtpT2lJNVpEY3haV0U1TXpKa1pqQTFOams1WWpSaE1EUXlObUZoWlRnM09EWm1PRGd6TnpZd1pEZzJNemxpWTJJMU1UVTBZakUyTkRkaU0yVmpPVFpoWm1GaElpd2laMlZ1WkdWeUlqb2laVE5sTW1WaVlUTTFNelUxTlROaE9HSXlaakF4TmpFeU1qRmhabUV3TldJMVl6SXdOR1U1WW1FMFpHSTJZekU1T1RSaVlqVmpPR1kxWXpreVpEUXpNaUlzSW0xaGNtbDBZV3hUZEdGMGRYTWlPaUprWlRBNE5EbGhNekExTldRellUSmhOelF4TmpReE0yWTNPR1kyWldWak9HVm1NRGswTmpWaVltSTRNMlprWmpaa00ySXhZek16T1dKbU1EYzNObU00SWl3aVpXUjFZMkYwYVc5dUlqb2lNV1kwTldRMFlUWmlNbVF3WXpJNVpqSTFPV1F6TjJNMlpUSTFZemxqT1RVME1qWXpZamRpT0RSaU56QmtOamxtTWpNelltRXlPV1V5T0RBek5EazVPU0lzSW05alkzVndZWFJwYjI0aU9pSTBObVJtTWpBNU9UTTNPR0k1TkRFNU9EZGtNVFppTVRFNE1EQTRNVE0xWmpRM09UQTFNV1psTTJKaU5EaGxOak5pWTJRM1pXVTVZbVU1WmpobFpHUXdJbjE5TENKemRXSWlPaUprYVdRNlpYUm9janB6WlhCdmJHbGhPakI0TURJNE1USTBOamN4WTJZeVpHRXpNV0UzWlROaVptWmtNMlJtT0dJeVkyRm1ZakZtT0dNMll6ZG1NalZqWVRJeVlqSmhZVE0wWVRFME1qaGhaVE14TmpNMElpd2libUptSWpveE56TTRPRFU0T1RReUxDSnBjM01pT2lKa2FXUTZaWFJvY2pwelpYQnZiR2xoT2pCNE1ESTRNVEkwTmpjeFkyWXlaR0V6TVdFM1pUTmlabVprTTJSbU9HSXlZMkZtWWpGbU9HTTJZemRtTWpWallUSXlZakpoWVRNMFlURTBNamhoWlRNeE5qTTBJbjAuQlZ4cTlucXUxUm9zRmotSzEyTHZCdjRUN01fZWhiUFVRVy1CcnVkSTJ3WlVYcGcxbU51U2EwN2dzdEQtWWtibG9jX0xIM2dCWDVaSTA1c1BxMFZpNEEiXX0sImF0dHJpYnV0ZXMiOlt7InBhdGgiOlsibmFtZSJdLCJjbGVhclZhbHVlIjoiQWxpY2UxIiwibm9uY2UiOiJiZGUxZDQ0MjM2YmRiOWI3Zjc1MWJkOThiNWQ5MWYzMzZiODUwMzU4MzljZDEyZmM5ZjBhMjdlNjUxYzBmZjk2NjJkYjIwNWUxNzBhYmZmMmQ2ZTcyMTQ0MmVmNTM5OWQ0MjVkNDBjZGYzNTQ0YWZlNmJkOTJhNTQyODg1YzgzNSJ9LHsicGF0aCI6WyJhZ2UiXSwiY2xlYXJWYWx1ZSI6IjI5Iiwibm9uY2UiOiIzODU0Njc2MzVlZjQ2Mzc4ZmUwNTAxYzkzYTBiNGU0NjEzY2ZiNjI0ZWJmYjRiNTkzYWQ3NDhkOWE1NjVmMTRlOTAwMzlkNGRiZWQ5M2EzZWJlNDU3ZGQxZjhmYWY3NGJhMWNiMDkxZTVmNWE5MjhiNTY3ZmMzMjIzM2FhYzBiNiJ9LHsicGF0aCI6WyJlbWFpbCJdLCJjbGVhclZhbHVlIjoiYWxpY2VAZXhhbXBsZS5jb20iLCJub25jZSI6IjYxOTZmMTQxNGZiYzg0YTJmODIxNjU1OTA2ZmVlY2I5OTc1NTNiODJkYTZlOWM4YjI4YzI4MzVmOTlhN2FmOWJhZGE0NzE3MjllZmEyNDdmNmM0ZDg2MTA1ZTA2ZTdhMGEwMDUxNThiYjIxYmY3NzQ3ZTkzZjEzMzk4ZDk2NjE2In1dLCJqdGkiOiJkOGU2ZjU4MC0yZmE3LTQ3ODYtOTY3Ni0xYTlmNDY3ODU0NDAiLCJuYmYiOjE3Mzg5MjEzNzksImlzcyI6ImRpZDpldGhyOnNlcG9saWE6MHgwMjgxMjQ2NzFjZjJkYTMxYTdlM2JmZmQzZGY4YjJjYWZiMWY4YzZjN2YyNWNhMjJiMmFhMzRhMTQyOGFlMzE2MzQifQ.ykZhlPoDP8Vc6QZxYro9kUvt1D5_4Yd0xTl5ULgNbWlD2lv4O45GBLcEEJvxar5Qb8Ahzr68aiV66BpivtEUXQ"
+    }
+  }
+
+
+
+}
+
+
+
+####TEST STORING ISSUED VC FOR SELECTIVE DISCLOSURE
+
+POST http://localhost:3001/store_vc/selective_disclosure
+Content-Type: application/json
+
+{
+  "did": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634",
+  "vc": {
+    "credentialSubject": {
+      "name": "9068ee8e3b893c0ef18e9eb6cff5b7559129fd7d2d42937c50a02743a9c4c021",
+      "age": "7854ac2e0a327d293ad0f350f12a026ca9e65c025e462ad33bdafd7a34eb5f89",
+      "email": "26193dadc5063c389e8120366d7c3302e5b55bcfc44e3eee301a0bcc13d1ec36",
+      "phone": "09dba45e2b7123ccdb27c2e9f0c5e6b32100407440140c6bcb2d7bd77050f3a1",
+      "address": "7903b8093e7be9b778e826de132f7428d494ad015ce98cf7291aea2503dee54d",
+      "nationality": "9d71ea932df05699b4a0426aae8786f883760d8639bcb5154b1647b3ec96afaa",
+      "gender": "e3e2eba3535553a8b2f0161221afa05b5c204e9ba4db6c1994bb5c8f5c92d432",
+      "maritalStatus": "de0849a3055d3a2a7416413f78f6eec8ef09465bbb83fdf6d3b1c339bf0776c8",
+      "education": "1f45d4a6b2d0c29f259d37c6e25c9c954263b7b84b70d69f233ba29e28034999",
+      "occupation": "46df2099378b941987d16b118008135f479051fe3bb48e63bcd7ee9be9f8edd0",
+      "id": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634"
+    },
+    "issuer": {
+      "id": "did:ethr:sepolia:0x028124671cf2da31a7e3bffd3df8b2cafb1f8c6c7f25ca22b2aa34a1428ae31634"
+    },
+    "type": [
+      "VerifiableCredential"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2025-02-06T16:22:22.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiI5MDY4ZWU4ZTNiODkzYzBlZjE4ZTllYjZjZmY1Yjc1NTkxMjlmZDdkMmQ0MjkzN2M1MGEwMjc0M2E5YzRjMDIxIiwiYWdlIjoiNzg1NGFjMmUwYTMyN2QyOTNhZDBmMzUwZjEyYTAyNmNhOWU2NWMwMjVlNDYyYWQzM2JkYWZkN2EzNGViNWY4OSIsImVtYWlsIjoiMjYxOTNkYWRjNTA2M2MzODllODEyMDM2NmQ3YzMzMDJlNWI1NWJjZmM0NGUzZWVlMzAxYTBiY2MxM2QxZWMzNiIsInBob25lIjoiMDlkYmE0NWUyYjcxMjNjY2RiMjdjMmU5ZjBjNWU2YjMyMTAwNDA3NDQwMTQwYzZiY2IyZDdiZDc3MDUwZjNhMSIsImFkZHJlc3MiOiI3OTAzYjgwOTNlN2JlOWI3NzhlODI2ZGUxMzJmNzQyOGQ0OTRhZDAxNWNlOThjZjcyOTFhZWEyNTAzZGVlNTRkIiwibmF0aW9uYWxpdHkiOiI5ZDcxZWE5MzJkZjA1Njk5YjRhMDQyNmFhZTg3ODZmODgzNzYwZDg2MzliY2I1MTU0YjE2NDdiM2VjOTZhZmFhIiwiZ2VuZGVyIjoiZTNlMmViYTM1MzU1NTNhOGIyZjAxNjEyMjFhZmEwNWI1YzIwNGU5YmE0ZGI2YzE5OTRiYjVjOGY1YzkyZDQzMiIsIm1hcml0YWxTdGF0dXMiOiJkZTA4NDlhMzA1NWQzYTJhNzQxNjQxM2Y3OGY2ZWVjOGVmMDk0NjViYmI4M2ZkZjZkM2IxYzMzOWJmMDc3NmM4IiwiZWR1Y2F0aW9uIjoiMWY0NWQ0YTZiMmQwYzI5ZjI1OWQzN2M2ZTI1YzljOTU0MjYzYjdiODRiNzBkNjlmMjMzYmEyOWUyODAzNDk5OSIsIm9jY3VwYXRpb24iOiI0NmRmMjA5OTM3OGI5NDE5ODdkMTZiMTE4MDA4MTM1ZjQ3OTA1MWZlM2JiNDhlNjNiY2Q3ZWU5YmU5ZjhlZGQwIn19LCJzdWIiOiJkaWQ6ZXRocjpzZXBvbGlhOjB4MDI4MTI0NjcxY2YyZGEzMWE3ZTNiZmZkM2RmOGIyY2FmYjFmOGM2YzdmMjVjYTIyYjJhYTM0YTE0MjhhZTMxNjM0IiwibmJmIjoxNzM4ODU4OTQyLCJpc3MiOiJkaWQ6ZXRocjpzZXBvbGlhOjB4MDI4MTI0NjcxY2YyZGEzMWE3ZTNiZmZkM2RmOGIyY2FmYjFmOGM2YzdmMjVjYTIyYjJhYTM0YTE0MjhhZTMxNjM0In0.BVxq9nqu1RosFj-K12LvBv4T7M_ehbPUQW-BrudI2wZUXpg1mNuSa07gstD-Ykbloc_LH3gBX5ZI05sPq0Vi4A"
+    }
+  },
+  "map": {
+    "name": {
+      "path": [
+        "name"
+      ],
+      "clearValue": "Alice1",
+      "nonce": "bde1d44236bdb9b7f751bd98b5d91f336b85035839cd12fc9f0a27e651c0ff9662db205e170abff2d6e721442ef5399d425d40cdf3544afe6bd92a542885c835"
+    },
+    "age": {
+      "path": [
+        "age"
+      ],
+      "clearValue": "29",
+      "nonce": "385467635ef46378fe0501c93a0b4e4613cfb624ebfb4b593ad748d9a565f14e90039d4dbed93a3ebe457dd1f8faf74ba1cb091e5f5a928b567fc32233aac0b6"
+    },
+    "email": {
+      "path": [
+        "email"
+      ],
+      "clearValue": "alice@example.com",
+      "nonce": "6196f1414fbc84a2f821655906feecb997553b82da6e9c8b28c2835f99a7af9bada471729efa247f6c4d86105e06e7a0a005158bb21bf7747e93f13398d96616"
+    },
+    "phone": {
+      "path": [
+        "phone"
+      ],
+      "clearValue": "555-12314",
+      "nonce": "3f9e7d1518fd1a576a28437d8f9bf7a3c5846c8d4c6e902720059696609ccc84be180bd34b26e5fe06fee4c67ecffde4430c76fbdd806a62f143c2e38c1001d5"
+    },
+    "address": {
+      "path": [
+        "address"
+      ],
+      "clearValue": "123 Main St",
+      "nonce": "3801438cdad9aa190a3ae77ff103752573a329a56ce4aa6bd7ec47faed28db2fe6f0c1d8d747fe7d4da68bcf8471744cd3d7975be6510c3fa11ea4baa5177f10"
+    },
+    "nationality": {
+      "path": [
+        "nationality"
+      ],
+      "clearValue": "American",
+      "nonce": "7278b80becec99408d45fa46c75deb6f8d0d3f1d54e6677ba3353cc04f588a5d022ebe02475ed25d55aba9153667dc771f66ed7da3e6321711859a8c621ccc0c"
+    },
+    "gender": {
+      "path": [
+        "gender"
+      ],
+      "clearValue": "male",
+      "nonce": "59236f754394c1ba546cae6420637f6d45d7b509592b15641b96d2625b7678e54551d050175a55d1edb4e7398aef5730fdc5063b689dc061e755e79f478e8099"
+    },
+    "maritalStatus": {
+      "path": [
+        "maritalStatus"
+      ],
+      "clearValue": "single",
+      "nonce": "631a6de87464bf7b19d8a26561d47decf9ca9737fdedb816dee9ae575dd9bc769f5ce86559b39968ccd6ed7d209ca11372cd896cd6a389c4b8b43b10718f9453"
+    },
+    "education": {
+      "path": [
+        "education"
+      ],
+      "clearValue": "Bachelor's",
+      "nonce": "792bd250613b0196598518e48b0e6e54493606a9666c7387f602be11d193868324e969deec7a2fc78c8ca3322758072790ceed3b0c10ddd38a92bc672cd9721b"
+    },
+    "occupation": {
+      "path": [
+        "occupation"
+      ],
+      "clearValue": "Software Engineer",
+      "nonce": "a9e070b6fb706d45f256e9ac00eacb27701c4c41e0f129dae4755864e62e0b8a53286a80db48182d196d8e79dfd3ccb683d46e36ae7db710e7a5cf27b5026ac6"
+    }
+  }
+}
+
+
+##### TEST ON VERAMO
+
+
+GET http://localhost:3001/create_did
+
+#### Test Credential Issuance with 10 Attributes
+POST http://localhost:3001/test_issue_verifiable_credential
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:0x877545E3910550Ce27c2c51Bd2FF14837acB6566",
+  "holder": "did:ethr:0x877545E3910550Ce27c2c51Bd2FF14837acB6566",
+  "type": "VerifiableCredential",
+  "attributes": {
+    "name": "Alice1",
+    "age": 29,
+    "email": "alice@example.com",
+    "phone": "555-1234",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "female",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer"
+  },
+  "store": true,
+  "numTrials": 50
+}
+
+
+
+#### Test Credential Issuance with 20 Attributes
+POST http://localhost:3001/test_issue_verifiable_credential
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:sepolia:0x02f5169a5f03287c341027ebb8bacb2d4ab402c59bbce900dd934482fac1210c1f",
+  "holder": "did:ethr:sepolia:0x02f5169a5f03287c341027ebb8bacb2d4ab402c59bbce900dd934482fac1210c1f",
+  "type": "VerifiableCredential",
+  "attributes": {
+    "name": "Alice",
+    "age": 29,
+    "email": "alice@example.com",
+    "phone": "555-1234",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "female",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer",
+    "company": "Tech Corp",
+    "salary": "100000",
+    "experience": "5 years",
+    "languages": "English, Spanish",
+    "passportNumber": "X12345678",
+    "drivingLicense": "Y987654321",
+    "height": "5'7",
+    "weight": "140 lbs",
+    "bloodType": "O+",
+    "allergies": "None"
+  },
+  "store": true,
+  "numTrials": 50
+}
+
+
+
+#### Test Credential Issuance with 50 Attributes
+POST http://localhost:3001/test_issue_verifiable_credential
+Content-Type: application/json
+
+{
+  "issuer": "did:ethr:0x877545E3910550Ce27c2c51Bd2FF14837acB6566",
+  "holder": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32",
+  "type": "VerifiableCredential",
+  "attributes": {
+    "name": "Alice",
+    "age": 29,
+    "email": "alice@example.com",
+    "phone": "555-1234",
+    "address": "123 Main St",
+    "nationality": "American",
+    "gender": "female",
+    "maritalStatus": "single",
+    "education": "Bachelor's",
+    "occupation": "Software Engineer",
+    "company": "Tech Corp",
+    "salary": "100000",
+    "experience": "5 years",
+    "languages": "English, Spanish",
+    "passportNumber": "X12345678",
+    "drivingLicense": "Y987654321",
+    "height": "5'7",
+    "weight": "140 lbs",
+    "bloodType": "O+",
+    "allergies": "None",
+    "insuranceNumber": "123-456-789",
+    "emergencyContact": "Bob Smith",
+    "birthDate": "1990-01-01",
+    "socialSecurityNumber": "123-45-6789",
+    "medicalHistory": "None",
+    "bankAccount": "987654321",
+    "creditCard": "1234 5678 9012 3456",
+    "cryptoWallet": "0x12345ABCDE",
+    "githubUsername": "alice-dev",
+    "linkedInProfile": "linkedin.com/in/alice",
+    "twitterHandle": "@alice123",
+    "instagramHandle": "@alice_in_wonderland",
+    "favoriteColor": "blue",
+    "favoriteFood": "pizza",
+    "pets": "cat",
+    "carModel": "Tesla Model 3",
+    "licensePlate": "XYZ 1234",
+    "favoriteSport": "soccer",
+    "hobby": "photography",
+    "shoeSize": "7",
+    "eyeColor": "brown",
+    "hairColor": "black",
+    "favoriteMovie": "Inception",
+    "favoriteBook": "1984"
+  },
+  "store": true,
+  "numTrials": 50
+}
+
+#### Test Verifiable Presentation Holder Claim with Execution Time Measurement
+# Test Verifiable Presentation Issuance with 10 Attributes
+POST http://localhost:3001/test_issue_verifiable_presentation/holder_claim
+Content-Type: application/json
+
+{
+  "holder": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32",
+  "type": "VerifiablePresentation",
+  "attributes": {
+    "name": "Alice",
+    "role": "admin",
+    "email": "alice@example.com",
+    "phone": "555-1234",
+    "department": "IT",
+    "accessLevel": "5",
+    "region": "North America",
+    "yearsOfService": 5,
+    "certifications": "CISSP",
+    "manager": "John Doe"
+  },
+  "assertion": "assertion_string_here",
+  "store": true,
+  "numTrials": 50
+}
+
+
+#### Test Verifiable Presentation Issuance with 20 Attributes
+POST http://localhost:3001/test_issue_verifiable_presentation/holder_claim
+Content-Type: application/json
+
+{
+  "holder": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32",
+  "type": "VerifiablePresentation",
+  "attributes": {
+    "name": "Alice",
+    "role": "admin",
+    "email": "alice@example.com",
+    "phone": "555-1234",
+    "department": "IT",
+    "accessLevel": "5",
+    "region": "North America",
+    "yearsOfService": 5,
+    "certifications": "CISSP",
+    "manager": "John Doe",
+    "location": "NYC",
+    "badgeNumber": "123456",
+    "emergencyContact": "Bob Smith",
+    "shift": "Morning",
+    "project": "Digital Transformation",
+    "company": "Tech Corp",
+    "salaryGrade": "E5",
+    "employeeStatus": "Full-time",
+    "hireDate": "2018-01-01",
+    "securityClearance": "Top Secret"
+  },
+  "assertion": "assertion_string_here",
+  "store": true,
+  "numTrials": 50
+}
+
+#### Test Verifiable Presentation Issuance with 50 Attributes
+POST http://localhost:3001/test_issue_verifiable_presentation/holder_claim
+Content-Type: application/json
+
+{
+  "holder": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32",
+  "type": "VerifiablePresentation",
+  "attributes": {
+    "name": "Alice",
+    "role": "admin",
+    "email": "alice@example.com",
+    "phone": "555-1234",
+    "department": "IT",
+    "accessLevel": "5",
+    "region": "North America",
+    "yearsOfService": 5,
+    "certifications": "CISSP",
+    "manager": "John Doe",
+    "location": "NYC",
+    "badgeNumber": "123456",
+    "emergencyContact": "Bob Smith",
+    "shift": "Morning",
+    "project": "Digital Transformation",
+    "company": "Tech Corp",
+    "salaryGrade": "E5",
+    "employeeStatus": "Full-time",
+    "hireDate": "2018-01-01",
+    "securityClearance": "Top Secret",
+    "office": "5th Avenue",
+    "workPhone": "555-5678",
+    "homeAddress": "456 Park Ave",
+    "employeeID": "789123",
+    "workLocation": "Remote",
+    "insurancePolicy": "ABC123",
+    "pensionPlan": "Plan A",
+    "annualLeaveBalance": "15 days",
+    "sickLeaveBalance": "10 days",
+    "trainingCompletion": "2024-08-15",
+    "supervisor": "Jane Smith",
+    "lastPromotion": "2022-06-01",
+    "performanceRating": "Exceeds Expectations",
+    "specialProjects": "AI Integration",
+    "rewardsPoints": "250",
+    "parkingPermit": "Lot B",
+    "workVisa": "H1B",
+    "laptopSerial": "LPT12345",
+    "vpnAccess": "Enabled",
+    "networkAccessLevel": "Admin",
+    "timeZone": "EST",
+    "languagePreference": "English",
+    "secondaryEmail": "alice.secondary@example.com",
+    "personalPhone": "555-9876",
+    "spouseName": "Charlie",
+    "dependentCount": 2
+  },
+  "assertion": "assertion_string_here",
+  "store": true,
+  "numTrials": 50
+}
+
+
+
+#### Test Verification of Verifiable Credential with 10 attributes Execution Time Measurement
+POST http://localhost:3001/test_verify
+Content-Type: application/json
+
+{
+  "credential": {
+    "credentialSubject": {
+      "name": "Alice",
+      "age": 29,
+      "email": "alice@example.com",
+      "phone": "555-1234",
+      "address": "123 Main St",
+      "nationality": "American",
+      "gender": "female",
+      "maritalStatus": "single",
+      "education": "Bachelor's",
+      "occupation": "Software Engineer",
+      "id": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32"
+    },
+    "issuer": {
+      "id": "did:ethr:0x877545E3910550Ce27c2c51Bd2FF14837acB6566"
+    },
+    "type": [
+      "VerifiableCredential"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2024-09-05T17:48:18.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiJBbGljZSIsImFnZSI6MjksImVtYWlsIjoiYWxpY2VAZXhhbXBsZS5jb20iLCJwaG9uZSI6IjU1NS0xMjM0IiwiYWRkcmVzcyI6IjEyMyBNYWluIFN0IiwibmF0aW9uYWxpdHkiOiJBbWVyaWNhbiIsImdlbmRlciI6ImZlbWFsZSIsIm1hcml0YWxTdGF0dXMiOiJzaW5nbGUiLCJlZHVjYXRpb24iOiJCYWNoZWxvcidzIiwib2NjdXBhdGlvbiI6IlNvZnR3YXJlIEVuZ2luZWVyIn19LCJzdWIiOiJkaWQ6ZXRocjoweDkwYjEwNDFFRWZlYTY4RWE1NjQ1NzRmNkM1NzZiRDNjOTAyQThmMzIiLCJuYmYiOjE3MjU1NTg0OTgsImlzcyI6ImRpZDpldGhyOjB4ODc3NTQ1RTM5MTA1NTBDZTI3YzJjNTFCZDJGRjE0ODM3YWNCNjU2NiJ9.y-JGya1yIwrxqthwDCiPsJ3uB-klUuVNFg5udlvvjpN32vaSLi-yvU05H2J41whoEh_HPTKhun0Pyx4x7BH1Og"
+    }
+  },
+  "numTrials": 50
+}
+
+
+#### Test Verification of Verifiable Credential with 20 attributes Execution Time Measurement
+POST http://localhost:3001/test_verify
+Content-Type: application/json
+
+{
+  "credential": {
+    "credentialSubject": {
+      "name": "Alice",
+      "age": 29,
+      "email": "alice@example.com",
+      "phone": "555-1234",
+      "address": "123 Main St",
+      "nationality": "American",
+      "gender": "female",
+      "maritalStatus": "single",
+      "education": "Bachelor's",
+      "occupation": "Software Engineer",
+      "company": "Tech Corp",
+      "salary": "100000",
+      "experience": "5 years",
+      "languages": "English, Spanish",
+      "passportNumber": "X12345678",
+      "drivingLicense": "Y987654321",
+      "height": "5'7",
+      "weight": "140 lbs",
+      "bloodType": "O+",
+      "allergies": "None",
+      "id": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32"
+    },
+    "issuer": {
+      "id": "did:ethr:0x877545E3910550Ce27c2c51Bd2FF14837acB6566"
+    },
+    "type": [
+      "VerifiableCredential"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2024-09-05T17:54:35.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiJBbGljZSIsImFnZSI6MjksImVtYWlsIjoiYWxpY2VAZXhhbXBsZS5jb20iLCJwaG9uZSI6IjU1NS0xMjM0IiwiYWRkcmVzcyI6IjEyMyBNYWluIFN0IiwibmF0aW9uYWxpdHkiOiJBbWVyaWNhbiIsImdlbmRlciI6ImZlbWFsZSIsIm1hcml0YWxTdGF0dXMiOiJzaW5nbGUiLCJlZHVjYXRpb24iOiJCYWNoZWxvcidzIiwib2NjdXBhdGlvbiI6IlNvZnR3YXJlIEVuZ2luZWVyIiwiY29tcGFueSI6IlRlY2ggQ29ycCIsInNhbGFyeSI6IjEwMDAwMCIsImV4cGVyaWVuY2UiOiI1IHllYXJzIiwibGFuZ3VhZ2VzIjoiRW5nbGlzaCwgU3BhbmlzaCIsInBhc3Nwb3J0TnVtYmVyIjoiWDEyMzQ1Njc4IiwiZHJpdmluZ0xpY2Vuc2UiOiJZOTg3NjU0MzIxIiwiaGVpZ2h0IjoiNSc3Iiwid2VpZ2h0IjoiMTQwIGxicyIsImJsb29kVHlwZSI6Ik8rIiwiYWxsZXJnaWVzIjoiTm9uZSJ9fSwic3ViIjoiZGlkOmV0aHI6MHg5MGIxMDQxRUVmZWE2OEVhNTY0NTc0ZjZDNTc2YkQzYzkwMkE4ZjMyIiwibmJmIjoxNzI1NTU4ODc1LCJpc3MiOiJkaWQ6ZXRocjoweDg3NzU0NUUzOTEwNTUwQ2UyN2MyYzUxQmQyRkYxNDgzN2FjQjY1NjYifQ.RUN0B1XHonFsDRwj_JfZ-4EXbebqvddhK7HRglxTbT5mk1YIUugd65UNYXSG_EzH0ZpmBGxhG8nQTLjZIUKvbA"
+    }
+  },
+  "numTrials": 50
+}
+
+
+
+#### Test Verification of Verifiable Credential with 50 attributes Execution Time Measurement
+POST http://localhost:3001/test_verify
+Content-Type: application/json
+
+{
+  "credential": {
+    "credentialSubject": {
+      "name": "Alice",
+      "age": 29,
+      "email": "alice@example.com",
+      "phone": "555-1234",
+      "address": "123 Main St",
+      "nationality": "American",
+      "gender": "female",
+      "maritalStatus": "single",
+      "education": "Bachelor's",
+      "occupation": "Software Engineer",
+      "company": "Tech Corp",
+      "salary": "100000",
+      "experience": "5 years",
+      "languages": "English, Spanish",
+      "passportNumber": "X12345678",
+      "drivingLicense": "Y987654321",
+      "height": "5'7",
+      "weight": "140 lbs",
+      "bloodType": "O+",
+      "allergies": "None",
+      "insuranceNumber": "123-456-789",
+      "emergencyContact": "Bob Smith",
+      "birthDate": "1990-01-01",
+      "socialSecurityNumber": "123-45-6789",
+      "medicalHistory": "None",
+      "bankAccount": "987654321",
+      "creditCard": "1234 5678 9012 3456",
+      "cryptoWallet": "0x12345ABCDE",
+      "githubUsername": "alice-dev",
+      "linkedInProfile": "linkedin.com/in/alice",
+      "twitterHandle": "@alice123",
+      "instagramHandle": "@alice_in_wonderland",
+      "favoriteColor": "blue",
+      "favoriteFood": "pizza",
+      "pets": "cat",
+      "carModel": "Tesla Model 3",
+      "licensePlate": "XYZ 1234",
+      "favoriteSport": "soccer",
+      "hobby": "photography",
+      "shoeSize": "7",
+      "eyeColor": "brown",
+      "hairColor": "black",
+      "favoriteMovie": "Inception",
+      "favoriteBook": "1984",
+      "id": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32"
+    },
+    "issuer": {
+      "id": "did:ethr:0x877545E3910550Ce27c2c51Bd2FF14837acB6566"
+    },
+    "type": [
+      "VerifiableCredential"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2024-09-05T17:55:05.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiJBbGljZSIsImFnZSI6MjksImVtYWlsIjoiYWxpY2VAZXhhbXBsZS5jb20iLCJwaG9uZSI6IjU1NS0xMjM0IiwiYWRkcmVzcyI6IjEyMyBNYWluIFN0IiwibmF0aW9uYWxpdHkiOiJBbWVyaWNhbiIsImdlbmRlciI6ImZlbWFsZSIsIm1hcml0YWxTdGF0dXMiOiJzaW5nbGUiLCJlZHVjYXRpb24iOiJCYWNoZWxvcidzIiwib2NjdXBhdGlvbiI6IlNvZnR3YXJlIEVuZ2luZWVyIiwiY29tcGFueSI6IlRlY2ggQ29ycCIsInNhbGFyeSI6IjEwMDAwMCIsImV4cGVyaWVuY2UiOiI1IHllYXJzIiwibGFuZ3VhZ2VzIjoiRW5nbGlzaCwgU3BhbmlzaCIsInBhc3Nwb3J0TnVtYmVyIjoiWDEyMzQ1Njc4IiwiZHJpdmluZ0xpY2Vuc2UiOiJZOTg3NjU0MzIxIiwiaGVpZ2h0IjoiNSc3Iiwid2VpZ2h0IjoiMTQwIGxicyIsImJsb29kVHlwZSI6Ik8rIiwiYWxsZXJnaWVzIjoiTm9uZSIsImluc3VyYW5jZU51bWJlciI6IjEyMy00NTYtNzg5IiwiZW1lcmdlbmN5Q29udGFjdCI6IkJvYiBTbWl0aCIsImJpcnRoRGF0ZSI6IjE5OTAtMDEtMDEiLCJzb2NpYWxTZWN1cml0eU51bWJlciI6IjEyMy00NS02Nzg5IiwibWVkaWNhbEhpc3RvcnkiOiJOb25lIiwiYmFua0FjY291bnQiOiI5ODc2NTQzMjEiLCJjcmVkaXRDYXJkIjoiMTIzNCA1Njc4IDkwMTIgMzQ1NiIsImNyeXB0b1dhbGxldCI6IjB4MTIzNDVBQkNERSIsImdpdGh1YlVzZXJuYW1lIjoiYWxpY2UtZGV2IiwibGlua2VkSW5Qcm9maWxlIjoibGlua2VkaW4uY29tL2luL2FsaWNlIiwidHdpdHRlckhhbmRsZSI6IkBhbGljZTEyMyIsImluc3RhZ3JhbUhhbmRsZSI6IkBhbGljZV9pbl93b25kZXJsYW5kIiwiZmF2b3JpdGVDb2xvciI6ImJsdWUiLCJmYXZvcml0ZUZvb2QiOiJwaXp6YSIsInBldHMiOiJjYXQiLCJjYXJNb2RlbCI6IlRlc2xhIE1vZGVsIDMiLCJsaWNlbnNlUGxhdGUiOiJYWVogMTIzNCIsImZhdm9yaXRlU3BvcnQiOiJzb2NjZXIiLCJob2JieSI6InBob3RvZ3JhcGh5Iiwic2hvZVNpemUiOiI3IiwiZXllQ29sb3IiOiJicm93biIsImhhaXJDb2xvciI6ImJsYWNrIiwiZmF2b3JpdGVNb3ZpZSI6IkluY2VwdGlvbiIsImZhdm9yaXRlQm9vayI6IjE5ODQifX0sInN1YiI6ImRpZDpldGhyOjB4OTBiMTA0MUVFZmVhNjhFYTU2NDU3NGY2QzU3NmJEM2M5MDJBOGYzMiIsIm5iZiI6MTcyNTU1ODkwNSwiaXNzIjoiZGlkOmV0aHI6MHg4Nzc1NDVFMzkxMDU1MENlMjdjMmM1MUJkMkZGMTQ4MzdhY0I2NTY2In0.lNmR-edSRvp2v2ITgSQCgIOKvyX3oLINV0cnvWm_fwQsHnp2sJSvxwcnn-xR3yeolAzvusszNQU7C_qk7twndQ"
+    }
+  },
+  "numTrials": 50
+}
+
+
+
+
+#### Test Verification of Statement VC Execution Time Measurement
+POST http://localhost:3001/test_verify
+Content-Type: application/json
+
+{
+  "credential": {
+    "issuanceDate": "2024-10-02T16:48:19.000Z",
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "VCPresentation",
+      "VCforStatementDiffusion_VPv01"
+    ],
+    "credentialSubject": {
+      "statement_vc_cid_or_url": "bafkreict4cp3t3v3oxdhuumiwevhifwhh2nwei3j6xayipcl5hf73wo7pu",
+      "prev_vp_uuid": "",
+      "url_or_cid_jwt_prev": "",
+      "type": "origin",
+      "host_URL": "hi",
+      "assertion": "This VP is submitted by the subject as evidence of VC propagation",
+      "id": "d7471ac4-67b7-4e12-80e2-5ced0b7eb2dd"
+    },
+    "issuer": {
+      "id": "did:ethr:0x877545E3910550Ce27c2c51Bd2FF14837acB6566"
+    },
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiVkNQcmVzZW50YXRpb24iLCJWQ2ZvclN0YXRlbWVudERpZmZ1c2lvbl9WUHYwMSJdLCJjcmVkZW50aWFsU3ViamVjdCI6eyJzdGF0ZW1lbnRfdmNfY2lkX29yX3VybCI6ImJhZmtyZWljdDRjcDN0M3Yzb3hkaHV1bWl3ZXZoaWZ3aGgybndlaTNqNnhheWlwY2w1aGY3M3dvN3B1IiwicHJldl92cF91dWlkIjoiIiwidXJsX29yX2NpZF9qd3RfcHJldiI6IiIsInR5cGUiOiJvcmlnaW4iLCJob3N0X1VSTCI6ImhpIiwiYXNzZXJ0aW9uIjoiVGhpcyBWUCBpcyBzdWJtaXR0ZWQgYnkgdGhlIHN1YmplY3QgYXMgZXZpZGVuY2Ugb2YgVkMgcHJvcGFnYXRpb24ifX0sInN1YiI6ImQ3NDcxYWM0LTY3YjctNGUxMi04MGUyLTVjZWQwYjdlYjJkZCIsIm5iZiI6MTcyNzg4NzY5OSwiaXNzIjoiZGlkOmV0aHI6MHg4Nzc1NDVFMzkxMDU1MENlMjdjMmM1MUJkMkZGMTQ4MzdhY0I2NTY2In0.-WoiX51z72RJ6YML2-NfaOQk5ow05gtiieqEQqWaobxZvOdRd4WW4s5Mecn6QH6RONJfmhajcNOV-cH2sSxYHA"
+    },
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iLCJTdGF0ZW1lbnREaWZmdXNpb25fVlB2MDEiXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKaGJHY2lPaUpGVXpJMU5rc2lMQ0owZVhBaU9pSktWMVFpZlEuZXlKMll5STZleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdk1qQXhPQzlqY21Wa1pXNTBhV0ZzY3k5Mk1TSXNJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTl1Y3k5amNtVmtaVzUwYVdGc2N5OTJNaUpkTENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lpd2lWa05RY21WelpXNTBZWFJwYjI0aUxDSldRMlp2Y2xOMFlYUmxiV1Z1ZEVScFptWjFjMmx2Ymw5V1VIWXdNU0pkTENKamNtVmtaVzUwYVdGc1UzVmlhbVZqZENJNmV5SnpkR0YwWlcxbGJuUmZkbU5mWTJsa1gyOXlYM1Z5YkNJNkltSmhabXR5WldsamREUmpjRE4wTTNZemIzaGthSFYxYldsM1pYWm9hV1ozYUdneWJuZGxhVE5xTm5oaGVXbHdZMncxYUdZM00zZHZOM0IxSWl3aWNISmxkbDkyY0Y5MWRXbGtJam9pSWl3aWRYSnNYMjl5WDJOcFpGOXFkM1JmY0hKbGRpSTZJaUlzSW5SNWNHVWlPaUp2Y21sbmFXNGlMQ0pvYjNOMFgxVlNUQ0k2SW1ocElpd2lZWE56WlhKMGFXOXVJam9pVkdocGN5QldVQ0JwY3lCemRXSnRhWFIwWldRZ1lua2dkR2hsSUhOMVltcGxZM1FnWVhNZ1pYWnBaR1Z1WTJVZ2IyWWdWa01nY0hKdmNHRm5ZWFJwYjI0aWZYMHNJbk4xWWlJNkltUTNORGN4WVdNMExUWTNZamN0TkdVeE1pMDRNR1V5TFRWalpXUXdZamRsWWpKa1pDSXNJbTVpWmlJNk1UY3lOemc0TnpZNU9Td2lhWE56SWpvaVpHbGtPbVYwYUhJNk1IZzROemMxTkRWRk16a3hNRFUxTUVObE1qZGpNbU0xTVVKa01rWkdNVFE0TXpkaFkwSTJOVFkySW4wLi1Xb2lYNTF6NzJSSjZZTUwyLU5mYU9RazVvdzA1Z3RpaWVxRVFxV2FvYnhadk9kUmQ0V1c0czVNZWNuNlFINlJPTkpmbWhhamNOT1YtY0gyc1N4WUhBIl19LCJqdGkiOiJkNzQ3MWFjNC02N2I3LTRlMTItODBlMi01Y2VkMGI3ZWIyZGQiLCJuYmYiOjE3Mjc4ODc2OTksImlzcyI6ImRpZDpldGhyOjB4ODc3NTQ1RTM5MTA1NTBDZTI3YzJjNTFCZDJGRjE0ODM3YWNCNjU2NiJ9.BnWujCQ5quqJSA4JxlxsjsHAg6VHtkkKOKK9pwV7Cads6c5UHgyQDeEw_0BY9w2vtOH5wXcV940Mv2ym-Ivyfw"
+    }
+  },
+  "numTrials": 5
+}
+
+
+
+#### Test Verification of Verifiable Presentation with Execution Time Measurement with 10 attributes
+POST http://localhost:3001/test_verify/vp
+Content-Type: application/json
+
+{
+  "vp": {
+    "verifiableCredential": [
+      {
+        "credentialSubject": {
+          "name": "Alice",
+          "role": "admin",
+          "email": "alice@example.com",
+          "phone": "555-1234",
+          "department": "IT",
+          "accessLevel": "5",
+          "region": "North America",
+          "yearsOfService": 5,
+          "certifications": "CISSP",
+          "manager": "John Doe",
+          "assertion": "assertion_string_here",
+          "id": "134feeae-9e91-44a0-9a87-f1661f878c29"
+        },
+        "issuer": {
+          "id": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32"
+        },
+        "type": [
+          "VerifiableCredential",
+          "VCPresentation",
+          "VCforVerifiablePresentation"
+        ],
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://www.w3.org/ns/credentials/v2"
+        ],
+        "issuanceDate": "2024-09-05T17:55:44.000Z",
+        "proof": {
+          "type": "JwtProof2020",
+          "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiVkNQcmVzZW50YXRpb24iLCJWQ2ZvclZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwiY3JlZGVudGlhbFN1YmplY3QiOnsibmFtZSI6IkFsaWNlIiwicm9sZSI6ImFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsInBob25lIjoiNTU1LTEyMzQiLCJkZXBhcnRtZW50IjoiSVQiLCJhY2Nlc3NMZXZlbCI6IjUiLCJyZWdpb24iOiJOb3J0aCBBbWVyaWNhIiwieWVhcnNPZlNlcnZpY2UiOjUsImNlcnRpZmljYXRpb25zIjoiQ0lTU1AiLCJtYW5hZ2VyIjoiSm9obiBEb2UiLCJhc3NlcnRpb24iOiJhc3NlcnRpb25fc3RyaW5nX2hlcmUifX0sInN1YiI6IjEzNGZlZWFlLTllOTEtNDRhMC05YTg3LWYxNjYxZjg3OGMyOSIsIm5iZiI6MTcyNTU1ODk0NCwiaXNzIjoiZGlkOmV0aHI6MHg5MGIxMDQxRUVmZWE2OEVhNTY0NTc0ZjZDNTc2YkQzYzkwMkE4ZjMyIn0.ryIo7MNv6Jb2_6iZE0i_S-mXbzMCkLpcFlVH71QhfYRR6sd5F1MmBbJFHegfUZc4QsXNheYupTCkVlTrse5-zA"
+        }
+      }
+    ],
+    "holder": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32",
+    "id": "134feeae-9e91-44a0-9a87-f1661f878c29",
+    "type": [
+      "VerifiablePresentation"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2024-09-05T17:55:44.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKaGJHY2lPaUpGVXpJMU5rc2lMQ0owZVhBaU9pSktWMVFpZlEuZXlKMll5STZleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdk1qQXhPQzlqY21Wa1pXNTBhV0ZzY3k5Mk1TSXNJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTl1Y3k5amNtVmtaVzUwYVdGc2N5OTJNaUpkTENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lpd2lWa05RY21WelpXNTBZWFJwYjI0aUxDSldRMlp2Y2xabGNtbG1hV0ZpYkdWUWNtVnpaVzUwWVhScGIyNGlYU3dpWTNKbFpHVnVkR2xoYkZOMVltcGxZM1FpT25zaWJtRnRaU0k2SWtGc2FXTmxJaXdpY205c1pTSTZJbUZrYldsdUlpd2laVzFoYVd3aU9pSmhiR2xqWlVCbGVHRnRjR3hsTG1OdmJTSXNJbkJvYjI1bElqb2lOVFUxTFRFeU16UWlMQ0prWlhCaGNuUnRaVzUwSWpvaVNWUWlMQ0poWTJObGMzTk1aWFpsYkNJNklqVWlMQ0p5WldkcGIyNGlPaUpPYjNKMGFDQkJiV1Z5YVdOaElpd2llV1ZoY25OUFpsTmxjblpwWTJVaU9qVXNJbU5sY25ScFptbGpZWFJwYjI1eklqb2lRMGxUVTFBaUxDSnRZVzVoWjJWeUlqb2lTbTlvYmlCRWIyVWlMQ0poYzNObGNuUnBiMjRpT2lKaGMzTmxjblJwYjI1ZmMzUnlhVzVuWDJobGNtVWlmWDBzSW5OMVlpSTZJakV6TkdabFpXRmxMVGxsT1RFdE5EUmhNQzA1WVRnM0xXWXhOall4WmpnM09HTXlPU0lzSW01aVppSTZNVGN5TlRVMU9EazBOQ3dpYVhOeklqb2laR2xrT21WMGFISTZNSGc1TUdJeE1EUXhSVVZtWldFMk9FVmhOVFkwTlRjMFpqWkROVGMyWWtRell6a3dNa0U0WmpNeUluMC5yeUlvN01OdjZKYjJfNmlaRTBpX1MtbVhiek1Da0xwY0ZsVkg3MVFoZllSUjZzZDVGMU1tQmJKRkhlZ2ZVWmM0UXNYTmhlWXVwVENrVmxUcnNlNS16QSJdfSwianRpIjoiMTM0ZmVlYWUtOWU5MS00NGEwLTlhODctZjE2NjFmODc4YzI5IiwibmJmIjoxNzI1NTU4OTQ0LCJpc3MiOiJkaWQ6ZXRocjoweDkwYjEwNDFFRWZlYTY4RWE1NjQ1NzRmNkM1NzZiRDNjOTAyQThmMzIifQ.boHyX4lqGUdKIbENP3QkW8kftnuwTUcJ0s2NaMnQDlEH9RDUxeKFjcarJmZLhxIMOvSqDcHPwBOzOjMfPagE9Q"
+    }
+  },
+  "numTrials": 50
+}
+
+
+#### Test Verification of Verifiable Presentation with Execution Time Measurement with 20 attributes
+POST http://localhost:3001/test_verify/vp
+Content-Type: application/json
+
+{
+  "vp": {
+    "verifiableCredential": [
+      {
+        "credentialSubject": {
+          "name": "Alice",
+          "role": "admin",
+          "email": "alice@example.com",
+          "phone": "555-1234",
+          "department": "IT",
+          "accessLevel": "5",
+          "region": "North America",
+          "yearsOfService": 5,
+          "certifications": "CISSP",
+          "manager": "John Doe",
+          "location": "NYC",
+          "badgeNumber": "123456",
+          "emergencyContact": "Bob Smith",
+          "shift": "Morning",
+          "project": "Digital Transformation",
+          "company": "Tech Corp",
+          "salaryGrade": "E5",
+          "employeeStatus": "Full-time",
+          "hireDate": "2018-01-01",
+          "securityClearance": "Top Secret",
+          "assertion": "assertion_string_here",
+          "id": "427a5b38-c81e-4114-adc0-ec99b19a16cf"
+        },
+        "issuer": {
+          "id": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32"
+        },
+        "type": [
+          "VerifiableCredential",
+          "VCPresentation",
+          "VCforVerifiablePresentation"
+        ],
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://www.w3.org/ns/credentials/v2"
+        ],
+        "issuanceDate": "2024-09-05T17:56:47.000Z",
+        "proof": {
+          "type": "JwtProof2020",
+          "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiVkNQcmVzZW50YXRpb24iLCJWQ2ZvclZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwiY3JlZGVudGlhbFN1YmplY3QiOnsibmFtZSI6IkFsaWNlIiwicm9sZSI6ImFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsInBob25lIjoiNTU1LTEyMzQiLCJkZXBhcnRtZW50IjoiSVQiLCJhY2Nlc3NMZXZlbCI6IjUiLCJyZWdpb24iOiJOb3J0aCBBbWVyaWNhIiwieWVhcnNPZlNlcnZpY2UiOjUsImNlcnRpZmljYXRpb25zIjoiQ0lTU1AiLCJtYW5hZ2VyIjoiSm9obiBEb2UiLCJsb2NhdGlvbiI6Ik5ZQyIsImJhZGdlTnVtYmVyIjoiMTIzNDU2IiwiZW1lcmdlbmN5Q29udGFjdCI6IkJvYiBTbWl0aCIsInNoaWZ0IjoiTW9ybmluZyIsInByb2plY3QiOiJEaWdpdGFsIFRyYW5zZm9ybWF0aW9uIiwiY29tcGFueSI6IlRlY2ggQ29ycCIsInNhbGFyeUdyYWRlIjoiRTUiLCJlbXBsb3llZVN0YXR1cyI6IkZ1bGwtdGltZSIsImhpcmVEYXRlIjoiMjAxOC0wMS0wMSIsInNlY3VyaXR5Q2xlYXJhbmNlIjoiVG9wIFNlY3JldCIsImFzc2VydGlvbiI6ImFzc2VydGlvbl9zdHJpbmdfaGVyZSJ9fSwic3ViIjoiNDI3YTViMzgtYzgxZS00MTE0LWFkYzAtZWM5OWIxOWExNmNmIiwibmJmIjoxNzI1NTU5MDA3LCJpc3MiOiJkaWQ6ZXRocjoweDkwYjEwNDFFRWZlYTY4RWE1NjQ1NzRmNkM1NzZiRDNjOTAyQThmMzIifQ.23hEo55bnuLJNVqkTcj1MTzC_BTWBHsH4AiYlIC1mrpmTImlO0ClE7_G63cCKnZo5iwXNLdTpKQvVVxfnI-cpQ"
+        }
+      }
+    ],
+    "holder": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32",
+    "id": "427a5b38-c81e-4114-adc0-ec99b19a16cf",
+    "type": [
+      "VerifiablePresentation"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2024-09-05T17:56:47.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKaGJHY2lPaUpGVXpJMU5rc2lMQ0owZVhBaU9pSktWMVFpZlEuZXlKMll5STZleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdk1qQXhPQzlqY21Wa1pXNTBhV0ZzY3k5Mk1TSXNJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTl1Y3k5amNtVmtaVzUwYVdGc2N5OTJNaUpkTENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lpd2lWa05RY21WelpXNTBZWFJwYjI0aUxDSldRMlp2Y2xabGNtbG1hV0ZpYkdWUWNtVnpaVzUwWVhScGIyNGlYU3dpWTNKbFpHVnVkR2xoYkZOMVltcGxZM1FpT25zaWJtRnRaU0k2SWtGc2FXTmxJaXdpY205c1pTSTZJbUZrYldsdUlpd2laVzFoYVd3aU9pSmhiR2xqWlVCbGVHRnRjR3hsTG1OdmJTSXNJbkJvYjI1bElqb2lOVFUxTFRFeU16UWlMQ0prWlhCaGNuUnRaVzUwSWpvaVNWUWlMQ0poWTJObGMzTk1aWFpsYkNJNklqVWlMQ0p5WldkcGIyNGlPaUpPYjNKMGFDQkJiV1Z5YVdOaElpd2llV1ZoY25OUFpsTmxjblpwWTJVaU9qVXNJbU5sY25ScFptbGpZWFJwYjI1eklqb2lRMGxUVTFBaUxDSnRZVzVoWjJWeUlqb2lTbTlvYmlCRWIyVWlMQ0pzYjJOaGRHbHZiaUk2SWs1WlF5SXNJbUpoWkdkbFRuVnRZbVZ5SWpvaU1USXpORFUySWl3aVpXMWxjbWRsYm1ONVEyOXVkR0ZqZENJNklrSnZZaUJUYldsMGFDSXNJbk5vYVdaMElqb2lUVzl5Ym1sdVp5SXNJbkJ5YjJwbFkzUWlPaUpFYVdkcGRHRnNJRlJ5WVc1elptOXliV0YwYVc5dUlpd2lZMjl0Y0dGdWVTSTZJbFJsWTJnZ1EyOXljQ0lzSW5OaGJHRnllVWR5WVdSbElqb2lSVFVpTENKbGJYQnNiM2xsWlZOMFlYUjFjeUk2SWtaMWJHd3RkR2x0WlNJc0ltaHBjbVZFWVhSbElqb2lNakF4T0Mwd01TMHdNU0lzSW5ObFkzVnlhWFI1UTJ4bFlYSmhibU5sSWpvaVZHOXdJRk5sWTNKbGRDSXNJbUZ6YzJWeWRHbHZiaUk2SW1GemMyVnlkR2x2Ymw5emRISnBibWRmYUdWeVpTSjlmU3dpYzNWaUlqb2lOREkzWVRWaU16Z3RZemd4WlMwME1URTBMV0ZrWXpBdFpXTTVPV0l4T1dFeE5tTm1JaXdpYm1KbUlqb3hOekkxTlRVNU1EQTNMQ0pwYzNNaU9pSmthV1E2WlhSb2Nqb3dlRGt3WWpFd05ERkZSV1psWVRZNFJXRTFOalExTnpSbU5rTTFOelppUkROak9UQXlRVGhtTXpJaWZRLjIzaEVvNTVibnVMSk5WcWtUY2oxTVR6Q19CVFdCSHNINEFpWWxJQzFtcnBtVEltbE8wQ2xFN19HNjNjQ0tuWm81aXdYTkxkVHBLUXZWVnhmbkktY3BRIl19LCJqdGkiOiI0MjdhNWIzOC1jODFlLTQxMTQtYWRjMC1lYzk5YjE5YTE2Y2YiLCJuYmYiOjE3MjU1NTkwMDcsImlzcyI6ImRpZDpldGhyOjB4OTBiMTA0MUVFZmVhNjhFYTU2NDU3NGY2QzU3NmJEM2M5MDJBOGYzMiJ9.rG1zxDCMusfRv5pHmytEb4CIyg0S3jEU2RTaXB72xWMUmczeBaFoh1_4hdCYVnekOFYexyitfq4hdHHwcjG_sw"
+    }
+  },
+  "numTrials": 50
+}
+
+
+
+#### Test Verification of Verifiable Presentation with Execution Time Measurement with 50 attributes
+POST http://localhost:3001/test_verify/vp
+Content-Type: application/json
+
+{
+  "vp": {
+    "verifiableCredential": [
+      {
+        "credentialSubject": {
+          "name": "Alice",
+          "role": "admin",
+          "email": "alice@example.com",
+          "phone": "555-1234",
+          "department": "IT",
+          "accessLevel": "5",
+          "region": "North America",
+          "yearsOfService": 5,
+          "certifications": "CISSP",
+          "manager": "John Doe",
+          "location": "NYC",
+          "badgeNumber": "123456",
+          "emergencyContact": "Bob Smith",
+          "shift": "Morning",
+          "project": "Digital Transformation",
+          "company": "Tech Corp",
+          "salaryGrade": "E5",
+          "employeeStatus": "Full-time",
+          "hireDate": "2018-01-01",
+          "securityClearance": "Top Secret",
+          "office": "5th Avenue",
+          "workPhone": "555-5678",
+          "homeAddress": "456 Park Ave",
+          "employeeID": "789123",
+          "workLocation": "Remote",
+          "insurancePolicy": "ABC123",
+          "pensionPlan": "Plan A",
+          "annualLeaveBalance": "15 days",
+          "sickLeaveBalance": "10 days",
+          "trainingCompletion": "2024-08-15",
+          "supervisor": "Jane Smith",
+          "lastPromotion": "2022-06-01",
+          "performanceRating": "Exceeds Expectations",
+          "specialProjects": "AI Integration",
+          "rewardsPoints": "250",
+          "parkingPermit": "Lot B",
+          "workVisa": "H1B",
+          "laptopSerial": "LPT12345",
+          "vpnAccess": "Enabled",
+          "networkAccessLevel": "Admin",
+          "timeZone": "EST",
+          "languagePreference": "English",
+          "secondaryEmail": "alice.secondary@example.com",
+          "personalPhone": "555-9876",
+          "spouseName": "Charlie",
+          "dependentCount": 2,
+          "assertion": "assertion_string_here",
+          "id": "6dca8378-817f-4c6b-9fe7-b6518210b5f6"
+        },
+        "issuer": {
+          "id": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32"
+        },
+        "type": [
+          "VerifiableCredential",
+          "VCPresentation",
+          "VCforVerifiablePresentation"
+        ],
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://www.w3.org/ns/credentials/v2"
+        ],
+        "issuanceDate": "2024-09-05T17:57:08.000Z",
+        "proof": {
+          "type": "JwtProof2020",
+          "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiVkNQcmVzZW50YXRpb24iLCJWQ2ZvclZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwiY3JlZGVudGlhbFN1YmplY3QiOnsibmFtZSI6IkFsaWNlIiwicm9sZSI6ImFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsInBob25lIjoiNTU1LTEyMzQiLCJkZXBhcnRtZW50IjoiSVQiLCJhY2Nlc3NMZXZlbCI6IjUiLCJyZWdpb24iOiJOb3J0aCBBbWVyaWNhIiwieWVhcnNPZlNlcnZpY2UiOjUsImNlcnRpZmljYXRpb25zIjoiQ0lTU1AiLCJtYW5hZ2VyIjoiSm9obiBEb2UiLCJsb2NhdGlvbiI6Ik5ZQyIsImJhZGdlTnVtYmVyIjoiMTIzNDU2IiwiZW1lcmdlbmN5Q29udGFjdCI6IkJvYiBTbWl0aCIsInNoaWZ0IjoiTW9ybmluZyIsInByb2plY3QiOiJEaWdpdGFsIFRyYW5zZm9ybWF0aW9uIiwiY29tcGFueSI6IlRlY2ggQ29ycCIsInNhbGFyeUdyYWRlIjoiRTUiLCJlbXBsb3llZVN0YXR1cyI6IkZ1bGwtdGltZSIsImhpcmVEYXRlIjoiMjAxOC0wMS0wMSIsInNlY3VyaXR5Q2xlYXJhbmNlIjoiVG9wIFNlY3JldCIsIm9mZmljZSI6IjV0aCBBdmVudWUiLCJ3b3JrUGhvbmUiOiI1NTUtNTY3OCIsImhvbWVBZGRyZXNzIjoiNDU2IFBhcmsgQXZlIiwiZW1wbG95ZWVJRCI6Ijc4OTEyMyIsIndvcmtMb2NhdGlvbiI6IlJlbW90ZSIsImluc3VyYW5jZVBvbGljeSI6IkFCQzEyMyIsInBlbnNpb25QbGFuIjoiUGxhbiBBIiwiYW5udWFsTGVhdmVCYWxhbmNlIjoiMTUgZGF5cyIsInNpY2tMZWF2ZUJhbGFuY2UiOiIxMCBkYXlzIiwidHJhaW5pbmdDb21wbGV0aW9uIjoiMjAyNC0wOC0xNSIsInN1cGVydmlzb3IiOiJKYW5lIFNtaXRoIiwibGFzdFByb21vdGlvbiI6IjIwMjItMDYtMDEiLCJwZXJmb3JtYW5jZVJhdGluZyI6IkV4Y2VlZHMgRXhwZWN0YXRpb25zIiwic3BlY2lhbFByb2plY3RzIjoiQUkgSW50ZWdyYXRpb24iLCJyZXdhcmRzUG9pbnRzIjoiMjUwIiwicGFya2luZ1Blcm1pdCI6IkxvdCBCIiwid29ya1Zpc2EiOiJIMUIiLCJsYXB0b3BTZXJpYWwiOiJMUFQxMjM0NSIsInZwbkFjY2VzcyI6IkVuYWJsZWQiLCJuZXR3b3JrQWNjZXNzTGV2ZWwiOiJBZG1pbiIsInRpbWVab25lIjoiRVNUIiwibGFuZ3VhZ2VQcmVmZXJlbmNlIjoiRW5nbGlzaCIsInNlY29uZGFyeUVtYWlsIjoiYWxpY2Uuc2Vjb25kYXJ5QGV4YW1wbGUuY29tIiwicGVyc29uYWxQaG9uZSI6IjU1NS05ODc2Iiwic3BvdXNlTmFtZSI6IkNoYXJsaWUiLCJkZXBlbmRlbnRDb3VudCI6MiwiYXNzZXJ0aW9uIjoiYXNzZXJ0aW9uX3N0cmluZ19oZXJlIn19LCJzdWIiOiI2ZGNhODM3OC04MTdmLTRjNmItOWZlNy1iNjUxODIxMGI1ZjYiLCJuYmYiOjE3MjU1NTkwMjgsImlzcyI6ImRpZDpldGhyOjB4OTBiMTA0MUVFZmVhNjhFYTU2NDU3NGY2QzU3NmJEM2M5MDJBOGYzMiJ9.DABh-HQyfV-qh3Numg_OXZBcMgBBpMUEJdLKNHk_CGsJ_wpl4d8YkJ70pJO59ElMDAKhXviIFAfu0i2dC4cDiw"
+        }
+      }
+    ],
+    "holder": "did:ethr:0x90b1041EEfea68Ea564574f6C576bD3c902A8f32",
+    "id": "6dca8378-817f-4c6b-9fe7-b6518210b5f6",
+    "type": [
+      "VerifiablePresentation"
+    ],
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "issuanceDate": "2024-09-05T17:57:08.000Z",
+    "proof": {
+      "type": "JwtProof2020",
+      "jwt": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy9ucy9jcmVkZW50aWFscy92MiJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKaGJHY2lPaUpGVXpJMU5rc2lMQ0owZVhBaU9pSktWMVFpZlEuZXlKMll5STZleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdk1qQXhPQzlqY21Wa1pXNTBhV0ZzY3k5Mk1TSXNJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTl1Y3k5amNtVmtaVzUwYVdGc2N5OTJNaUpkTENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lpd2lWa05RY21WelpXNTBZWFJwYjI0aUxDSldRMlp2Y2xabGNtbG1hV0ZpYkdWUWNtVnpaVzUwWVhScGIyNGlYU3dpWTNKbFpHVnVkR2xoYkZOMVltcGxZM1FpT25zaWJtRnRaU0k2SWtGc2FXTmxJaXdpY205c1pTSTZJbUZrYldsdUlpd2laVzFoYVd3aU9pSmhiR2xqWlVCbGVHRnRjR3hsTG1OdmJTSXNJbkJvYjI1bElqb2lOVFUxTFRFeU16UWlMQ0prWlhCaGNuUnRaVzUwSWpvaVNWUWlMQ0poWTJObGMzTk1aWFpsYkNJNklqVWlMQ0p5WldkcGIyNGlPaUpPYjNKMGFDQkJiV1Z5YVdOaElpd2llV1ZoY25OUFpsTmxjblpwWTJVaU9qVXNJbU5sY25ScFptbGpZWFJwYjI1eklqb2lRMGxUVTFBaUxDSnRZVzVoWjJWeUlqb2lTbTlvYmlCRWIyVWlMQ0pzYjJOaGRHbHZiaUk2SWs1WlF5SXNJbUpoWkdkbFRuVnRZbVZ5SWpvaU1USXpORFUySWl3aVpXMWxjbWRsYm1ONVEyOXVkR0ZqZENJNklrSnZZaUJUYldsMGFDSXNJbk5vYVdaMElqb2lUVzl5Ym1sdVp5SXNJbkJ5YjJwbFkzUWlPaUpFYVdkcGRHRnNJRlJ5WVc1elptOXliV0YwYVc5dUlpd2lZMjl0Y0dGdWVTSTZJbFJsWTJnZ1EyOXljQ0lzSW5OaGJHRnllVWR5WVdSbElqb2lSVFVpTENKbGJYQnNiM2xsWlZOMFlYUjFjeUk2SWtaMWJHd3RkR2x0WlNJc0ltaHBjbVZFWVhSbElqb2lNakF4T0Mwd01TMHdNU0lzSW5ObFkzVnlhWFI1UTJ4bFlYSmhibU5sSWpvaVZHOXdJRk5sWTNKbGRDSXNJbTltWm1salpTSTZJalYwYUNCQmRtVnVkV1VpTENKM2IzSnJVR2h2Ym1VaU9pSTFOVFV0TlRZM09DSXNJbWh2YldWQlpHUnlaWE56SWpvaU5EVTJJRkJoY21zZ1FYWmxJaXdpWlcxd2JHOTVaV1ZKUkNJNklqYzRPVEV5TXlJc0luZHZjbXRNYjJOaGRHbHZiaUk2SWxKbGJXOTBaU0lzSW1sdWMzVnlZVzVqWlZCdmJHbGplU0k2SWtGQ1F6RXlNeUlzSW5CbGJuTnBiMjVRYkdGdUlqb2lVR3hoYmlCQklpd2lZVzV1ZFdGc1RHVmhkbVZDWVd4aGJtTmxJam9pTVRVZ1pHRjVjeUlzSW5OcFkydE1aV0YyWlVKaGJHRnVZMlVpT2lJeE1DQmtZWGx6SWl3aWRISmhhVzVwYm1kRGIyMXdiR1YwYVc5dUlqb2lNakF5TkMwd09DMHhOU0lzSW5OMWNHVnlkbWx6YjNJaU9pSktZVzVsSUZOdGFYUm9JaXdpYkdGemRGQnliMjF2ZEdsdmJpSTZJakl3TWpJdE1EWXRNREVpTENKd1pYSm1iM0p0WVc1alpWSmhkR2x1WnlJNklrVjRZMlZsWkhNZ1JYaHdaV04wWVhScGIyNXpJaXdpYzNCbFkybGhiRkJ5YjJwbFkzUnpJam9pUVVrZ1NXNTBaV2R5WVhScGIyNGlMQ0p5WlhkaGNtUnpVRzlwYm5Seklqb2lNalV3SWl3aWNHRnlhMmx1WjFCbGNtMXBkQ0k2SWt4dmRDQkNJaXdpZDI5eWExWnBjMkVpT2lKSU1VSWlMQ0pzWVhCMGIzQlRaWEpwWVd3aU9pSk1VRlF4TWpNME5TSXNJblp3YmtGalkyVnpjeUk2SWtWdVlXSnNaV1FpTENKdVpYUjNiM0pyUVdOalpYTnpUR1YyWld3aU9pSkJaRzFwYmlJc0luUnBiV1ZhYjI1bElqb2lSVk5VSWl3aWJHRnVaM1ZoWjJWUWNtVm1aWEpsYm1ObElqb2lSVzVuYkdsemFDSXNJbk5sWTI5dVpHRnllVVZ0WVdsc0lqb2lZV3hwWTJVdWMyVmpiMjVrWVhKNVFHVjRZVzF3YkdVdVkyOXRJaXdpY0dWeWMyOXVZV3hRYUc5dVpTSTZJalUxTlMwNU9EYzJJaXdpYzNCdmRYTmxUbUZ0WlNJNklrTm9ZWEpzYVdVaUxDSmtaWEJsYm1SbGJuUkRiM1Z1ZENJNk1pd2lZWE56WlhKMGFXOXVJam9pWVhOelpYSjBhVzl1WDNOMGNtbHVaMTlvWlhKbEluMTlMQ0p6ZFdJaU9pSTJaR05oT0RNM09DMDRNVGRtTFRSak5tSXRPV1psTnkxaU5qVXhPREl4TUdJMVpqWWlMQ0p1WW1ZaU9qRTNNalUxTlRrd01qZ3NJbWx6Y3lJNkltUnBaRHBsZEdoeU9qQjRPVEJpTVRBME1VVkZabVZoTmpoRllUVTJORFUzTkdZMlF6VTNObUpFTTJNNU1ESkJPR1l6TWlKOS5EQUJoLUhReWZWLXFoM051bWdfT1haQmNNZ0JCcE1VRUpkTEtOSGtfQ0dzSl93cGw0ZDhZa0o3MHBKTzU5RWxNREFLaFh2aUlGQWZ1MGkyZEM0Y0RpdyJdfSwianRpIjoiNmRjYTgzNzgtODE3Zi00YzZiLTlmZTctYjY1MTgyMTBiNWY2IiwibmJmIjoxNzI1NTU5MDI4LCJpc3MiOiJkaWQ6ZXRocjoweDkwYjEwNDFFRWZlYTY4RWE1NjQ1NzRmNkM1NzZiRDNjOTAyQThmMzIifQ.EY3Sjl9TWuagJ4lxnyf9vRbsyoZk32yjkHLiZXYx0QNiu14hOlVf7CEzxdoPLmRQbYVtomyRZWq28hlUK0AStA"
+    }
+  },
+  "numTrials": 50
+}
+
+
+
+
+
+

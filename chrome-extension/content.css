@@ -1,0 +1,42 @@
+.cavs-rdx-anchor {
+  position: relative !important;
+}
+
+.cavs-rdx-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 9999;
+  font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 6px 8px;
+  max-width: 260px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cavs-rdx-badge[data-state="idle"] {
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.cavs-rdx-badge[data-state="loading"] {
+  background: rgba(30, 64, 175, 0.78);
+}
+
+.cavs-rdx-badge[data-state="error"] {
+  background: rgba(185, 28, 28, 0.85);
+}
+
+.cavs-rdx-badge[data-state="ok"] {
+  background: rgba(22, 101, 52, 0.82);
+}
+
+.cavs-rdx-details {
+  margin-top: 6px;
+  opacity: 0.95;
+  white-space: pre-wrap;
+}
+

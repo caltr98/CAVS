@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "CAVS over Reddit (Experimental)",
+  "version": "0.1.0",
+  "description": "Overlays Reddit posts with CAVS analysis/consensus results.",
+  "action": {
+    "default_title": "CAVS over Reddit"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.reddit.com/*", "https://reddit.com/*", "https://old.reddit.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["storage"],
+  "host_permissions": [
+    "http://127.0.0.1:4200/*",
+    "http://localhost:4200/*",
+    "http://127.0.0.1:20000/*",
+    "http://localhost:20000/*"
+  ]
+}
+

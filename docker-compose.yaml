@@ -1,0 +1,133 @@
+services:
+  KeyBertService:
+    image: keybertservice:latest
+    build: ./keyBertService
+    ports:
+      - "5003:5003"
+
+  RobertaPhraseService:
+    image: robertaphraseservice:latest
+    build: ./robertaPhraseService
+    ports:
+      - "5004:5004"
+
+  KeyLLMService:
+    image: keyllmservice:latest
+    build: ./keyLLMService
+    ports:
+      - "5002:5002"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - OPENAI_KEYWORD_MODEL=${OPENAI_KEYWORD_MODEL:-gpt-4.1}
+
+  gptcomp:
+    image: gptcomp:latest
+    build:
+      context: .
+      dockerfile: GPT_COMP_CHECK/Dockerfile
+    ports:
+      - "3030:3030"
+    environment:
+      - OPENAI_COMPETENCE_API_KEY=${OPENAI_COMPETENCE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_COMPETENCE_BASE_URL=${OPENAI_COMPETENCE_BASE_URL:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - OPENAI_COMPETENCE_MODEL=${OPENAI_COMPETENCE_MODEL:-gpt-4.1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1}
+      - OPENAI_COMPETENCE_TEMPERATURE=${OPENAI_COMPETENCE_TEMPERATURE:-0}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0}
+      - OPENAI_TIMEOUT_S=${OPENAI_TIMEOUT_S:-60}
+
+  Ojd_service1:
+    image: ojddapsservice1:latest-basic
+    build: ./ojd_daps_skillsService
+    ports:
+      - "5005:5005"
+
+  VeramoAgent:
+    image: veramoagent:latest
+    build: ./veramoAgent
+    ports:
+      - "3001:3001"
+
+  CAVSService:
+    image: cavsbackend:latest
+    build: ./veramoAgent/CAVSBackend
+    ports:
+      - "4200:4200"
+    environment:
+      - CAVS_COMPETENCE_MODE=${CAVS_COMPETENCE_MODE:-nesta}
+      - GPT_COMP_ENDPOINT=http://gptcomp:3030
+      - OPENAI_COMPETENCE_API_KEY=${OPENAI_COMPETENCE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_COMPETENCE_BASE_URL=${OPENAI_COMPETENCE_BASE_URL:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - OPENAI_COMPETENCE_MODEL=${OPENAI_COMPETENCE_MODEL:-gpt-4.1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1}
+      - ESCO_JSONL_PATH=${ESCO_JSONL_PATH:-/usr/src/app/esco-v1.2.1.jsonl}
+      - ESCO_MAX_HOPS=${ESCO_MAX_HOPS:-}
+    depends_on:
+      - VeramoAgent
+      - RobertaPhraseService
+      - KeyBertService
+      - KeyLLMService
+      - gptcomp
+      - Ojd_service1
+
+  CAVSService1:
+    image: cavsbackend:latest
+    build: ./veramoAgent/CAVSBackend
+    ports:
+      - "4202:4200"
+    environment:
+      - CAVS_COMPETENCE_MODE=${CAVS_COMPETENCE_MODE:-nesta}
+      - GPT_COMP_ENDPOINT=http://gptcomp:3030
+      - OPENAI_COMPETENCE_API_KEY=${OPENAI_COMPETENCE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_COMPETENCE_BASE_URL=${OPENAI_COMPETENCE_BASE_URL:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - OPENAI_COMPETENCE_MODEL=${OPENAI_COMPETENCE_MODEL:-gpt-4.1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1}
+      - ESCO_JSONL_PATH=${ESCO_JSONL_PATH:-/usr/src/app/esco-v1.2.1.jsonl}
+      - ESCO_MAX_HOPS=${ESCO_MAX_HOPS:-}
+    depends_on:
+      - VeramoAgent
+      - RobertaPhraseService
+      - KeyBertService
+      - KeyLLMService
+      - gptcomp
+      - Ojd_service1
+
+  CAVSService2:
+    image: cavsbackend:latest
+    build: ./veramoAgent/CAVSBackend
+    ports:
+      - "4203:4200"
+    environment:
+      - CAVS_COMPETENCE_MODE=${CAVS_COMPETENCE_MODE:-nesta}
+      - GPT_COMP_ENDPOINT=http://gptcomp:3030
+      - OPENAI_COMPETENCE_API_KEY=${OPENAI_COMPETENCE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_COMPETENCE_BASE_URL=${OPENAI_COMPETENCE_BASE_URL:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - OPENAI_COMPETENCE_MODEL=${OPENAI_COMPETENCE_MODEL:-gpt-4.1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1}
+      - ESCO_JSONL_PATH=${ESCO_JSONL_PATH:-/usr/src/app/esco-v1.2.1.jsonl}
+      - ESCO_MAX_HOPS=${ESCO_MAX_HOPS:-}
+    depends_on:
+      - VeramoAgent
+      - RobertaPhraseService
+      - KeyBertService
+      - KeyLLMService
+      - gptcomp
+      - Ojd_service1
+
+  CAVSClient:
+    image: cavsclient:latest
+    build: ./veramoAgent/client
+    ports:
+      - "3000:3000"
+    depends_on:
+      - VeramoAgent
+      - CAVSService

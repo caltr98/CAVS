@@ -1,0 +1,42 @@
+{
+  "keywordExtraction": {
+    "roberta": {
+      "top_n": 120,
+      "nr_candidates": 300,
+      "ngram_max": 3,
+      "use_mmr": true,
+      "diversity": 0.7,
+      "score_threshold": 0.1
+    },
+    "keybert": {
+      "top_n": 120,
+      "nr_candidates": 300,
+      "ngram_max": 3,
+      "use_mmr": true,
+      "diversity": 0.7,
+      "score_threshold": 0.1
+    },
+    "keyllm": {
+      "top_n": 30,
+      "temperature": 0.3,
+      "seed": 123,
+      "model": "gpt-4.1"
+    }
+  },
+  "enrichment": {
+    "max_per_keyword": 10,
+    "gpt": {
+      "temperature": 0.3,
+      "seed": 123,
+      "model": "gpt-4.1"
+    }
+  },
+  "competence": {
+    "support_threshold": 0,
+    "skill_mapping_mode": "extract_union_roberta_map"
+  },
+  "skillMapping": {
+    "mode": "keywords",
+    "skill_match_thresh": 0.4
+  }
+}

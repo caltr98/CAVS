@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "types": [
+      "hardhat/types/runtime",
+      "@nomicfoundation/hardhat-ethers/types",
+      "node"
+    ]
+  },
+  "include": [
+    "./hardhat.config.ts",
+    "./scripts/**/*.ts"
+  ]
+}
+
