@@ -1,0 +1,4 @@
+[submodule "veramoAgent/MultiSignatureVeramo"]
+	path = veramoAgent/MultiSignatureVeramo
+	url = https://github.com/caltr98/MultiSignatureVeramo.git
+	branch = main
