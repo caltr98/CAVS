@@ -1,28 +1,71 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
+import threading
 from typing import List, Sequence, Tuple
 
 import numpy as np
 from flask import Flask, jsonify, request
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import CountVectorizer
+from keybert import KeyBERT
+import yake
 
 
 DEFAULT_MODEL_NAME = os.environ.get("ROBERTA_PHRASE_MODEL", "sentence-transformers/all-distilroberta-v1")
+DEFAULT_MODEL_REVISION = os.environ.get(
+    "ROBERTA_PHRASE_MODEL_REVISION",
+    "842eaed40bee4d61673a81c92d5689a8fed7a09f",
+)
 
 app = Flask(__name__)
 
 phrase_model = None
+keybert_model = None
 model_checksum = None
+_response_cache = {}
+_response_inflight = {}
+_response_cache_lock = threading.Lock()
 
 
 def _get_model() -> SentenceTransformer:
     global phrase_model
     if phrase_model is None:
-        phrase_model = SentenceTransformer(DEFAULT_MODEL_NAME)
+        phrase_model = SentenceTransformer(
+            DEFAULT_MODEL_NAME,
+            revision=DEFAULT_MODEL_REVISION,
+            local_files_only=True,
+        )
     return phrase_model
+
+
+def _get_keybert_model() -> KeyBERT:
+    global keybert_model
+    if keybert_model is None:
+        keybert_model = KeyBERT(model="sentence-transformers/all-MiniLM-L6-v2")
+    return keybert_model
+
+
+def _rank_keybert(doc: str, *, top_n: int, nr_candidates: int, ngram_max: int,
+                  diversity: float, score_threshold: float, use_mmr: bool):
+    ranked = _get_keybert_model().extract_keywords(
+        doc,
+        keyphrase_ngram_range=(1, ngram_max),
+        stop_words=None,
+        top_n=top_n,
+        nr_candidates=nr_candidates,
+        use_mmr=use_mmr,
+        diversity=diversity,
+    )
+    kept = [(phrase, float(score)) for phrase, score in ranked if float(score) >= score_threshold]
+    return [phrase for phrase, _ in kept], {"scores": [score for _, score in kept]}
+
+
+def _rank_yake(doc: str, *, top_n: int, ngram_max: int, **_kwargs):
+    ranked = yake.KeywordExtractor(lan="en", n=ngram_max, top=top_n).extract_keywords(doc)
+    return [phrase for phrase, _ in ranked], {"scores": [float(score) for _, score in ranked]}
 
 
 def _compute_checksum(model_name: str) -> str:
@@ -33,6 +76,65 @@ def _parse_bool(raw: str, default: bool = True) -> bool:
     if raw is None:
         return default
     return str(raw).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _request_cache_key(scope: str) -> str:
+    body = request.get_data(cache=True) or b""
+    json_body = request.get_json(silent=True) if body else None
+    body_value = json_body if json_body is not None else body.decode("utf-8", errors="replace")
+    payload = {
+        "scope": scope,
+        "method": request.method,
+        "path": request.path,
+        "query": sorted((key, value) for key in request.args for value in request.args.getlist(key)),
+        "body": body_value,
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _cached_response(scope: str, compute):
+    key = _request_cache_key(scope)
+    while True:
+        with _response_cache_lock:
+            cached = _response_cache.get(key)
+            if cached is not None:
+                body, status, content_type = cached
+                resp = app.response_class(response=body, status=status, content_type=content_type)
+                resp.headers["X-CAVS-Cache"] = "hit"
+                return resp
+            entry = _response_inflight.get(key)
+            if entry is None:
+                entry = {"event": threading.Event(), "result": None, "error": None}
+                _response_inflight[key] = entry
+                break
+        entry["event"].wait()
+        if entry.get("error") is not None:
+            raise entry["error"]
+        result = entry.get("result")
+        if result is not None:
+            body, status, content_type = result
+            resp = app.response_class(response=body, status=status, content_type=content_type)
+            resp.headers["X-CAVS-Cache"] = "shared"
+            return resp
+
+    try:
+        resp = app.make_response(compute())
+        result = (resp.get_data(), resp.status_code, resp.content_type)
+        if 200 <= resp.status_code < 300:
+            resp.direct_passthrough = False
+            with _response_cache_lock:
+                _response_cache[key] = result
+            resp.headers["X-CAVS-Cache"] = "miss"
+        entry["result"] = result
+        return resp
+    except Exception as exc:
+        entry["error"] = exc
+        raise
+    finally:
+        with _response_cache_lock:
+            _response_inflight.pop(key, None)
+            entry["event"].set()
 
 
 def _candidate_phrases(doc: str, ngram_max: int, nr_candidates: int) -> List[str]:
@@ -144,6 +246,10 @@ def _rank_phrases(
 
 @app.route("/phrases", methods=["GET"])
 def phrases():
+    return _cached_response("phrases", _phrases_uncached)
+
+
+def _phrases_uncached():
     doc = request.args.get("doc", "")
     if not doc.strip():
         return jsonify(error="Document not provided"), 400
@@ -170,7 +276,12 @@ def phrases():
         score_threshold = 0.10
     use_mmr = _parse_bool(request.args.get("use_mmr"), default=True)
 
-    phrases_out, extra = _rank_phrases(
+    engine = str(request.args.get("engine", "roberta")).strip().lower()
+    if engine not in {"roberta", "keybert", "yake"}:
+        return jsonify(error="engine must be roberta, keybert, or yake"), 400
+
+    ranker = {"roberta": _rank_phrases, "keybert": _rank_keybert, "yake": _rank_yake}[engine]
+    phrases_out, extra = ranker(
         doc,
         top_n=top_n,
         nr_candidates=nr_candidates,
@@ -184,7 +295,8 @@ def phrases():
         num_phrases=len(phrases_out),
         phrases=phrases_out,
         model={
-            "name": DEFAULT_MODEL_NAME,
+            "name": {"roberta": DEFAULT_MODEL_NAME, "keybert": "sentence-transformers/all-MiniLM-L6-v2", "yake": "yake-0.6.0"}[engine],
+            "engine": engine,
             "model_checksum": model_checksum,
             "params": {
                 "top_n": top_n,

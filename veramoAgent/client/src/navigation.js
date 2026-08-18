@@ -19,6 +19,7 @@ export const actorNavigation = [
         tasks: [
             { path: "/cavs/config", label: "Config" },
             { path: "/cavs/issuer-trust", label: "Trust" },
+            { path: "/cavs/ocr-oracles", label: "OCR" },
         ],
     },
     {
@@ -29,7 +30,7 @@ export const actorNavigation = [
         defaultPath: "/author/request",
         tasks: [
             { path: "/author/request", label: "Request" },
-            { path: "/author/selective-disclosure", label: "Disclosure" },
+            { path: "/author/oracles", label: "OCR" },
             { path: "/author/statements", label: "Present" },
         ],
     },

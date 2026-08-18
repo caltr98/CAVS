@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import {
     CodeView,
     DetailPanel,
@@ -64,14 +63,28 @@ function CredentialSelectionCard({
     );
 }
 
+function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+}
+
+function formatOracleRequestLogs(session) {
+    if (!session?.logs?.length) {
+        return "";
+    }
+    return session.logs.join("\n");
+}
+
 export function AuthorRequestPage() {
-    const navigate = useNavigate();
     const {
         authorMessage,
         clearSelections,
         selectedCredentialIndexes,
         setAuthorMessage,
-        setPendingDisclosureRequest,
         setSkillsCredentials,
         skillsCredentials,
         toggleCredentialIndex,
@@ -85,14 +98,11 @@ export function AuthorRequestPage() {
 
     async function fetchCredentials() {
         try {
-            const [standardCredentials, selectiveCredentials] = await Promise.all([
-                api.listCredentialsByType(veramoEndpoint, "ESCO_type_VerifiableCredential"),
-                api.listSelectiveDisclosureCredentialsByType(
-                    veramoEndpoint,
-                    "SelectiveDisclosure_ESCO_type_VerifiableCredential",
-                ),
-            ]);
-            setSkillsCredentials([...(standardCredentials || []), ...(selectiveCredentials || [])]);
+            const standardCredentials = await api.listCredentialsByType(
+                veramoEndpoint,
+                "ESCO_type_VerifiableCredential",
+            );
+            setSkillsCredentials(standardCredentials || []);
             setAuthorMessage("Author credentials loaded from the wallet.");
         } catch (error) {
             setAuthorMessage("Unable to fetch author credentials.");
@@ -130,21 +140,6 @@ export function AuthorRequestPage() {
 
             setLastResponse(response);
             setSessionMessage("Statement VC stored in the wallet.");
-
-            if (response.selectiveDisclosureRequest) {
-                setPendingDisclosureRequest({
-                    skillsToPresent:
-                        response.selectiveDisclosureRequest.skills_extracted || [],
-                    typeStatement: selectedTypeStatement,
-                });
-                setAuthorMessage(
-                    "Selective disclosure requested. Continue in the selective disclosure page.",
-                );
-                navigate("/author/selective-disclosure");
-                return;
-            }
-
-            setPendingDisclosureRequest(null);
             clearSelections();
             setStatementText("");
             setCategoryStatement("");
@@ -243,78 +238,205 @@ export function AuthorRequestPage() {
     );
 }
 
-export function AuthorSelectiveDisclosurePage() {
+export function AuthorOracleRequestPage() {
     const {
         authorMessage,
-        pendingDisclosureRequest,
-        resetDisclosureRequest,
         selectedCredentialIndexes,
-        selectedSkillIndexes,
         setAuthorMessage,
+        setSkillsCredentials,
         skillsCredentials,
         toggleCredentialIndex,
-        toggleSkillIndex,
     } = useAuthorFlow();
     const { selectedCavsEndpoint, selectedDid, setSessionMessage, veramoEndpoint } = useSession();
+
+    const [statementText, setStatementText] = useState("");
+    const [oracleContractRpcUrl, setOracleContractRpcUrl] = useState("");
+    const [oracleContractAddress, setOracleContractAddress] = useState("");
+    const [oracleContractDefaults, setOracleContractDefaults] = useState(null);
+    const [oracleRequestSession, setOracleRequestSession] = useState(null);
+    const [oracleRequestBusy, setOracleRequestBusy] = useState(false);
+    const [storedOracleSessionId, setStoredOracleSessionId] = useState("");
     const [lastResponse, setLastResponse] = useState(null);
 
-    const requestedSkills = pendingDisclosureRequest?.skillsToPresent || [];
-    const disclosurePayloadPreview = selectedSkillIndexes.map(
-        (index) => `skill_${requestedSkills[index]?.[0] || `skill-${index}`}`,
-    );
+    useEffect(() => {
+        let ignore = false;
 
-    async function submitSelectiveDisclosure() {
-        if (!pendingDisclosureRequest) {
-            setAuthorMessage("Start from the request page to generate a selective disclosure request.");
+        async function loadOracleDefaults() {
+            if (!selectedCavsEndpoint) {
+                return;
+            }
+
+            try {
+                const data = await api.getOcrOracleRegistryDefaults(selectedCavsEndpoint);
+                if (ignore) {
+                    return;
+                }
+                setOracleContractDefaults(data);
+                if (data.rpcUrl) {
+                    setOracleContractRpcUrl(data.rpcUrl);
+                }
+                if (data.contractAddress) {
+                    setOracleContractAddress(data.contractAddress);
+                }
+            } catch (_error) {
+                if (!ignore) {
+                    setOracleContractDefaults(null);
+                }
+            }
+        }
+
+        loadOracleDefaults();
+
+        return () => {
+            ignore = true;
+        };
+    }, [selectedCavsEndpoint]);
+
+    useEffect(() => {
+        if (!selectedCavsEndpoint || !oracleRequestSession?.sessionId) {
+            return undefined;
+        }
+        if (["done", "partial", "timeout", "error"].includes(oracleRequestSession.status)) {
+            return undefined;
+        }
+
+        let ignore = false;
+
+        async function pollOracleRequest() {
+            try {
+                const data = await api.getAuthorOracleRequestStatus(
+                    selectedCavsEndpoint,
+                    oracleRequestSession.sessionId,
+                );
+                if (!ignore) {
+                    setOracleRequestSession(data);
+                    setLastResponse(data);
+                }
+            } catch (_error) {
+                if (!ignore) {
+                    setAuthorMessage("Unable to refresh the oracle request status.");
+                }
+            }
+        }
+
+        void pollOracleRequest();
+        const timer = window.setInterval(pollOracleRequest, 2500);
+
+        return () => {
+            ignore = true;
+            window.clearInterval(timer);
+        };
+    }, [oracleRequestSession?.sessionId, oracleRequestSession?.status, selectedCavsEndpoint, setAuthorMessage]);
+
+    useEffect(() => {
+        if (!oracleRequestSession?.finalVc || !oracleRequestSession?.sessionId) {
             return;
         }
-        if (!selectedDid || !selectedCavsEndpoint) {
-            setAuthorMessage("A DID and CAVS endpoint are required.");
+        if (storedOracleSessionId === oracleRequestSession.sessionId) {
             return;
         }
 
-        const credentialHashes = selectedCredentialIndexes.map(
-            (index) => skillsCredentials[index]?.hash,
-        );
-        const attributesToDisclose = selectedSkillIndexes.map(
-            (index) => `skill_${requestedSkills[index]?.[0]}`,
-        );
+        let ignore = false;
 
+        async function storeOracleVc() {
+            try {
+                await api.storeStructuredVc(veramoEndpoint, {
+                    vc: oracleRequestSession.finalVc,
+                });
+                if (ignore) {
+                    return;
+                }
+                setStoredOracleSessionId(oracleRequestSession.sessionId);
+                setSessionMessage("Oracle network VC stored in the wallet.");
+                setAuthorMessage("Oracle network VC created and stored.");
+            } catch (_error) {
+                if (!ignore) {
+                    setAuthorMessage("Oracle network VC is ready, but storing it failed.");
+                }
+            }
+        }
+
+        void storeOracleVc();
+
+        return () => {
+            ignore = true;
+        };
+    }, [oracleRequestSession, storedOracleSessionId, setAuthorMessage, setSessionMessage, veramoEndpoint]);
+
+    async function fetchCredentials() {
         try {
-            const vpResponse = await api.issueSelectiveDisclosurePresentation(veramoEndpoint, {
-                attributesToDisclose,
-                hashOfVCs: credentialHashes,
-                holder: selectedDid,
-                toStore: true,
-                type: "VerifiablePresentation",
-                typeStatement: pendingDisclosureRequest.typeStatement,
-            });
-
-            const response = await api.submitSelectiveDisclosureStatement(selectedCavsEndpoint, {
-                holderDID: selectedDid,
-                verifiableCredential: credentialHashes,
-                vp: vpResponse.vp,
-            });
-
-            await api.storeVc(veramoEndpoint, {
-                did: selectedDid,
-                verifiableCredential: response.jwt,
-            });
-
-            setLastResponse({ response, vpResponse });
-            resetDisclosureRequest();
-            setAuthorMessage("Selective disclosure statement VC created and stored.");
-            setSessionMessage("Selective disclosure statement VC stored.");
+            const standardCredentials = await api.listCredentialsByType(
+                veramoEndpoint,
+                "ESCO_type_VerifiableCredential",
+            );
+            setSkillsCredentials(standardCredentials || []);
+            setAuthorMessage("Author credentials loaded from the wallet.");
         } catch (error) {
-            setAuthorMessage("Unable to complete the selective disclosure flow.");
+            setAuthorMessage("Unable to fetch author credentials.");
         }
     }
 
-    if (!pendingDisclosureRequest) {
+    async function requestOracles() {
+        if (!selectedCavsEndpoint) {
+            setAuthorMessage("Choose a CAVS endpoint in the session header.");
+            return;
+        }
+        if (!selectedDid) {
+            setAuthorMessage("Choose a DID in the session header.");
+            return;
+        }
+        if (!statementText.trim()) {
+            setAuthorMessage("Statement text is required.");
+            return;
+        }
+        if (!oracleContractRpcUrl.trim() || !oracleContractAddress.trim()) {
+            setAuthorMessage("Oracle Coordinator Smart Contract RPC URL and address are required.");
+            return;
+        }
+
+        const credentials = selectedCredentialIndexes
+            .map((index) => skillsCredentials[index]?.verifiableCredential)
+            .filter(Boolean);
+        if (!credentials.length) {
+            setAuthorMessage("Select at least one credential before requesting the oracle network.");
+            return;
+        }
+
+        setOracleRequestBusy(true);
+        try {
+            const response = await api.startAuthorOracleRequest(selectedCavsEndpoint, {
+                statement: statementText,
+                holderDid: selectedDid,
+                credentials,
+                contractRpcUrl: oracleContractRpcUrl.trim(),
+                contractAddress: oracleContractAddress.trim(),
+            });
+            setOracleRequestSession(response);
+            setStoredOracleSessionId("");
+            setLastResponse(response);
+            setAuthorMessage(
+                `Oracle request submitted to ${response.oracles?.length || 0} registered endpoints.`,
+            );
+        } catch (error) {
+            setAuthorMessage("Unable to submit the oracle network request.");
+        } finally {
+            setOracleRequestBusy(false);
+        }
+    }
+
+    const rpcUrlLooksPrefilled =
+        Boolean(oracleContractDefaults?.rpcUrl) &&
+        oracleContractRpcUrl.trim() === String(oracleContractDefaults.rpcUrl).trim();
+    const contractAddressLooksPrefilled =
+        Boolean(oracleContractDefaults?.contractAddress) &&
+        oracleContractAddress.trim().toLowerCase() ===
+            String(oracleContractDefaults.contractAddress).trim().toLowerCase();
+
+    if (!selectedDid) {
         return (
             <EmptyState
-                title="No pending selective disclosure request"
-                description="Start with a statement request."
+                title="No active DID"
+                description="Create or import a DID first."
             />
         );
     }
@@ -323,33 +445,66 @@ export function AuthorSelectiveDisclosurePage() {
         <>
             <PageHero
                 eyebrow="Author"
-                title="Disclosure"
+                title="Request Oracles"
             />
 
             <div className="page-grid">
-                <SurfaceCard title="Requested skills">
-                    <div className="record-stack">
-                        {requestedSkills.map((keywordToSkill, index) => (
-                            <article className="record-item" key={`${keywordToSkill[0]}-${index}`}>
-                                <label className="checkbox-row">
-                                    <input
-                                        checked={selectedSkillIndexes.includes(index)}
-                                        onChange={() => toggleSkillIndex(index)}
-                                        type="checkbox"
-                                    />
-                                    <span>
-                                        {keywordToSkill[0]} / {keywordToSkill[1]}
-                                    </span>
-                                </label>
-                            </article>
-                        ))}
+                <SurfaceCard title="Statement">
+                    <label className="field field--wide">
+                        <span className="field__label">Active CAVS Endpoint</span>
+                        <input className="input-control" readOnly value={selectedCavsEndpoint} />
+                    </label>
+                    <label className="field field--wide">
+                        <span className="field__label">Statement</span>
+                        <textarea
+                            className="text-area"
+                            onChange={(event) => setStatementText(event.target.value)}
+                            placeholder="Statement text"
+                            value={statementText}
+                        />
+                    </label>
+                    <div className="button-row">
+                        <button className="secondary-button" type="button" onClick={fetchCredentials}>
+                            Load credentials
+                        </button>
                     </div>
-                    <DetailPanel label="Technical Details">
-                        <CodeView data={disclosurePayloadPreview} />
-                    </DetailPanel>
                 </SurfaceCard>
 
                 <StatusCard message={authorMessage} />
+
+                <SurfaceCard title="Oracle Coordinator">
+                    <div className="field-grid">
+                        <label className="field">
+                            <span className="field__label">Contract RPC URL</span>
+                            <input
+                                className={
+                                    rpcUrlLooksPrefilled
+                                        ? "input-control input-control--prefilled"
+                                        : "input-control"
+                                }
+                                onChange={(event) => setOracleContractRpcUrl(event.target.value)}
+                                placeholder="https://..."
+                                value={oracleContractRpcUrl}
+                            />
+                        </label>
+                        <label className="field">
+                            <span className="field__label">Oracle Coordinator Smart Contract</span>
+                            <input
+                                className={
+                                    contractAddressLooksPrefilled
+                                        ? "input-control input-control--prefilled"
+                                        : "input-control"
+                                }
+                                onChange={(event) => setOracleContractAddress(event.target.value)}
+                                placeholder="0x..."
+                                value={oracleContractAddress}
+                            />
+                        </label>
+                    </div>
+                    <p className="muted-copy">
+                        Request Oracles reads the registered OCR endpoints from this coordinator, forwards the statement to each oracle queue, and waits for the returned VC.
+                    </p>
+                </SurfaceCard>
 
                 <CredentialSelectionCard
                     credentials={skillsCredentials}
@@ -357,11 +512,33 @@ export function AuthorSelectiveDisclosurePage() {
                     title="Credential library"
                     toggleSelection={toggleCredentialIndex}
                 />
+
+                <SurfaceCard title="Oracle Replies" className="page-grid__wide">
+                    <label className="field field--wide">
+                        <span className="field__label">Live log</span>
+                        <textarea
+                            className="text-area"
+                            readOnly
+                            placeholder="Oracle replies will appear here."
+                            value={formatOracleRequestLogs(oracleRequestSession)}
+                        />
+                    </label>
+                    {oracleRequestSession?.finalResult ? (
+                        <DetailPanel label="Final OCR Result">
+                            <CodeView data={oracleRequestSession.finalResult} />
+                        </DetailPanel>
+                    ) : null}
+                </SurfaceCard>
             </div>
 
             <StickyActions>
-                <button className="primary-button" type="button" onClick={submitSelectiveDisclosure}>
-                    Send disclosure
+                <button
+                    className="primary-button"
+                    type="button"
+                    onClick={requestOracles}
+                    disabled={oracleRequestBusy}
+                >
+                    {oracleRequestBusy ? "Requesting..." : "Request Oracles"}
                 </button>
             </StickyActions>
 
@@ -433,7 +610,25 @@ export function AuthorStatementsPage() {
         const document = normalizeStoredArtifact(record);
         setPreviousPresentationInput(JSON.stringify(document, null, 2));
         setSelectedTypePresentation("Diffusion");
-        setAuthorMessage("Previous presentation loaded into the builder.");
+        setAuthorMessage("Previous presentation JSON loaded into the builder.");
+    }
+
+    async function loadPreviousPresentationFile(event) {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+
+        if (!file) {
+            return;
+        }
+
+        try {
+            const fileText = await readFileAsText(file);
+            setPreviousPresentationInput(fileText);
+            setSelectedTypePresentation("Diffusion");
+            setAuthorMessage("Previous presentation file loaded into the builder.");
+        } catch (error) {
+            setAuthorMessage("Unable to read the uploaded presentation file.");
+        }
     }
 
     async function resolvePreviousPresentation() {
@@ -633,15 +828,31 @@ export function AuthorStatementsPage() {
                             </label>
                         </>
                     ) : (
-                        <label className="field field--wide">
-                            <span className="field__label">Previous Presentation</span>
-                            <textarea
-                                className="text-area"
-                                onChange={(event) => setPreviousPresentationInput(event.target.value)}
-                                placeholder="Previous presentation JSON or JWT"
-                                value={previousPresentationInput}
-                            />
-                        </label>
+                        <>
+                            <label className="field field--wide">
+                                <span className="field__label">Previous Presentation</span>
+                                <textarea
+                                    className="text-area"
+                                    onChange={(event) => setPreviousPresentationInput(event.target.value)}
+                                    placeholder="Paste previous presentation JSON or JWT"
+                                    value={previousPresentationInput}
+                                />
+                            </label>
+                            <div className="file-upload">
+                                <label className="upload-button">
+                                    Upload JSON or JWT
+                                    <input
+                                        accept=".json,.jwt,.txt,application/json,text/plain"
+                                        className="visually-hidden"
+                                        onChange={loadPreviousPresentationFile}
+                                        type="file"
+                                    />
+                                </label>
+                                <p className="file-upload__meta">
+                                    Paste text or upload a JSON/JWT file
+                                </p>
+                            </div>
+                        </>
                     )}
                 </SurfaceCard>
 

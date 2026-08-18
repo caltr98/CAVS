@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import config from "../config.json";
-import secret from "../secret.json";
 import { api } from "../services/api";
 
 const SessionContext = createContext(null);
@@ -9,7 +8,13 @@ const availableCavsEndpoints = [
     config.cavsendpoint,
     config.cavsendpoint2,
     config.cavsendpoint3,
+    config.cavsendpoint4,
 ].filter(Boolean);
+
+const ipfsSecret = {
+    name: import.meta.env.VITE_IPFS_SECRET_NAME || "",
+    password: import.meta.env.VITE_IPFS_SECRET_PASSWORD || "",
+};
 
 export function SessionProvider({ children }) {
     const [availableDids, setAvailableDids] = useState([]);
@@ -64,7 +69,9 @@ export function SessionProvider({ children }) {
 
         async function hydrateIpfs() {
             try {
-                await api.configureIpfsSecrets(config.ipfsagent, secret);
+                if (ipfsSecret.name || ipfsSecret.password) {
+                    await api.configureIpfsSecrets(config.ipfsagent, ipfsSecret);
+                }
                 const peerData = await api.getPeerId(config.ipfsagent);
                 if (!ignore) {
                     setPeerId(peerData.peer_id || "");

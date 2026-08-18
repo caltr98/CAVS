@@ -13,6 +13,7 @@ import decode from 'jsqr';
 import { PNG } from 'pngjs';
 import { jwtDecode } from "jwt-decode";
 import bodyParser from "body-parser";
+import { Wallet } from "ethers";
 import { createVCPayload, createVPPayload, verifyVPSelectiveDisclousureCorrectness } from "./src/hash/main.js";
 const app = express();
 // Enable CORS
@@ -32,12 +33,32 @@ app.get("/api/v0/check/", async (req, res) => {
         res.send({ result: 'null' });
     }
 });
-// Endpoint to get DID ETHR by private key
-app.get("/api/v0/setup/", async (req, res) => {
-    const privateKey = req.query.privatekey;
-    const walletAddr = req.query.walletaddr;
+// Import a DID ETHR identity. POST keeps private key material out of request
+// URLs and access logs; GET remains as a backwards-compatible legacy route.
+async function setupEthDid(req, res) {
+    const input = req.method === 'POST' ? req.body : req.query;
+    const privateKey = typeof input?.privatekey === 'string'
+        ? input.privatekey.trim()
+        : '';
+    const walletAddr = typeof input?.walletaddr === 'string'
+        ? input.walletaddr.trim()
+        : '';
+    const privateKeyHex = privateKey.replace(/^0x/i, '');
+    if (!/^[0-9a-fA-F]{64}$/.test(privateKeyHex) || !/^0x[0-9a-fA-F]{40}$/.test(walletAddr)) {
+        return res.status(400).send({ error: 'A valid privatekey and walletaddr are required.' });
+    }
+    let derivedAddress;
     try {
-        console.log(`Setting up DID for wallet address: ${walletAddr} with private key: ${privateKey}`);
+        derivedAddress = new Wallet(`0x${privateKeyHex}`).address;
+    }
+    catch (_error) {
+        return res.status(400).send({ error: 'A valid privatekey and walletaddr are required.' });
+    }
+    if (derivedAddress.toLowerCase() !== walletAddr.toLowerCase()) {
+        return res.status(400).send({ error: 'walletaddr does not match privatekey.' });
+    }
+    try {
+        console.log(`Setting up DID for wallet address: ${walletAddr}`);
         let identifier = await agentETH.didManagerGetByAlias({ alias: walletAddr });
         console.log(`Identifier found: ${JSON.stringify(identifier)}`);
         res.send(identifier);
@@ -57,7 +78,7 @@ app.get("/api/v0/setup/", async (req, res) => {
                     type: "Secp256k1",
                     kms: "local",
                     kid: "key-1" + walletAddr,
-                    privateKeyHex: privateKey,
+                    privateKeyHex,
                 },
             ],
             services: [],
@@ -69,13 +90,15 @@ app.get("/api/v0/setup/", async (req, res) => {
         console.error(`Error creating identifier for wallet address ${walletAddr}:`, error);
         res.status(500).send({ error: 'An error occurred while creating the identifier.' });
     }
-});
+}
+app.post("/api/v0/setup/", setupEthDid);
+app.get("/api/v0/setup/", setupEthDid);
 app.get("/api/v0/confirm/", async (req, res) => {
     let privateKey = req.query.privatekey;
     let walletAddr = req.query.walletaddr;
     let identifier;
     // Use the private key directly without converting it
-    console.log(privateKey + " " + walletAddr);
+    console.log(`Confirming DID for wallet address: ${walletAddr}`);
     try {
         identifier = await agentETH.didManagerGetByAlias({ alias: walletAddr });
         console.log(identifier);
@@ -867,13 +890,16 @@ app.post('/get_qr_code/jwt', async (req, res) => {
     }
 });
 //route to convert a jwt to VP or VC (or any other text)
-app.get("/decode_jwt", async (req, res) => {
-    let jwt = req.query.jwt;
+//
+// Shared decoder used by both GET (legacy) and POST (added for large VCs).
+// Large authors carry up to 200 ESCO skills, which produces ~30 KB JWTs;
+// most HTTP servers refuse query strings that big, so GET fails the moment
+// the dataset includes those authors. POST avoids the URL length limit
+// entirely by carrying the JWT in the JSON body.
+async function handleDecodeJwt(jwt, res) {
     try {
         let decoded = jwtDecode(jwt);
-        let result = decoded; //result can be any json if not in the following two categories
         if (decoded.hasOwnProperty('vc')) {
-            //if a veriable credential
             let result = format_jwt_decoded_to_VC(jwt, decoded);
             res.send(result);
             return;
@@ -883,10 +909,19 @@ app.get("/decode_jwt", async (req, res) => {
             res.send(result);
             return;
         }
+        res.send(decoded);
     }
     catch (error) {
         res.status(500).send("error decoding");
     }
+}
+
+app.get("/decode_jwt", async (req, res) => {
+    return handleDecodeJwt(req.query.jwt, res);
+});
+
+app.post("/decode_jwt", async (req, res) => {
+    return handleDecodeJwt((req.body || {}).jwt, res);
 });
 function convertTimestampToIssuanceDate(timestampInSeconds) {
     // Ensure timestamp is a valid number

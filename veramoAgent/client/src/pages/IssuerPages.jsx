@@ -21,6 +21,30 @@ function buildSkillsPayload(skillEntries) {
     }, {});
 }
 
+function normalizeExtractedSkill(match) {
+    if (!match) {
+        return null;
+    }
+
+    const nestedLabel = match?.esco?.label;
+    const nestedUri = match?.esco?.uri;
+    if (nestedLabel && nestedUri) {
+        return [nestedLabel, nestedUri];
+    }
+
+    const flatLabel = match?.match_skill || match?.label || match?.name;
+    const flatUri = match?.match_id || match?.uri || match?.id;
+    if (flatLabel && flatUri) {
+        return [flatLabel, flatUri];
+    }
+
+    if (Array.isArray(match) && match[0] && match[1]) {
+        return [match[0], match[1]];
+    }
+
+    return null;
+}
+
 function IssuerCredentialWorkspace({ mode }) {
     const {
         selectedDid,
@@ -119,12 +143,17 @@ function IssuerCredentialWorkspace({ mode }) {
                 engine: selectedSkillEngine,
             });
             const skillPairs = (skillResponse.skills || [])
-                .map((match) => [match?.esco?.label, match?.esco?.uri])
-                .filter(([label, uri]) => Boolean(label && uri));
+                .map((match) => normalizeExtractedSkill(match))
+                .filter((pair) => Boolean(pair?.[0] && pair?.[1]));
 
             skillPairs.forEach(([label, uri]) => {
                 addSkillEntry(createSkillEntry(label, uri, `${label}|${uri}`, "extracted"));
             });
+
+            if (skillPairs.length === 0) {
+                setFeedback("No skills could be mapped from the certificate description.");
+                return;
+            }
 
             setFeedback(`Mapped ${skillPairs.length} skills from the certificate description.`);
         } catch (error) {

@@ -39,8 +39,15 @@ import { DataSource } from 'typeorm'
 
 // @see https://github.com/uport-project/veramo/blob/next/__tests__/localAgent.test.ts
 
-const infuraProjectId = '05dfd704449d432ead7fdc7a2ee1fc4f';
-const secretKey = 'eb4aaf0408d8af22cdb8e63913a6ce49d898451fb949490b4a82d0018d9bf9d4';
+const infuraProjectId = process.env.INFURA_PROJECT_ID || '';
+const secretKey = process.env.VERAMO_KMS_SECRET_KEY || '';
+const DID_RESOLVER_RPC_URL = process.env.DID_RESOLVER_RPC_URL || '';
+if (!DID_RESOLVER_RPC_URL) {
+    throw new Error('DID_RESOLVER_RPC_URL is required')
+}
+if (!secretKey) {
+    throw new Error('VERAMO_KMS_SECRET_KEY is required')
+}
 
 
 // This will be the name for the local sqlite database
@@ -64,9 +71,9 @@ const ethrDidProvider = new EthrDIDProvider({
         {
             name: 'mainnet',
             chainId: 1,
-            rpcUrl: 'https://mainnet.infura.io/v3/' + infuraProjectId,
+            rpcUrl: DID_RESOLVER_RPC_URL,
         }],
-    rpcUrl: `https://mainnet.infura.io/v3/${infuraProjectId}`,
+    rpcUrl: DID_RESOLVER_RPC_URL,
     gas: 1000001,
     ttl: 60 * 60 * 24 * 30 * 12 + 1,
 });
@@ -98,7 +105,7 @@ export const agentETH = createAgent<
                 ...ethrDidResolver({ infuraProjectId: infuraProjectId }),
                 ...webDidResolver(),
             }),
-        }),        new CredentialPlugin(),
+        }),        new CredentialPlugin([new CredentialProviderJWT()]),
         new DataStore(dbConnection),
         new DataStoreORM(dbConnection)
     ],
@@ -106,9 +113,9 @@ export const agentETH = createAgent<
 
  */
 // You will need to get a project ID from infura https://www.infura.io I DID PUT THERE THE API KEY
-const INFURA_PROJECT_ID = '77b6397329f849c0b5746b7da777c7dd'
+const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID || ''
 // This will be the secret key for the KMS (replace this with your secret key)
-const KMS_SECRET_KEY = 'eb4aaf0408d8af22cdb8e63913a6ce49d898451fb949490b4a82d0018d9bf9d4'
+const KMS_SECRET_KEY = secretKey
 
 export const agentETH = createAgent<
     IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin
@@ -127,13 +134,13 @@ export const agentETH = createAgent<
                 'did:ethr:mainnet': new EthrDIDProvider({
                     defaultKms: 'local',
                     network: 'mainnet',
-                    rpcUrl: 'https://sepolia.infura.io/v3/' + INFURA_PROJECT_ID,
+                    rpcUrl: DID_RESOLVER_RPC_URL,
                 }),
             },
         }),
         new DIDResolverPlugin({
             resolver: new Resolver({
-                ...ethrDidResolver({ infuraProjectId: INFURA_PROJECT_ID }),
+                ...ethrDidResolver({ networks: [{ name: 'sepolia', rpcUrl: DID_RESOLVER_RPC_URL }] }),
                 ...webDidResolver(),
             }),
         }),

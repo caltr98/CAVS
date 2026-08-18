@@ -5,7 +5,7 @@
   "type": "module",
   "main": "CAVSService.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test *.test.mjs",
     "start": "node CAVSService.js",
     "dev": "nodemon CAVSService.js"
   },
@@ -16,6 +16,7 @@
     "axios": "^1.19.0",
     "body-parser": "^2.3.0",
     "cors": "^2.8.5",
+    "ethers": "^6.17.0",
     "express": "^5.2.1"
   },
   "devDependencies": {

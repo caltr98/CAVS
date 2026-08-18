@@ -16,8 +16,6 @@ export const statementTypes = [
 export function AuthorFlowProvider({ children }) {
     const [skillsCredentials, setSkillsCredentials] = useState([]);
     const [selectedCredentialIndexes, setSelectedCredentialIndexes] = useState([]);
-    const [selectedSkillIndexes, setSelectedSkillIndexes] = useState([]);
-    const [pendingDisclosureRequest, setPendingDisclosureRequest] = useState(null);
     const [statementCredentials, setStatementCredentials] = useState([]);
     const [statementCids, setStatementCids] = useState({});
     const [authorMessage, setAuthorMessage] = useState("Ready to request.");
@@ -30,17 +28,8 @@ export function AuthorFlowProvider({ children }) {
         );
     }
 
-    function toggleSkillIndex(index) {
-        setSelectedSkillIndexes((previousIndexes) =>
-            previousIndexes.includes(index)
-                ? previousIndexes.filter((value) => value !== index)
-                : [...previousIndexes, index],
-        );
-    }
-
     function clearSelections() {
         setSelectedCredentialIndexes([]);
-        setSelectedSkillIndexes([]);
     }
 
     function setStatementCid(index, cid) {
@@ -50,20 +39,11 @@ export function AuthorFlowProvider({ children }) {
         }));
     }
 
-    function resetDisclosureRequest() {
-        setPendingDisclosureRequest(null);
-        setSelectedSkillIndexes([]);
-    }
-
     const value = {
         authorMessage,
         clearSelections,
-        pendingDisclosureRequest,
-        resetDisclosureRequest,
         selectedCredentialIndexes,
-        selectedSkillIndexes,
         setAuthorMessage,
-        setPendingDisclosureRequest,
         setSkillsCredentials,
         setStatementCid,
         setStatementCredentials,
@@ -71,7 +51,6 @@ export function AuthorFlowProvider({ children }) {
         statementCids,
         statementCredentials,
         toggleCredentialIndex,
-        toggleSkillIndex,
     };
 
     return <AuthorFlowContext.Provider value={value}>{children}</AuthorFlowContext.Provider>;

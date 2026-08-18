@@ -5,10 +5,10 @@ import { SessionProvider } from "./context/SessionContext";
 import { AuthorFlowProvider } from "./context/AuthorFlowContext";
 import { AppShell } from "./components/Shell";
 import { IssuerCreatePage, IssuerSelectiveDisclosurePage } from "./pages/IssuerPages";
-import { CavsConfigPage, CavsIssuerTrustPage } from "./pages/CavsPages";
+import { CavsConfigPage, CavsIssuerTrustPage, CavsOcrOracleRegistryPage } from "./pages/CavsPages";
 import {
+    AuthorOracleRequestPage,
     AuthorRequestPage,
-    AuthorSelectiveDisclosurePage,
     AuthorStatementsPage,
 } from "./pages/AuthorPages";
 import { ReaderDecodeTracePage, ReaderHistoryPage } from "./pages/ReaderPages";
@@ -40,15 +40,13 @@ function App() {
                                 <Route index element={<Navigate to="config" replace />} />
                                 <Route path="config" element={<CavsConfigPage />} />
                                 <Route path="issuer-trust" element={<CavsIssuerTrustPage />} />
+                                <Route path="ocr-oracles" element={<CavsOcrOracleRegistryPage />} />
                             </Route>
 
                             <Route path="author">
                                 <Route index element={<Navigate to="request" replace />} />
                                 <Route path="request" element={<AuthorRequestPage />} />
-                                <Route
-                                    path="selective-disclosure"
-                                    element={<AuthorSelectiveDisclosurePage />}
-                                />
+                                <Route path="oracles" element={<AuthorOracleRequestPage />} />
                                 <Route path="statements" element={<AuthorStatementsPage />} />
                             </Route>
 

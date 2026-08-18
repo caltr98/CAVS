@@ -58,6 +58,9 @@ export const api = {
     storeVc(endpoint, payload) {
         return post(`${endpoint}/store_vc`, payload, { timeout: STORE_TIMEOUT });
     },
+    storeStructuredVc(endpoint, payload) {
+        return post(`${endpoint}/vc/store`, payload, { timeout: STORE_TIMEOUT });
+    },
     storeSelectiveDisclosureVc(endpoint, payload) {
         return post(`${endpoint}/store_vc/selective_disclosure`, payload, {
             timeout: STORE_TIMEOUT,
@@ -209,5 +212,35 @@ export const api = {
     },
     addIssuerTrust(endpoint, payload) {
         return post(`${endpoint}/api/issuer_trust`, payload, { timeout: DEFAULT_TIMEOUT });
+    },
+    getOcrOracleIdentity(endpoint, payload) {
+        return post(`${endpoint}/ocr/oracle_registry/identity`, payload, {
+            timeout: DEFAULT_TIMEOUT,
+        });
+    },
+    getOcrOracleRegistryDefaults(endpoint) {
+        return get(`${endpoint}/ocr/oracle_registry/defaults`, {
+            timeout: DEFAULT_TIMEOUT,
+        });
+    },
+    listOcrOracleRegistry(endpoint, payload) {
+        return post(`${endpoint}/ocr/oracle_registry/list`, payload, {
+            timeout: DEFAULT_TIMEOUT,
+        });
+    },
+    updateOcrOracleSlot(endpoint, payload) {
+        return post(`${endpoint}/ocr/oracle_registry/update`, payload, {
+            timeout: LONG_TIMEOUT,
+        });
+    },
+    startAuthorOracleRequest(endpoint, payload) {
+        return post(`${endpoint}/ocr/author_oracle_request/start`, payload, {
+            timeout: DEFAULT_TIMEOUT,
+        });
+    },
+    getAuthorOracleRequestStatus(endpoint, sessionId) {
+        return get(`${endpoint}/ocr/author_oracle_request/status/${sessionId}`, {
+            timeout: DEFAULT_TIMEOUT,
+        });
     },
 };

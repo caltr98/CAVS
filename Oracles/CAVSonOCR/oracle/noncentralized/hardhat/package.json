@@ -1,0 +1,42 @@
+{
+  "name": "cavsonocr-noncentralized",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "compile": "hardhat build",
+    "node:localhost": "npx hardhat node",
+    "test": "hardhat test",
+    "test:no-gas": "hardhat test",
+    "deploy:sepolia": "npx hardhat run --network sepolia scripts/deploy.ts",
+    "fund:author": "npx hardhat run scripts/fundAuthorWallet.ts",
+    "fund:author:localhost": "npx hardhat run --network localhost scripts/fundAuthorWallet.ts",
+    "fund:author:sepolia": "npx hardhat run --network sepolia scripts/fundAuthorWallet.ts",
+    "fund:cavs-oracles": "npx hardhat run scripts/fundCavsOracles.ts",
+    "fund:cavs-oracles:localhost": "npx hardhat run --network localhost scripts/fundCavsOracles.ts",
+    "fund:cavs-oracles:sepolia": "npx hardhat run --network sepolia scripts/fundCavsOracles.ts",
+    "verify:cavs-oracles:sepolia": "npx hardhat run --network sepolia scripts/verifyCavsOracleDids.ts",
+    "register:oracle": "npx hardhat run --network sepolia scripts/registerOracle.ts",
+    "list:oracles": "npx hardhat run --network sepolia scripts/listOracles.ts",
+    "submit:request": "npx hardhat run --network sepolia scripts/submitRequest.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.15",
+    "@nomicfoundation/hardhat-ethers-chai-matchers": "^3.0.11",
+    "@nomicfoundation/hardhat-mocha": "^3.1.0",
+    "chai": "^6.2.2",
+    "dotenv": "^17.4.2",
+    "ethers": "^6.17.0",
+    "hardhat": "^3.13.0",
+    "mocha": "^11.8.0",
+    "typescript": "^5.9.3"
+  },
+  "type": "module",
+  "dependencies": {
+    "@paulmillr/trusted-setups": "^0.1.2",
+    "micro-eth-signer": "^0.14.0"
+  },
+  "overrides": {
+    "diff": "8.0.3",
+    "serialize-javascript": "7.1.0"
+  }
+}

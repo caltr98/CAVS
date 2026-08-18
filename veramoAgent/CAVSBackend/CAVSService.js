@@ -5,6 +5,15 @@ import bodyParser from 'body-parser';
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
+import { getAddress, Wallet } from 'ethers';
+import { registerAuthorOracleRequestRoutes } from './authorOracleRequest.js';
+import { registerOcrOracleRegistryRoutes } from './ocrOracleRegistry.js';
+import {
+    ExtractIdempotencyStore,
+    IdempotencyCapacityError,
+    IdempotencyConflictError,
+    InvalidIdempotencyKeyError,
+} from './extractIdempotency.js';
 import config from './config.json' with { type: 'json' };
 import trustedissuers from './trustedissuers.json' with { type: 'json' };
 
@@ -17,20 +26,22 @@ const PIPELINE_CONFIG_PATH = path.resolve('./pipeline.config.json');
 const DEFAULT_PIPELINE_CONFIG = {
     keywordExtraction: {
         roberta: {
-            top_n: 120,
+            top_n: 30,
             nr_candidates: 300,
-            ngram_max: 3,
+            ngram_max: 2,
             use_mmr: true,
             diversity: 0.7,
-            score_threshold: 0.10,
+            score_threshold: 0.30,
+            timeout_s: 60,
         },
         keybert: {
-            top_n: 120,
+            top_n: 30,
             nr_candidates: 300,
-            ngram_max: 3,
+            ngram_max: 2,
             use_mmr: true,
             diversity: 0.7,
-            score_threshold: 0.10,
+            score_threshold: 0.30,
+            timeout_s: 60,
         },
         keyllm: {
             top_n: 30,
@@ -49,14 +60,17 @@ const DEFAULT_PIPELINE_CONFIG = {
     },
     competence: {
         support_threshold: 0.0,
-        // Match Validation/nest-experimentation article_skill_mode=extract_union_roberta_map.
-        skill_mapping_mode: "extract_union_roberta_map",
+        // Match Validation/liar2/scripts/competence_roberta_nesta/tokenize_and_call_nesta.py default mode.
+        skill_mapping_mode: "keywords",
     },
     skillMapping: {
         // "keywords": map provided keywords to skills (default pipeline behaviour)
         // "extract": run OJD-DAPS extract directly on the original document text
         mode: "keywords",
         skill_match_thresh: null,
+        per_keyword: false,
+        fallback_extract: false,
+        timeout_s: 90,
     },
 };
 
@@ -65,6 +79,9 @@ let pipelineConfig = structuredClone(DEFAULT_PIPELINE_CONFIG);
 function deepMerge(target, source) {
     if (!source || typeof source !== 'object') return target;
     for (const [key, value] of Object.entries(source)) {
+        if (key === '__proto__' || key === 'prototype' || key === 'constructor') {
+            continue;
+        }
         if (value && typeof value === 'object' && !Array.isArray(value)) {
             if (!target[key] || typeof target[key] !== 'object') target[key] = {};
             deepMerge(target[key], value);
@@ -88,8 +105,26 @@ function loadPipelineConfig() {
     }
 }
 
-function savePipelineConfig() {
-    fs.writeFileSync(PIPELINE_CONFIG_PATH, JSON.stringify(pipelineConfig, null, 2));
+function savePipelineConfig(value = pipelineConfig) {
+    writeJsonFileAtomic(PIPELINE_CONFIG_PATH, value);
+}
+
+function writeJsonFileAtomic(filePath, value) {
+    const destination = path.resolve(filePath);
+    const temporary = `${destination}.${process.pid}.tmp`;
+    try {
+        fs.writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, {
+            encoding: 'utf8',
+            mode: 0o600,
+        });
+        fs.renameSync(temporary, destination);
+    } finally {
+        try {
+            fs.rmSync(temporary, { force: true });
+        } catch (_error) {
+            // The temporary file normally no longer exists after rename.
+        }
+    }
 }
 
 let keywordExtractorEngines = ["RoBERTa"];
@@ -100,8 +135,24 @@ let selectedExtractorEngine = keywordExtractorEngines[0];
 let selectedEnricherEngine = enricherEngines[0];
 let selectedSkillExtractorEngine = skillExtractorEngines[0];
 let selectedSelectiveDisclosureMode = false;
-const selectedDIDETHAWalletAddr = '0x877545E3910550Ce27c2c51Bd2FF14837acB6566';
-const selectedDIDPrivKey = 'f55a62b189423bf293d3e9b8bbd114d98bd28b29fc45d07d4876ce2f2dc51440';
+const selectedDIDPrivKey = String(
+    readSecretFile(process.env.CAVS_DID_PRIVATE_KEY_FILE)
+    || readSecretFile(process.env.PRIVATE_KEY_FILE)
+    || process.env.CAVS_DID_PRIVATE_KEY
+    || '',
+).trim();
+const selectedDIDWallet = selectedDIDPrivKey ? new Wallet(selectedDIDPrivKey) : null;
+const configuredDIDWalletAddress = String(process.env.CAVS_DID_WALLET_ADDRESS || '').trim();
+const selectedDIDETHAWalletAddr = configuredDIDWalletAddress
+    ? getAddress(configuredDIDWalletAddress)
+    : (selectedDIDWallet?.address || '');
+if (
+    selectedDIDWallet
+    && selectedDIDETHAWalletAddr
+    && selectedDIDWallet.address.toLowerCase() !== selectedDIDETHAWalletAddr.toLowerCase()
+) {
+    throw new Error('CAVS_DID_WALLET_ADDRESS does not match CAVS DID private key');
+}
 let selectedDID = '';
 
 const keywordExtractorServiceEndpoint =
@@ -114,24 +165,163 @@ const keyLLMServiceEndpoint = process.env.KEYLLM_ENDPOINT || config.keyLLMServic
 const yagoServiceEndpoint = process.env.YAGO_ENDPOINT || config.yagoServiceEndpoint;
 const ojdDapsSkillsEndpoint = process.env.OJD_ENDPOINT || config.ojdDapsSkillsEndpoint;
 const veramoAgentEndpoint = process.env.VERAMO_ENDPOINT || config.veramoAgentEndpoint;
+const veramoRequestTimeoutMs = Math.max(
+    65000,
+    parseInt(process.env.CAVS_VERAMO_TIMEOUT_MS || process.env.VERAMO_REQUEST_TIMEOUT_MS || '600000', 10) || 600000,
+);
+const ocrVcSignerRequestTimeoutMs = Math.max(
+    1000,
+    parseInt(process.env.OCR_VC_SIGNER_TIMEOUT_MS || '5000', 10) || 5000,
+);
+const ocrVcLocalRequestTimeoutMs = Math.max(
+    1000,
+    parseInt(process.env.OCR_VC_LOCAL_TIMEOUT_MS || '65000', 10) || 65000,
+);
+const ocrVerificationRequestTimeoutMs = Math.max(
+    1000,
+    parseInt(process.env.OCR_VERIFICATION_TIMEOUT_MS || '120000', 10) || 120000,
+);
+// Keep this outer request deadline above the remote checker/proxy deadline
+// (200 s in the publication runtime) while remaining below OCR's 300 s
+// observation cap.  A shorter hard-coded deadline used to discard valid late
+// checker responses and let OCR quorum mask the unavailable observation.
+const competenceCheckerRequestTimeoutMs = Math.max(
+    1000,
+    parseInt(process.env.CAVS_COMPETENCE_TIMEOUT_MS || '220000', 10) || 220000,
+);
+const ocrRequesterCallbackTimeoutMs = Math.max(
+    1000,
+    parseInt(process.env.OCR_REQUESTER_CALLBACK_TIMEOUT_MS || '15000', 10) || 15000,
+);
+const ocrVcCallbackTimeoutMs = Math.max(
+    1000,
+    parseInt(process.env.OCR_VC_CALLBACK_TIMEOUT_MS || '15000', 10) || 15000,
+);
+const didSetupRequestTimeoutMs = Math.max(
+    1000,
+    parseInt(process.env.CAVS_DID_SETUP_TIMEOUT_MS || '15000', 10) || 15000,
+);
+const extractIdempotencyMaxInFlight = readBoundedIntegerEnvironment(
+    'CAVS_EXTRACT_IDEMPOTENCY_MAX_IN_FLIGHT',
+    256,
+    1,
+    4096,
+);
+const extractIdempotencyMaxResults = readBoundedIntegerEnvironment(
+    'CAVS_EXTRACT_IDEMPOTENCY_MAX_RESULTS',
+    512,
+    1,
+    16384,
+);
+const extractIdempotencyResultTtlMs = readBoundedIntegerEnvironment(
+    'CAVS_EXTRACT_IDEMPOTENCY_TTL_MS',
+    15 * 60 * 1000,
+    1000,
+    24 * 60 * 60 * 1000,
+);
+// Go's dedicated extractor transport retires idle connections after 60s.
+// Keep the server side open longer so the client is always the endpoint that
+// closes an idle pooled socket; the inverse ordering caused the archived
+// mid-campaign `write: broken pipe`.
+const cavsHttpKeepAliveTimeoutMs = readBoundedIntegerEnvironment(
+    'CAVS_HTTP_KEEP_ALIVE_TIMEOUT_MS',
+    120 * 1000,
+    65 * 1000,
+    10 * 60 * 1000,
+);
+const cavsHttpHeadersTimeoutMs = cavsHttpKeepAliveTimeoutMs + 5 * 1000;
+const startupRetryDelayMs = Math.max(
+    100,
+    parseInt(process.env.CAVS_STARTUP_RETRY_DELAY_MS || '5000', 10) || 5000,
+);
+const remoteSignerIdentityCacheTtlMs = Math.max(
+    0,
+    parseInt(process.env.OCR_SIGNER_IDENTITY_CACHE_TTL_MS || '5000', 10) || 0,
+);
+const remoteSignerIdentityCacheMaxEntries = Math.max(
+    1,
+    parseInt(process.env.OCR_SIGNER_IDENTITY_CACHE_MAX_ENTRIES || '64', 10) || 64,
+);
+const ocrMaxRemoteEndpoints = Math.max(
+    1,
+    Math.min(
+        256,
+        parseInt(process.env.OCR_MAX_REMOTE_ENDPOINTS || '32', 10) || 32,
+    ),
+);
+const ocrMaxVcSigners = Math.max(
+    1,
+    Math.min(
+        256,
+        parseInt(process.env.OCR_MAX_VC_SIGNERS || '32', 10) || 32,
+    ),
+);
+const ocrMaxEmbeddedCredentials = Math.max(
+    1,
+    Math.min(
+        64,
+        parseInt(process.env.OCR_MAX_EMBEDDED_CREDENTIALS || '16', 10) || 16,
+    ),
+);
+const ocrVcRemoteSignersDefault = !['0', 'false', 'no'].includes(
+    String(process.env.OCR_VC_REMOTE_SIGNERS || 'true').trim().toLowerCase(),
+);
 const gptCompetenceEndpoint = process.env.GPT_COMP_ENDPOINT || config.gptCompServiceEndpoint || 'http://gptcomp:3030';
+const azureOpenAICompetenceEndpoint = process.env.AZURE_OPENAI_COMP_ENDPOINT || 'http://azurecomp:3030';
+const qwenCompetenceEndpoint = process.env.QWEN_COMP_ENDPOINT || config.qwenCompServiceEndpoint || 'http://qwencomp:3030';
+const deepseekCompetenceEndpoint = process.env.DEEPSEEK_COMP_ENDPOINT || config.deepseekCompServiceEndpoint || 'http://deepseekcomp:3030';
+const llamaCompetenceEndpoint = process.env.LLAMA_COMP_ENDPOINT || 'http://llamacomp:3030';
+const gemmaCompetenceEndpoint = process.env.GEMMA_COMP_ENDPOINT || 'http://gemmacomp:3030';
 const GPT_COMPETENCE_MODE_LABEL = "GPT competence service";
+const AZURE_OPENAI_COMPETENCE_MODE_LABEL = "Azure model competence service";
+const QWEN_COMPETENCE_MODE_LABEL = "Qwen competence service";
+const DEEPSEEK_COMPETENCE_MODE_LABEL = "DeepSeek competence service";
+const LLAMA_COMPETENCE_MODE_LABEL = "Llama competence service";
+const GEMMA_COMPETENCE_MODE_LABEL = "Gemma competence service";
 const ROBERTA_TO_NESTA_MODE_LABEL = "RoBERTa to Nesta mode";
+const nestaKeywordEngine = String(process.env.NESTA_KEYWORD_ENGINE || "roberta").trim().toLowerCase();
 const DEFAULT_COMPETENCE_MODE = parseCompetenceMode(
     process.env.CAVS_COMPETENCE_MODE || config.competenceMode || "nesta"
 ) || "ojd_daps";
 let selectedCompetenceMode = DEFAULT_COMPETENCE_MODE;
 const runtimeOpenAIConfig = {
-    apiKey: process.env.OPENAI_COMPETENCE_API_KEY || process.env.OPENAI_API_KEY || "",
+    apiKey: readSecretFile(process.env.OPENAI_API_KEY_FILE) || process.env.OPENAI_COMPETENCE_API_KEY || process.env.OPENAI_API_KEY || "",
     baseUrl: process.env.OPENAI_COMPETENCE_BASE_URL || process.env.OPENAI_BASE_URL || "",
     model: process.env.OPENAI_COMPETENCE_MODEL || process.env.OPENAI_MODEL || "",
 };
-const DEFAULT_ESCO_FILE_PATH = '/home/cal/componentsCAVS/esco-v1.2.1.jsonl';
+
+function readBoundedIntegerEnvironment(name, fallback, minimum, maximum) {
+    const raw = process.env[name];
+    if (raw === undefined || String(raw).trim() === '') return fallback;
+    const value = Number(raw);
+    if (!Number.isInteger(value) || value < minimum || value > maximum) {
+        throw new Error(`${name} must be an integer from ${minimum} to ${maximum}`);
+    }
+    return value;
+}
+
+function readSecretFile(path) {
+    if (!path) return '';
+    try { return fs.readFileSync(path, 'utf8').trim(); } catch (_) { return ''; }
+}
+const DEFAULT_ESCO_FILE_PATH = '/usr/src/app/esco-v1.2.1.jsonl';
 const escoFilePath =
     process.env.ESCO_JSONL_PATH ||
     config?.escoFilePath ||
     DEFAULT_ESCO_FILE_PATH;
-app.use(cors(), express.json());
+const HTTP_BODY_LIMIT = process.env.CAVS_HTTP_BODY_LIMIT || '8mb';
+app.use(cors(), express.json({ limit: HTTP_BODY_LIMIT }));
+
+const extractIdempotencyStore = new ExtractIdempotencyStore({
+    maxInFlight: extractIdempotencyMaxInFlight,
+    maxResults: extractIdempotencyMaxResults,
+    resultTtlMs: extractIdempotencyResultTtlMs,
+    isCacheable: (result) => (
+        Number.isInteger(result?.status)
+        && result.status >= 200
+        && result.status < 300
+    ),
+});
 
 function parseOracleIdLike(value) {
     if (Number.isInteger(value) && value >= 0) return value;
@@ -209,10 +399,31 @@ function parseHierarchyMaxHops(value) {
 
 const ESCO_MAX_HOPS = parseHierarchyMaxHops(process.env.ESCO_MAX_HOPS);
 
+function timeoutMsFromSeconds(value, fallbackMs) {
+    const seconds = Number(value);
+    if (!Number.isFinite(seconds) || seconds <= 0) return fallbackMs;
+    return Math.floor(seconds * 1000);
+}
+
+function definedOptions(options = {}) {
+    return Object.fromEntries(
+        Object.entries(options).filter(([_key, value]) => value !== undefined && value !== null && value !== "")
+    );
+}
+
 function parseCompetenceMode(mode) {
     const m = normalizeStr(mode);
     if (!m) return null;
 
+    if (
+        m === "azure-openai" ||
+        m === "azure_openai" ||
+        m === "azure" ||
+        m === "azure_model" ||
+        m === normalizeStr(AZURE_OPENAI_COMPETENCE_MODE_LABEL)
+    ) {
+        return "azure-openai";
+    }
     if (
         m === "gpt" ||
         m === "gpt_service" ||
@@ -228,9 +439,37 @@ function parseCompetenceMode(mode) {
         return "gpt";
     }
     if (
+        m === "qwen" ||
+        m === "qwen_service" ||
+        m === "qwen_comp" ||
+        m === "qwen_competence" ||
+        m === "qwen_competence_service" ||
+        m === normalizeStr(QWEN_COMPETENCE_MODE_LABEL)
+    ) {
+        return "qwen";
+    }
+    if (
+        m === "deepseek" ||
+        m === "deepseek_service" ||
+        m === "deepseek_comp" ||
+        m === "deepseek_competence" ||
+        m === "deepseek_competence_service" ||
+        m === normalizeStr(DEEPSEEK_COMPETENCE_MODE_LABEL)
+    ) {
+        return "deepseek";
+    }
+    if (m === "llama" || m === normalizeStr(LLAMA_COMPETENCE_MODE_LABEL)) {
+        return "llama";
+    }
+    if (m === "gemma" || m === normalizeStr(GEMMA_COMPETENCE_MODE_LABEL)) {
+        return "gemma";
+    }
+    if (
         m === "ojd" ||
         m === "ojd_daps" ||
         m === "nesta" ||
+        m === "nesta-keybert" ||
+        m === "nesta-yake" ||
         m === "nesta_skill_extraction" ||
         m === normalizeStr(ROBERTA_TO_NESTA_MODE_LABEL)
     ) {
@@ -249,7 +488,13 @@ function resolveCompetenceMode(modeInput) {
 }
 
 function formatCompetenceModeForUi(mode) {
-    return mode === "ojd_daps" ? ROBERTA_TO_NESTA_MODE_LABEL : GPT_COMPETENCE_MODE_LABEL;
+    if (mode === "ojd_daps") return ROBERTA_TO_NESTA_MODE_LABEL;
+    if (mode === "qwen") return QWEN_COMPETENCE_MODE_LABEL;
+    if (mode === "deepseek") return DEEPSEEK_COMPETENCE_MODE_LABEL;
+    if (mode === "llama") return LLAMA_COMPETENCE_MODE_LABEL;
+    if (mode === "gemma") return GEMMA_COMPETENCE_MODE_LABEL;
+    if (mode === "azure-openai") return AZURE_OPENAI_COMPETENCE_MODE_LABEL;
+    return GPT_COMPETENCE_MODE_LABEL;
 }
 
 function normalizeOptionalString(value) {
@@ -283,7 +528,7 @@ async function syncKeyLLMOpenAIConfig() {
                 base_url: runtimeOpenAIConfig.baseUrl,
             },
             {
-                timeout: 65000,
+                timeout: veramoRequestTimeoutMs,
                 headers: { 'Content-Type': 'application/json' },
             },
         );
@@ -347,6 +592,23 @@ function parseAuthorSkillEntry(entry) {
     if (typeof entry === "string") {
         const raw = entry.trim();
         if (!raw) return null;
+        if (raw.startsWith("(") && raw.endsWith(")")) {
+            const inner = raw.slice(1, -1).trim();
+            const splitIndex = inner.lastIndexOf(",");
+            if (splitIndex > 0) {
+                const label = cleanupSkillLabel(inner.slice(0, splitIndex));
+                const uri = inner.slice(splitIndex + 1).trim();
+                if (label && uri) return { label, uri };
+            }
+        }
+        if (raw.includes("|")) {
+            const splitIndex = raw.lastIndexOf("|");
+            if (splitIndex > 0) {
+                const label = cleanupSkillLabel(raw.slice(0, splitIndex));
+                const uri = raw.slice(splitIndex + 1).trim();
+                if (label && uri) return { label, uri };
+            }
+        }
         const m = raw.match(ESCO_SKILL_URI_RE);
         if (!m) return null;
         const uri = m[0];
@@ -627,6 +889,34 @@ function resolveSkillTokensToUris(tokens, labelToUris) {
     return out;
 }
 
+function resolveValidAuthorSkillUris(authorSkills, escoIndex) {
+    const out = new Set();
+    const graph = escoIndex?.graph;
+    if (!graph) return out;
+
+    for (const entry of (Array.isArray(authorSkills) ? authorSkills : [])) {
+        const parsed = parseAuthorSkillEntry(entry);
+        if (parsed) {
+            const uri = parsed.uri;
+            if (!uri.startsWith('http://data.europa.eu/esco/skill/') || !graph.has(uri)) {
+                continue;
+            }
+
+            out.add(uri);
+            continue;
+        }
+
+        if (typeof entry === 'string') {
+            const raw = entry.trim();
+            if (raw.startsWith('http://data.europa.eu/esco/skill/') && graph.has(raw)) {
+                out.add(raw);
+            }
+        }
+    }
+
+    return out;
+}
+
 function shortestDistance(graph, startUri, targetUris, maxHops) {
     if (!startUri || !targetUris || targetUris.size === 0) return Infinity;
     if (targetUris.has(startUri)) return 0;
@@ -711,33 +1001,88 @@ function buildDistanceAwareCoverageReason(competent, coveredSkills, extractedCou
     );
 }
 
-async function fetchDIDWithRetry() {
-    while (!selectedDID) {
-        try {
-            const response = await axios.get(
-                `${veramoAgentEndpoint}/api/v0/setup/?privatekey=${selectedDIDPrivKey}&walletaddr=${selectedDIDETHAWalletAddr}`,
-                {
-                    timeout: 65000,
-                }
-            );
-            selectedDID = response.data.did;
-            console.log('Our DID:', selectedDID);
-        } catch (error) {
-            console.error('Error fetching credentials:', error.message);
-            await new Promise((resolve) => setTimeout(resolve, 5000)); // wait for 5 seconds before retrying
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+let selectedDidAttemptInFlight = null;
+let selectedDidWarmupInFlight = null;
+
+async function ensureSelectedDidOnce() {
+    if (selectedDID) return selectedDID;
+    if (!selectedDIDPrivKey || !selectedDIDETHAWalletAddr) {
+        throw new Error(
+            'CAVS DID identity is not configured; set CAVS_DID_PRIVATE_KEY_FILE '
+            + '(recommended) or CAVS_DID_PRIVATE_KEY',
+        );
+    }
+    if (selectedDidAttemptInFlight) return await selectedDidAttemptInFlight;
+
+    const attempt = (async () => {
+        const response = await axios.post(
+            `${veramoAgentEndpoint}/api/v0/setup/`,
+            {
+                privatekey: selectedDIDWallet.privateKey.slice(2),
+                walletaddr: selectedDIDETHAWalletAddr,
+            },
+            { timeout: didSetupRequestTimeoutMs },
+        );
+        const did = normalizeOptionalString(response.data?.did);
+        if (!did) {
+            throw new Error('Veramo DID setup returned no DID');
+        }
+        selectedDID = did;
+        console.log('Our DID:', selectedDID);
+        return selectedDID;
+    })();
+    selectedDidAttemptInFlight = attempt;
+    try {
+        return await attempt;
+    } finally {
+        if (selectedDidAttemptInFlight === attempt) {
+            selectedDidAttemptInFlight = null;
         }
     }
 }
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function fetchDIDWithRetry() {
+    if (selectedDID) return selectedDID;
+    if (selectedDidWarmupInFlight) return await selectedDidWarmupInFlight;
+
+    const warmup = (async () => {
+        while (!selectedDID) {
+            try {
+                await ensureSelectedDidOnce();
+            } catch (error) {
+                console.error('Error fetching credentials:', error.message);
+                await sleep(startupRetryDelayMs);
+            }
+        }
+        return selectedDID;
+    })();
+    selectedDidWarmupInFlight = warmup;
+    try {
+        return await warmup;
+    } finally {
+        if (selectedDidWarmupInFlight === warmup) {
+            selectedDidWarmupInFlight = null;
+        }
+    }
+}
 
 // --- OCR/Veramo identity setup (BLS keys etc) ---
 const ocrSignerByOracleId = new Map(); // oracleId -> {did,kid_bls,kid_eth,bls_pub_key}
 const ocrSignerSetupInFlight = new Map(); // oracleId -> Promise<identity>
 let ocrSignerWarmupStarted = false;
+const remoteSignerIdentityCache = new Map();
+
+function setBoundedCacheEntry(cache, key, value, maxEntries) {
+    cache.delete(key);
+    cache.set(key, value);
+    while (cache.size > maxEntries) {
+        cache.delete(cache.keys().next().value);
+    }
+}
 
 async function ensureOcrSignerIdentity(oracleId) {
-    if (!Number.isInteger(oracleId) || oracleId < 0) {
+    if (!Number.isInteger(oracleId) || oracleId < 0 || oracleId > 255) {
         throw new Error(`Invalid oracleId ${oracleId}`);
     }
     const existing = ocrSignerByOracleId.get(oracleId);
@@ -752,7 +1097,7 @@ async function ensureOcrSignerIdentity(oracleId) {
         const resp = await axios.post(
             `${veramoAgentEndpoint}/setup`,
             { name },
-            { timeout: 65000 },
+            { timeout: ocrVcLocalRequestTimeoutMs },
         );
         const did = resp.data?.did;
         const kid_bls = resp.data?.kid_bls;
@@ -789,23 +1134,36 @@ async function warmupOcrSignerIdentitiesForever() {
             return;
         } catch (err) {
             console.error('OCR signer warmup failed, retrying:', err?.message || err);
-            await sleep(5000);
+            await sleep(startupRetryDelayMs);
         }
     }
 }
 
+const ocrSimulationMode = /^(1|true|yes|on)$/i.test(
+    String(process.env.OCR_SIMULATION_MODE || '').trim(),
+);
+
 const configureApp = async () => {
     try {
         // Do not block server startup on Veramo; warm up in background.
-        void fetchDIDWithRetry();
         void warmupOcrSignerIdentitiesForever();
-        // Warm up ESCO index in background; competence endpoint can still fallback.
-        void getEscoIndex().catch((err) => {
-            if (!escoUnavailableWarned) {
-                console.warn(`ESCO index unavailable (${escoFilePath}):`, err?.message || err);
-                escoUnavailableWarned = true;
-            }
-        });
+        if (ocrSimulationMode) {
+            // Deterministic OCR observations never call the competence path.
+            // The OCR signer warmup above also establishes selectedDID, so the
+            // legacy private-key DID warmup would be duplicate startup work.
+            // Keep its on-demand path available for endpoints that explicitly
+            // request that identity.
+            console.log('OCR simulation mode: skipping duplicate DID and unused ESCO warmups');
+        } else {
+            void fetchDIDWithRetry();
+            // Warm up ESCO in the background; competence can still fallback.
+            void getEscoIndex().catch((err) => {
+                if (!escoUnavailableWarned) {
+                    console.warn(`ESCO index unavailable (${escoFilePath}):`, err?.message || err);
+                    escoUnavailableWarned = true;
+                }
+            });
+        }
     } catch (error) {
         console.error('Error during startup setup:', error?.message || error);
     }
@@ -821,6 +1179,325 @@ const normalizeSigner = (s) => {
     return { did, kid_bls, kid_eth, bls_pub };
 };
 
+function signerPublicIdentity(identity) {
+    return {
+        did: identity.did,
+        kid_bls: identity.kid_bls,
+        kid_eth: identity.kid_eth || '',
+        bls_pub_key: identity.bls_pub_key,
+    };
+}
+
+function parseVcThreshold(body, fallbackThreshold) {
+    const raw =
+        body.threshold ??
+        body.attestedThreshold ??
+        body.attested_threshold ??
+        body.signerThreshold ??
+        body.signer_threshold;
+    const parsed = parseInt(String(raw ?? ''), 10);
+    if (Number.isInteger(parsed) && parsed > 0) {
+        return parsed;
+    }
+    return fallbackThreshold;
+}
+
+function parseSignerEndpoints(raw) {
+    if (!Array.isArray(raw)) return [];
+    const endpoints = Array.from(
+        new Set(
+            raw
+                .map((entry) => normalizeOptionalString(
+                    typeof entry === 'string'
+                        ? entry
+                        : entry?.endpoint || entry?.url || entry?.baseUrl,
+                ))
+                .filter(Boolean)
+                .map((endpoint) => endpoint.replace(/\/+$/, '')),
+        ),
+    );
+    if (endpoints.length > ocrMaxRemoteEndpoints) {
+        const error = new Error(
+            `too many OCR endpoints (${endpoints.length} > ${ocrMaxRemoteEndpoints})`,
+        );
+        error.statusCode = 400;
+        throw error;
+    }
+    return endpoints;
+}
+
+function parseCallbackEndpoints(raw) {
+    return parseSignerEndpoints(raw);
+}
+
+function axiosErrorDetail(error) {
+    const data = error?.response?.data;
+    if (typeof data === 'string') return data;
+    if (data?.error || data?.detail) return data.error || data.detail;
+    return error?.message || String(error);
+}
+
+async function fetchRemoteSignerIdentity(endpoint) {
+    const now = Date.now();
+    const cached = remoteSignerIdentityCache.get(endpoint);
+    if (remoteSignerIdentityCacheTtlMs > 0 && cached && cached.expiresAt > now) {
+        return cached.value;
+    }
+
+    const pending = (async () => {
+        const response = await axios.post(
+            `${endpoint}/ocr/vc/signer_identity`,
+            {},
+            { timeout: ocrVcSignerRequestTimeoutMs },
+        );
+        const identity = response.data || {};
+        if (!identity.did || !identity.kid_bls || !identity.bls_pub_key) {
+            throw new Error(`signer endpoint ${endpoint} identity response is missing DID/BLS fields`);
+        }
+        return {
+            endpoint,
+            did: identity.did,
+            kid_bls: identity.kid_bls,
+            kid_eth: identity.kid_eth || '',
+            bls_pub_key: identity.bls_pub_key,
+        };
+    })();
+    if (remoteSignerIdentityCacheTtlMs > 0) {
+        setBoundedCacheEntry(
+            remoteSignerIdentityCache,
+            endpoint,
+            { expiresAt: now + remoteSignerIdentityCacheTtlMs, value: pending },
+            remoteSignerIdentityCacheMaxEntries,
+        );
+    }
+    try {
+        return await pending;
+    } catch (error) {
+        if (remoteSignerIdentityCache.get(endpoint)?.value === pending) {
+            remoteSignerIdentityCache.delete(endpoint);
+        }
+        throw error;
+    }
+}
+
+async function resolveRemoteSignerPool(endpoints, threshold) {
+    const settled = await Promise.allSettled(endpoints.map((endpoint) => fetchRemoteSignerIdentity(endpoint)));
+    const available = [];
+    const unavailable = [];
+    settled.forEach((result, index) => {
+        const endpoint = endpoints[index];
+        if (result.status === 'fulfilled') {
+            available.push(result.value);
+        } else {
+            unavailable.push({
+                endpoint,
+                error: axiosErrorDetail(result.reason),
+            });
+        }
+    });
+    if (available.length < threshold) {
+        const error = new Error(
+            `not enough live signer endpoints for VC threshold: available=${available.length} threshold=${threshold}`,
+        );
+        error.statusCode = 503;
+        error.available = available;
+        error.unavailable = unavailable;
+        throw error;
+    }
+    return { available, unavailable };
+}
+
+async function requestRemoteVcSignature(signer, payload, holderDid) {
+    const response = await axios.post(
+        `${signer.endpoint}/ocr/vc/sign`,
+        {
+            holderDid,
+            payload,
+        },
+        { timeout: ocrVcSignerRequestTimeoutMs },
+    );
+    const signature = response.data?.signature;
+    const proofOfOwnership = response.data?.proofOfOwnership;
+    if (!signature || !proofOfOwnership) {
+        throw new Error(`signer endpoint ${signer.endpoint} did not return signature and proof`);
+    }
+    return {
+        endpoint: signer.endpoint,
+        signature,
+        proofOfOwnership,
+    };
+}
+
+async function buildAndFinalizeOcrVc({
+    holder,
+    statementHash,
+    competent,
+    confidence,
+    reason,
+    selectedSigners,
+}) {
+    const keys = selectedSigners.map((s) => s.bls_pub_key);
+    const aggResp = await axios.post(
+        `${veramoAgentEndpoint}/bls/aggregate`,
+        { keys },
+        { timeout: ocrVcLocalRequestTimeoutMs },
+    );
+    const aggregatedKey = aggResp.data?.aggregatedKey;
+    if (!aggregatedKey) throw new Error('missing aggregatedKey from veramo');
+
+    const issuerEntries = selectedSigners.map((s) => ({ did: s.did, kid_bls: s.kid_bls }));
+    const issuerDIDs = selectedSigners.map((s) => s.did);
+    const payload = {
+        '@context': ['https://www.w3.org/2018/credentials/v1'],
+        type: ['VerifiableCredential', 'aggregated-bls-multi-signature'],
+        multi_issuers: issuerDIDs,
+        aggregated_bls_public_key: aggregatedKey,
+        credentialSubject: {
+            id: holder,
+            statementHash,
+            competent,
+            confidence,
+            reason,
+        },
+        issuanceDate: new Date().toISOString(),
+    };
+
+    const signResults = await Promise.allSettled(
+        selectedSigners.map((signer) => requestRemoteVcSignature(signer, payload, holder)),
+    );
+    const failedSigners = [];
+    const signatures = [];
+    const proofsOfOwnership = [];
+    signResults.forEach((result, index) => {
+        const signer = selectedSigners[index];
+        if (result.status === 'fulfilled') {
+            signatures.push(result.value.signature);
+            proofsOfOwnership.push(result.value.proofOfOwnership);
+        } else {
+            failedSigners.push({
+                endpoint: signer.endpoint,
+                error: axiosErrorDetail(result.reason),
+            });
+        }
+    });
+    if (failedSigners.length > 0) {
+        const error = new Error(`VC signing failed for ${failedSigners.length} selected signer(s)`);
+        error.statusCode = 503;
+        error.failedSigners = failedSigners;
+        throw error;
+    }
+
+    const finalResp = await axios.post(
+        `${veramoAgentEndpoint}/mi-vc/finalize`,
+        { payload, signatures, aggregatedKey, proofsOfOwnership, store: false },
+        { timeout: ocrVcLocalRequestTimeoutMs },
+    );
+    const vc = finalResp.data?.vc;
+    if (!vc) throw new Error('missing vc from veramo');
+    return { vc, aggregatedKey, signatures, proofsOfOwnership };
+}
+
+async function buildAndFinalizeLocalOcrVc({
+    holder,
+    statementHash,
+    competent,
+    confidence,
+    reason,
+    resolvedSigners,
+}) {
+    const keys = resolvedSigners.map((s) => s.bls_pub_key);
+    const aggResp = await axios.post(
+        `${veramoAgentEndpoint}/bls/aggregate`,
+        { keys },
+        { timeout: ocrVcLocalRequestTimeoutMs },
+    );
+    const aggregatedKey = aggResp.data?.aggregatedKey;
+    if (!aggregatedKey) throw new Error('missing aggregatedKey from veramo');
+
+    const issuerEntries = resolvedSigners.map((s) => ({ did: s.did, kid_bls: s.kid_bls }));
+    const issuerDIDs = resolvedSigners.map((s) => s.did);
+    const payload = {
+        '@context': ['https://www.w3.org/2018/credentials/v1'],
+        type: ['VerifiableCredential', 'aggregated-bls-multi-signature'],
+        multi_issuers: issuerDIDs,
+        aggregated_bls_public_key: aggregatedKey,
+        credentialSubject: {
+            id: holder,
+            statementHash,
+            competent,
+            confidence,
+            reason,
+        },
+        issuanceDate: new Date().toISOString(),
+    };
+
+    const [signResp, proofResp] = await Promise.all([
+        axios.post(
+            `${veramoAgentEndpoint}/mi-vc/sign`,
+            { issuers: issuerEntries, payload },
+            { timeout: ocrVcLocalRequestTimeoutMs },
+        ),
+        axios.post(
+            `${veramoAgentEndpoint}/mi-vc/proofs`,
+            { issuers: issuerEntries, holder_did: holder, payload },
+            { timeout: ocrVcLocalRequestTimeoutMs },
+        ),
+    ]);
+    const signatures = signResp.data?.signatures;
+    if (!signatures) throw new Error('missing signatures from veramo');
+
+    const proofsOfOwnership = proofResp.data?.proofsOfOwnership;
+    if (!proofsOfOwnership) throw new Error('missing proofsOfOwnership from veramo');
+
+    const finalResp = await axios.post(
+        `${veramoAgentEndpoint}/mi-vc/finalize`,
+        { payload, signatures, aggregatedKey, proofsOfOwnership, store: false },
+        { timeout: ocrVcLocalRequestTimeoutMs },
+    );
+    const vc = finalResp.data?.vc;
+    if (!vc) throw new Error('missing vc from veramo');
+    return { vc, aggregatedKey, signatures, proofsOfOwnership };
+}
+
+async function postFinalVcCallback(callbackEndpoint, requesterEndpoint, result, vc) {
+    const response = await axios.post(
+        `${callbackEndpoint}/ocr/vc/final_callback`,
+        {
+            requesterEndpoint,
+            result,
+            vc,
+        },
+        { timeout: ocrVcCallbackTimeoutMs },
+    );
+    return response.data || {};
+}
+
+async function fanoutFinalVcCallbacks({ callbackEndpoints, requesterEndpoint, result, vc }) {
+    if (!Array.isArray(callbackEndpoints) || callbackEndpoints.length === 0 || !requesterEndpoint) {
+        return { callbackSuccesses: 0, callbackFailures: 0, callbackFailedEndpoints: [] };
+    }
+    const settled = await Promise.allSettled(
+        callbackEndpoints.map((endpoint) => postFinalVcCallback(endpoint, requesterEndpoint, result, vc)),
+    );
+    const callbackFailedEndpoints = [];
+    let callbackSuccesses = 0;
+    settled.forEach((entry, index) => {
+        if (entry.status === 'fulfilled') {
+            callbackSuccesses += 1;
+        } else {
+            callbackFailedEndpoints.push({
+                endpoint: callbackEndpoints[index],
+                error: axiosErrorDetail(entry.reason),
+            });
+        }
+    });
+    return {
+        callbackSuccesses,
+        callbackFailures: callbackFailedEndpoints.length,
+        callbackFailedEndpoints,
+    };
+}
+
 async function resolveDidIdentityViaVeramo(did, verificationMethodId) {
     const normalizedDid = String(did || '').trim();
     if (!normalizedDid) {
@@ -832,7 +1509,7 @@ async function resolveDidIdentityViaVeramo(did, verificationMethodId) {
             did: normalizedDid,
             verificationMethodId: verificationMethodId ? String(verificationMethodId).trim() : undefined,
         },
-        { timeout: 65000 },
+        { timeout: ocrVcLocalRequestTimeoutMs },
     );
     const eth_address = String(resp.data?.eth_address || resp.data?.address || '').trim();
     if (!eth_address) {
@@ -918,7 +1595,7 @@ app.post('/message/sign', bodyParser.json(), async (req, res) => {
         const signResp = await axios.post(
             `${veramoAgentEndpoint}/ocr/eth/sign`,
             { kid_eth: identity.kid_eth, digestHex },
-            { timeout: 65000 },
+            { timeout: ocrVcLocalRequestTimeoutMs },
         );
         const signatureHex = signResp.data?.signatureHex;
         if (!signatureHex) {
@@ -962,7 +1639,7 @@ app.post('/message/verify', bodyParser.json(), async (req, res) => {
                 did,
                 verificationMethodId,
             },
-            { timeout: 65000 },
+            { timeout: ocrVcLocalRequestTimeoutMs },
         );
         res.json({
             ok: !!verifyResp.data?.ok,
@@ -978,6 +1655,17 @@ app.post('/message/verify', bodyParser.json(), async (req, res) => {
     }
 });
 
+registerOcrOracleRegistryRoutes(app, {
+    ensureOcrSignerIdentity,
+    normalizeOptionalString,
+    parseOracleIdLike,
+    resolveDidIdentityViaVeramo,
+    veramoAgentEndpoint,
+});
+registerAuthorOracleRequestRoutes(app, {
+    veramoAgentEndpoint,
+});
+
 // OCR setup endpoint:
 // - lets an orchestrator pre-register signers (optional)
 // - otherwise triggers background warmup without returning key material
@@ -988,8 +1676,8 @@ app.post('/ocr/veramo/setup', bodyParser.json(), async (req, res) => {
     if (!Number.isInteger(oracleId) && typeof name === 'string' && /^oracle\\d+$/.test(name)) {
         oracleId = parseInt(name.replace(/^oracle/, ''), 10);
     }
-    if (!Number.isInteger(oracleId) || oracleId < 0) {
-        return res.status(400).json({ error: 'missing oracleId (or name like oracle0)' });
+    if (!Number.isInteger(oracleId) || oracleId < 0 || oracleId > 255) {
+        return res.status(400).json({ error: 'oracleId must be an integer from 0 to 255 (or name like oracle0)' });
     }
 
     const provided = {
@@ -1014,9 +1702,86 @@ app.post('/ocr/veramo/setup', bodyParser.json(), async (req, res) => {
     res.json({ ok: true, source: 'warmup', ready: !!ocrSignerByOracleId.get(oracleId) });
 });
 
+app.post('/ocr/vc/signer_identity', bodyParser.json(), async (req, res) => {
+    try {
+        const identity = await ensureLocalSignerIdentity();
+        res.json({ ok: true, ...signerPublicIdentity(identity) });
+    } catch (error) {
+        console.error('Error in /ocr/vc/signer_identity:', error?.response?.data || error?.message || error);
+        res.status(502).json({ ok: false, error: String(error?.response?.data?.error || error?.message || error) });
+    }
+});
+
+app.post('/ocr/vc/sign', bodyParser.json({ limit: HTTP_BODY_LIMIT }), async (req, res) => {
+    try {
+        const holderDid = normalizeOptionalString(req.body?.holderDid || req.body?.holder_did);
+        const payload = req.body?.payload;
+        if (!holderDid) return res.status(400).json({ ok: false, error: 'missing holderDid' });
+        if (!payload || typeof payload !== 'object') return res.status(400).json({ ok: false, error: 'missing payload' });
+
+        const identity = await ensureLocalSignerIdentity();
+        const issuer = { did: identity.did, kid_bls: identity.kid_bls };
+        const [signResp, proofResp] = await Promise.all([
+            axios.post(
+                `${veramoAgentEndpoint}/mi-vc/sign`,
+                { issuers: [issuer], payload },
+                { timeout: ocrVcLocalRequestTimeoutMs },
+            ),
+            axios.post(
+                `${veramoAgentEndpoint}/mi-vc/proofs`,
+                { issuers: [issuer], holder_did: holderDid, payload },
+                { timeout: ocrVcLocalRequestTimeoutMs },
+            ),
+        ]);
+        const signature = Array.isArray(signResp.data?.signatures)
+            ? signResp.data.signatures[0]
+            : null;
+        const proofOfOwnership = Array.isArray(proofResp.data?.proofsOfOwnership)
+            ? proofResp.data.proofsOfOwnership[0]
+            : null;
+        if (!signature) return res.status(502).json({ ok: false, error: 'missing signature from veramo' });
+        if (!proofOfOwnership) return res.status(502).json({ ok: false, error: 'missing proofOfOwnership from veramo' });
+        res.json({
+            ok: true,
+            issuer,
+            bls_pub_key: identity.bls_pub_key,
+            signature,
+            proofOfOwnership,
+        });
+    } catch (error) {
+        console.error('Error in /ocr/vc/sign:', error?.response?.data || error?.message || error);
+        res.status(502).json({ ok: false, error: String(error?.response?.data?.error || error?.message || error) });
+    }
+});
+
+app.post('/ocr/vc/final_callback', bodyParser.json({ limit: HTTP_BODY_LIMIT }), async (req, res) => {
+    try {
+        const requesterEndpoint = normalizeOptionalString(req.body?.requesterEndpoint);
+        const result = req.body?.result && typeof req.body.result === 'object' ? req.body.result : {};
+        const vc = req.body?.vc;
+        if (!requesterEndpoint) return res.status(400).json({ ok: false, error: 'missing requesterEndpoint' });
+        if (!vc) return res.status(400).json({ ok: false, error: 'missing vc' });
+
+        await axios.post(
+            requesterEndpoint,
+            { ...result, vc },
+            { timeout: ocrRequesterCallbackTimeoutMs },
+        );
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Error in /ocr/vc/final_callback:', error?.response?.data || error?.message || error);
+        res.status(error?.response?.status || 502).json({
+            ok: false,
+            error: 'final VC callback failed',
+            detail: error?.response?.data || error?.message || error,
+        });
+    }
+});
+
 // Issue a VC for an OCR outcome using Veramo via CAVS service.
 app.post('/ocr/vc', bodyParser.json(), async (req, res) => {
     try {
+        const vcStartedAtMs = Date.now();
         const body = req.body || {};
         const statementHash = typeof body.statementHash === 'string' ? body.statementHash.trim() : '';
         const holderDid = body.holderDid;
@@ -1033,94 +1798,144 @@ app.post('/ocr/vc', bodyParser.json(), async (req, res) => {
         }
         if (!statementHash) return res.status(400).json({ error: 'missing statementHash' });
 
-        let resolvedSigners = [];
-        const signerOracleIDsRaw = body.signerOracleIDs ?? body.signerOracleIds ?? body.signer_oracle_ids;
-        if (Array.isArray(signerOracleIDsRaw) && signerOracleIDsRaw.length > 0) {
-            void warmupOcrSignerIdentitiesForever();
-            const ids = Array.from(
-                new Set(
-                    signerOracleIDsRaw
-                        .map((x) => parseInt(String(x), 10))
-                        .filter((x) => Number.isInteger(x) && x >= 0),
-                ),
-            ).sort((a, b) => a - b);
-            if (ids.length === 0) return res.status(400).json({ error: 'no valid signerOracleIDs' });
+        const holder = holderDid.trim();
+        const requesterEndpoint = normalizeOptionalString(body.requesterEndpoint);
+        const callbackEndpoints = parseCallbackEndpoints(body.callbackEndpoints ?? body.callback_endpoints);
+        const callbackResult = body.result && typeof body.result === 'object'
+            ? body.result
+            : {
+                requestId: body.requestId,
+                statementHash,
+                holderDid: holder,
+                competent,
+                confidence,
+                reason,
+            };
+        const signerEndpoints = parseSignerEndpoints(body.signerEndpoints ?? body.signer_endpoints);
+        if (signerEndpoints.length > 0) {
+            const threshold = parseVcThreshold(body, signerEndpoints.length);
+            const useRemoteSigners = body.remoteSigners === undefined
+                ? ocrVcRemoteSignersDefault
+                : parseBooleanLoose(body.remoteSigners);
 
-            for (const id of ids) {
-                resolvedSigners.push(await ensureOcrSignerIdentity(id));
+            if (useRemoteSigners) {
+                const { available, unavailable } = await resolveRemoteSignerPool(signerEndpoints, threshold);
+                let candidateSigners = available;
+                const signingFailures = [];
+
+                while (candidateSigners.length >= threshold) {
+                    const selectedSigners = candidateSigners.slice(0, threshold);
+                    try {
+                        const finalized = await buildAndFinalizeOcrVc({
+                            holder,
+                            statementHash,
+                            competent,
+                            confidence,
+                            reason,
+                            selectedSigners,
+                        });
+                        const selectedEndpoints = selectedSigners.map((s) => s.endpoint);
+                        const selectedSet = new Set(selectedEndpoints);
+                        const droppedSignerEndpoints = signerEndpoints.filter((endpoint) => !selectedSet.has(endpoint));
+                        console.log(
+                            `OCR_VC_MINT requestId=${body.requestId || ''} selectedEndpoints=${selectedEndpoints.join(',')} ` +
+                            `threshold=${threshold} droppedEndpoints=${droppedSignerEndpoints.join(',') || '-'} ` +
+                            `unavailableEndpoints=${unavailable.map((s) => s.endpoint).join(',') || '-'}`
+                        );
+                        const callbackFanout = await fanoutFinalVcCallbacks({
+                            callbackEndpoints,
+                            requesterEndpoint,
+                            result: callbackResult,
+                            vc: finalized.vc,
+                        });
+                        return res.json({
+                            ok: true,
+                            vc: finalized.vc,
+                            vcMinted: true,
+                            vcMintStatus: 'minted',
+                            vcMintDurationMs: Date.now() - vcStartedAtMs,
+                            signerEndpoints: selectedEndpoints,
+                            droppedSignerEndpoints,
+                            unavailableSignerEndpoints: unavailable.map((s) => s.endpoint),
+                            threshold,
+                            ...callbackFanout,
+                        });
+                    } catch (error) {
+                        const failed = Array.isArray(error.failedSigners) ? error.failedSigners : [];
+                        if (failed.length === 0) throw error;
+                        signingFailures.push(...failed);
+                        const failedEndpoints = new Set(failed.map((s) => s.endpoint));
+                        for (const endpoint of failedEndpoints) {
+                            remoteSignerIdentityCache.delete(endpoint);
+                        }
+                        candidateSigners = candidateSigners.filter((s) => !failedEndpoints.has(s.endpoint));
+                    }
+                }
+
+                const error = new Error(
+                    `not enough signer endpoints after VC signing failures: available=${candidateSigners.length} threshold=${threshold}`,
+                );
+                error.statusCode = 503;
+                error.failedSigners = signingFailures;
+                throw error;
             }
+
+            return res.status(400).json({ error: 'remoteSigners=false requires explicit signers[] material' });
         } else if (Array.isArray(body.signers) && body.signers.length > 0) {
             // Backwards-compatible: accept explicit signer material (not recommended for OCR).
+            if (body.signers.length > ocrMaxVcSigners) {
+                return res.status(400).json({
+                    error: `too many explicit signers (${body.signers.length} > ${ocrMaxVcSigners})`,
+                });
+            }
             const normalized = body.signers
                 .map(normalizeSigner)
                 .filter((s) => s.did && s.kid_bls && s.bls_pub);
             if (normalized.length === 0) return res.status(400).json({ error: 'no valid signers' });
-            resolvedSigners = normalized.map((s) => ({
+            const resolvedSigners = normalized.map((s) => ({
                 did: s.did,
                 kid_bls: s.kid_bls,
                 kid_eth: s.kid_eth || '',
                 bls_pub_key: s.bls_pub,
             }));
-        } else {
-            return res.status(400).json({ error: 'missing signers (use signerOracleIDs[])' });
-        }
-
-        const keys = resolvedSigners.map((s) => s.bls_pub_key);
-        const aggResp = await axios.post(
-            `${veramoAgentEndpoint}/bls/aggregate`,
-            { keys },
-            { timeout: 65000 },
-        );
-        const aggregatedKey = aggResp.data?.aggregatedKey;
-        if (!aggregatedKey) return res.status(502).json({ error: 'missing aggregatedKey from veramo' });
-
-        const issuerEntries = resolvedSigners.map((s) => ({ did: s.did, kid_bls: s.kid_bls }));
-        const issuerDIDs = resolvedSigners.map((s) => s.did);
-        const holder = holderDid.trim();
-
-        const payload = {
-            '@context': ['https://www.w3.org/2018/credentials/v1'],
-            type: ['VerifiableCredential', 'aggregated-bls-multi-signature'],
-            multi_issuers: issuerDIDs,
-            aggregated_bls_public_key: aggregatedKey,
-            credentialSubject: {
-                id: holder,
+            const finalized = await buildAndFinalizeLocalOcrVc({
+                holder,
                 statementHash,
                 competent,
                 confidence,
                 reason,
-            },
-            issuanceDate: new Date().toISOString(),
-        };
-
-        const signResp = await axios.post(
-            `${veramoAgentEndpoint}/mi-vc/sign`,
-            { issuers: issuerEntries, payload },
-            { timeout: 65000 },
-        );
-        const signatures = signResp.data?.signatures;
-        if (!signatures) return res.status(502).json({ error: 'missing signatures from veramo' });
-
-        const proofResp = await axios.post(
-            `${veramoAgentEndpoint}/mi-vc/proofs`,
-            { issuers: issuerEntries, holder_did: holder, payload },
-            { timeout: 65000 },
-        );
-        const proofsOfOwnership = proofResp.data?.proofsOfOwnership;
-        if (!proofsOfOwnership) return res.status(502).json({ error: 'missing proofsOfOwnership from veramo' });
-
-        const finalResp = await axios.post(
-            `${veramoAgentEndpoint}/mi-vc/finalize`,
-            { payload, signatures, aggregatedKey, proofsOfOwnership, store: true },
-            { timeout: 65000 },
-        );
-        const vc = finalResp.data?.vc;
-        if (!vc) return res.status(502).json({ error: 'missing vc from veramo' });
-
-        res.json({ vc });
+                resolvedSigners,
+            });
+            const callbackFanout = await fanoutFinalVcCallbacks({
+                callbackEndpoints,
+                requesterEndpoint,
+                result: callbackResult,
+                vc: finalized.vc,
+            });
+            return res.json({
+                ok: true,
+                vc: finalized.vc,
+                vcMinted: true,
+                vcMintStatus: 'minted',
+                vcMintDurationMs: Date.now() - vcStartedAtMs,
+                signerEndpoints: [],
+                droppedSignerEndpoints: [],
+                unavailableSignerEndpoints: [],
+                threshold: resolvedSigners.length,
+                ...callbackFanout,
+            });
+        } else {
+            return res.status(400).json({ error: 'missing signers (use signerEndpoints[] or explicit signers[])' });
+        }
     } catch (error) {
         console.error('Error in /ocr/vc', error?.response?.data || error?.message);
-        res.status(502).json({ error: 'vc issuance failed', detail: error?.response?.data || error?.message });
+        res.status(error.statusCode || 502).json({
+            error: 'vc issuance failed',
+            detail: error?.response?.data || error?.message,
+            availableSignerEndpoints: Array.isArray(error.available) ? error.available.map((s) => s.endpoint) : undefined,
+            unavailableSignerEndpoints: Array.isArray(error.unavailable) ? error.unavailable.map((s) => s.endpoint) : undefined,
+            failedSignerEndpoints: Array.isArray(error.failedSigners) ? error.failedSigners.map((s) => s.endpoint) : undefined,
+        });
     }
 });
 
@@ -1270,7 +2085,13 @@ app.get("/api_enricher", (req, res) => {
 
 app.get("/api_competence_mode", (req, res) => {
     res.json({
-        competence_modes: [ROBERTA_TO_NESTA_MODE_LABEL, GPT_COMPETENCE_MODE_LABEL],
+        competence_modes: [
+            ROBERTA_TO_NESTA_MODE_LABEL,
+            GPT_COMPETENCE_MODE_LABEL,
+            AZURE_OPENAI_COMPETENCE_MODE_LABEL,
+            QWEN_COMPETENCE_MODE_LABEL,
+            DEEPSEEK_COMPETENCE_MODE_LABEL,
+        ],
         selectedCompetenceMode: formatCompetenceModeForUi(selectedCompetenceMode),
     });
 });
@@ -1294,19 +2115,315 @@ app.get("/api/pipeline_config", (req, res) => {
 });
 
 app.post("/api/pipeline_config", (req, res) => {
-    deepMerge(pipelineConfig, req.body || {});
-    savePipelineConfig();
-    res.json(pipelineConfig);
+    try {
+        const updated = structuredClone(pipelineConfig);
+        deepMerge(updated, req.body || {});
+        savePipelineConfig(updated);
+        pipelineConfig = updated;
+        res.json(pipelineConfig);
+    } catch (error) {
+        console.error('Error saving pipeline config:', error?.message || error);
+        res.status(500).json({ error: 'failed to save pipeline config' });
+    }
 });
+
+function parseAuthorSkillPair(label, uri) {
+    const normalizedLabel = normalizeOptionalString(label);
+    const normalizedUri = normalizeOptionalString(uri);
+    if (!normalizedLabel || !normalizedUri) return null;
+    return { label: normalizedLabel, uri: normalizedUri };
+}
+
+function parseAuthorSkillValue(value) {
+    if (!value) return null;
+    if (Array.isArray(value)) {
+        return parseAuthorSkillPair(value[0], value[1]);
+    }
+    if (typeof value === "object") {
+        return parseAuthorSkillPair(
+            value.label || value.name || value.skill || value.match_skill || value[0],
+            value.uri || value.id || value.match_id || value.skill_id || value[1],
+        );
+    }
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) return null;
+        if (trimmed.includes("|")) {
+            const [label, ...rest] = trimmed.split("|");
+            return parseAuthorSkillPair(label, rest.join("|"));
+        }
+        const httpIndex = trimmed.search(/https?:\/\//i);
+        if (httpIndex > 0) {
+            return parseAuthorSkillPair(trimmed.slice(0, httpIndex), trimmed.slice(httpIndex));
+        }
+    }
+    return null;
+}
+
+function extractAuthorSkillsFromVerifiedCredentials(credentials) {
+    const unique = new Map();
+    for (const credential of credentials || []) {
+        const subject = credential?.credentialSubject || credential?.vc?.credentialSubject;
+        const skills = subject?.skills;
+        if (!skills) continue;
+
+        const values = Array.isArray(skills)
+            ? skills
+            : typeof skills === "object"
+                ? Object.values(skills)
+                : [skills];
+        for (const value of values) {
+            const parsed = parseAuthorSkillValue(value);
+            if (parsed) {
+                unique.set(`${parsed.label}|${parsed.uri}`, parsed);
+            }
+        }
+    }
+    return [...unique.values()];
+}
+
+function embeddedCredentialsFromPresentation(presentation) {
+    const raw =
+        presentation?.verifiableCredential ||
+        presentation?.vp?.verifiableCredential ||
+        presentation?.presentation?.verifiableCredential ||
+        [];
+    if (!raw) return [];
+    return Array.isArray(raw) ? raw : [raw];
+}
+
+function presentationHolder(presentation) {
+    return normalizeOptionalString(
+        presentation?.holder ||
+        presentation?.vp?.holder ||
+        presentation?.presentation?.holder ||
+        presentation?.iss,
+    ) || "";
+}
+
+function credentialSubjectId(credential) {
+    const subject = credential?.credentialSubject || credential?.vc?.credentialSubject || {};
+    const id = Array.isArray(subject) ? subject[0]?.id : subject.id;
+    return normalizeOptionalString(id) || "";
+}
+
+function isVerifiedResponse(payload) {
+    return Boolean(payload?.verified ?? payload?.res ?? payload?.result?.verified);
+}
+
+async function decodeJwtArtifact(jwt) {
+    // JWT presentations can exceed common request-line limits by tens of KB.
+    // Keep the artifact in the request body, matching the benchmark issuer flow.
+    const response = await axios.post(
+        `${veramoAgentEndpoint}/decode_jwt`,
+        { jwt },
+        { timeout: ocrVerificationRequestTimeoutMs },
+    );
+    return response.data;
+}
+
+async function normalizeCredentialForVerification(credential) {
+    if (typeof credential === "string") {
+        return await decodeJwtArtifact(credential);
+    }
+    if (credential?.proof?.jwt && !credential.credentialSubject) {
+        return await decodeJwtArtifact(credential.proof.jwt);
+    }
+    if (credential?.verifiableCredential) {
+        return await normalizeCredentialForVerification(credential.verifiableCredential);
+    }
+    return credential;
+}
+
+async function verifyPresentationAndExtractAuthorSkills(presentation, holderDid) {
+    if (!presentation || typeof presentation !== "object") {
+        return { ok: false, reason: "vp verification failed: missing presentation" };
+    }
+    let decodedPresentation = null;
+    if (presentation?.proof?.jwt) {
+        try {
+            decodedPresentation = await decodeJwtArtifact(presentation.proof.jwt);
+        } catch (_error) {
+            decodedPresentation = null;
+        }
+    }
+    const presentationForExtraction = decodedPresentation || presentation;
+    const expectedHolder = normalizeOptionalString(holderDid) || "";
+    if (!expectedHolder) {
+        return { ok: false, reason: "vp verification failed: missing holderDid" };
+    }
+
+    const holder = presentationHolder(presentation) || presentationHolder(presentationForExtraction);
+    if (!holder || holder !== expectedHolder) {
+        return { ok: false, reason: "vp verification failed: holder mismatch" };
+    }
+
+    try {
+        const vpVerification = await axios.post(
+            `${veramoAgentEndpoint}/verify/vp`,
+            { vp: presentation },
+            { timeout: ocrVerificationRequestTimeoutMs, headers: { "Content-Type": "application/json" } },
+        );
+        if (!isVerifiedResponse(vpVerification.data)) {
+            const verifierDetail = JSON.stringify(vpVerification.data || {});
+            return { ok: false, reason: `vp verification failed: ${verifierDetail}` };
+        }
+    } catch (error) {
+        const detail = error?.response?.data?.error || error?.response?.data?.message || error?.message || error;
+        return { ok: false, reason: `vp verification failed: ${detail}` };
+    }
+
+    const rawCredentials = embeddedCredentialsFromPresentation(presentationForExtraction);
+    if (!rawCredentials.length) {
+        return { ok: false, reason: "embedded vc verification failed: no embedded credentials" };
+    }
+    if (rawCredentials.length > ocrMaxEmbeddedCredentials) {
+        return {
+            ok: false,
+            reason: `embedded vc verification failed: too many credentials (${rawCredentials.length} > ${ocrMaxEmbeddedCredentials})`,
+        };
+    }
+
+    const verifiedCredentials = [];
+    for (const rawCredential of rawCredentials) {
+        let credential;
+        try {
+            credential = await normalizeCredentialForVerification(rawCredential);
+        } catch (error) {
+            const detail = error?.response?.data?.error || error?.message || error;
+            return { ok: false, reason: `embedded vc verification failed: ${detail}` };
+        }
+
+        const subjectId = credentialSubjectId(credential);
+        if (!subjectId || subjectId !== expectedHolder) {
+            return { ok: false, reason: "embedded vc verification failed: holder mismatch" };
+        }
+
+        try {
+            const vcVerification = await axios.post(
+                `${veramoAgentEndpoint}/verify`,
+                { credential },
+                { timeout: ocrVerificationRequestTimeoutMs, headers: { "Content-Type": "application/json" } },
+            );
+            if (!isVerifiedResponse(vcVerification.data)) {
+                return { ok: false, reason: "embedded vc verification failed" };
+            }
+        } catch (error) {
+            const detail = error?.response?.data?.error || error?.response?.data?.message || error?.message || error;
+            return { ok: false, reason: `embedded vc verification failed: ${detail}` };
+        }
+
+        verifiedCredentials.push(credential);
+    }
+
+    const authorSkills = extractAuthorSkillsFromVerifiedCredentials(verifiedCredentials);
+    if (!authorSkills.length) {
+        return { ok: false, reason: "embedded vc verification failed: no ESCO skills found" };
+    }
+
+    return {
+        ok: true,
+        authorSkills,
+        credentialCount: verifiedCredentials.length,
+    };
+}
+
+async function executeOcrExtractRequest(body) {
+    const timings = {};
+    const elapsedNs = (start) => Number(process.hrtime.bigint() - start);
+    try {
+        const text = body?.text || body?.document;
+        let authorSkills = Array.isArray(body?.authorSkills) ? body.authorSkills : [];
+        const presentation = body?.presentation || body?.vp || body?.verifiablePresentation || null;
+        const holderDid = body?.holderDid || body?.holderDID;
+        const competenceMode = body?.competenceMode;
+        const requestId = normalizeOptionalString(body?.requestId || body?.request_id);
+
+        let verification = null;
+        if (presentation) {
+            const verifyStart = process.hrtime.bigint();
+            verification = await verifyPresentationAndExtractAuthorSkills(presentation, holderDid);
+            timings.verify_vcs_ns = elapsedNs(verifyStart);
+            if (!verification.ok) {
+                return {
+                    status: 200,
+                    body: {
+                        competent: false,
+                        confidence: 1.0,
+                        reason: verification.reason,
+                        verification,
+                        timings,
+                    },
+                };
+            }
+            authorSkills = verification.authorSkills;
+        }
+
+        const competenceStart = process.hrtime.bigint();
+        const result = await findCompetent(text, authorSkills, competenceMode, requestId);
+        timings.ai_competence_ns = elapsedNs(competenceStart);
+        return {
+            status: result.status,
+            body: {
+                ...result.body,
+                authorSkills,
+                verification: verification
+                    ? {
+                        ok: true,
+                        credentialCount: verification.credentialCount,
+                    }
+                    : undefined,
+                timings,
+            },
+        };
+    } catch (error) {
+        console.error('Error in POST /extract:', error?.response?.data || error?.message || error);
+        return {
+            status: error?.response?.status || 500,
+            body: {
+                error: 'competence request failed',
+                detail: error?.response?.data || error?.message || String(error),
+                timings,
+            },
+        };
+    }
+}
 
 // OCR oracle-facing endpoint: returns only competence/confidence/reason.
 app.post("/extract", bodyParser.json(), async (req, res) => {
-    const text = req.body?.text || req.body?.document;
-    const authorSkills = Array.isArray(req.body?.authorSkills) ? req.body.authorSkills : [];
-    const competenceMode = req.body?.competenceMode;
-
-    const result = await findCompetent(text, authorSkills, competenceMode);
-    return res.status(result.status).json(result.body);
+    try {
+        const execution = await extractIdempotencyStore.execute({
+            key: req.get('Idempotency-Key'),
+            // A canonical SHA-256 fingerprint of this parsed JSON body is
+            // retained alongside the key. Reusing a key for another payload is
+            // rejected instead of returning an unrelated model result.
+            payload: req.body,
+            operation: () => executeOcrExtractRequest(req.body),
+        });
+        if (execution.disposition !== 'bypass') {
+            res.set('X-CAVS-Idempotency-Status', execution.disposition);
+        }
+        return res.status(execution.value.status).json(execution.value.body);
+    } catch (error) {
+        if (
+            error instanceof InvalidIdempotencyKeyError
+            || error instanceof IdempotencyConflictError
+            || error instanceof IdempotencyCapacityError
+        ) {
+            if (error instanceof IdempotencyCapacityError) {
+                res.set('Retry-After', '1');
+            }
+            return res.status(error.statusCode).json({
+                error: error.code,
+                detail: error.message,
+            });
+        }
+        console.error('Error in POST /extract idempotency layer:', error?.message || error);
+        return res.status(500).json({
+            error: 'competence request failed',
+            detail: error?.message || String(error),
+        });
+    }
 });
 
 // Backwards-compatible gateway endpoints for older client flows.
@@ -1403,12 +2520,16 @@ app.get("/keyword_to_skills", async (req, res) => {
 // ROUTE 4 set DID as new Selected DID
 app.post("/setup_did", async (req, res) => {
     try {
-        const response = await axios.get(`${veramoAgentEndpoint}/create_did`, {
-            timeout: 65000,
-        });
-        selectedDID = response.data.did;
-        console.log("DID: " + response.data.did);
-        res.status(200).send({"did":response.data.did});
+        if (!selectedDID) {
+            // One bounded attempt per HTTP request; the independent startup
+            // warmup keeps retrying in the background.
+            await ensureSelectedDidOnce();
+        }
+        if (!selectedDID) {
+            throw new Error("No selected DID available");
+        }
+        console.log("DID: " + selectedDID);
+        res.status(200).send({"did": selectedDID});
     } catch (error) {
         console.error("Error creating DID:", error.message);
         res.status(500).send("Failed to create DID");
@@ -1436,7 +2557,7 @@ const extractKeywords = async (document, options = {}) => {
 
         if (extractorEngine === "GPT") {
             const response = await axios.get(`${keyLLMServiceEndpoint}/keywords_only_LMM`, {
-                timeout: 65000,
+                timeout: veramoRequestTimeoutMs,
                 params: {
                     doc: document,
                     top_n: keyllmCfg.top_n,
@@ -1450,7 +2571,7 @@ const extractKeywords = async (document, options = {}) => {
 
         if (extractorEngine === "RoBERTa+GPT") {
             const response = await axios.get(`${keyLLMServiceEndpoint}/keywords_both`, {
-                timeout: 65000,
+                timeout: veramoRequestTimeoutMs,
                 params: {
                     doc: document,
                     top_n: keyllmCfg.top_n,
@@ -1484,20 +2605,25 @@ const extractRoBERTaKeywords = async (document, options = {}) => {
     try {
         const robertaCfg = {
             ...(pipelineConfig.keywordExtraction?.roberta || pipelineConfig.keywordExtraction?.keybert || {}),
-            ...options,
+            ...definedOptions(options),
         };
 
+        const params = {
+            doc: document,
+            engine: nestaKeywordEngine,
+            top_n: robertaCfg.top_n,
+            nr_candidates: robertaCfg.nr_candidates,
+            ngram_max: robertaCfg.ngram_max,
+            use_mmr: robertaCfg.use_mmr,
+            diversity: robertaCfg.diversity,
+            score_threshold: robertaCfg.score_threshold,
+        };
+        if (options.request_id) {
+            params.request_id = options.request_id;
+        }
         const response = await axios.get(`${keywordExtractorServiceEndpoint}/keywords`, {
-            timeout: 65000,
-            params: {
-                doc: document,
-                top_n: robertaCfg.top_n,
-                nr_candidates: robertaCfg.nr_candidates,
-                ngram_max: robertaCfg.ngram_max,
-                use_mmr: robertaCfg.use_mmr,
-                diversity: robertaCfg.diversity,
-                score_threshold: robertaCfg.score_threshold,
-            }
+            timeout: timeoutMsFromSeconds(robertaCfg.timeout_s, 60000),
+            params,
         });
         return { status: 200, keywords: response.data.keywords, model: response.data.model };
     } catch (err) {
@@ -1543,7 +2669,7 @@ const enrichSameLevel = async (keywords, options = {}) => {
             const responses = await Promise.all(
                 keywords.map((term) =>
                     axios.get(`${yagoServiceEndpoint}/querySameLevelHierarchy`, {
-                        timeout: 65000,
+                        timeout: veramoRequestTimeoutMs,
                         params: { element: term }
                     })
                 )
@@ -1559,7 +2685,7 @@ const enrichSameLevel = async (keywords, options = {}) => {
             const responses = await Promise.all(
                 keywords.map((term) =>
                     axios.get(`${keyLLMServiceEndpoint}/same_level_keywords`, {
-                        timeout: 65000,
+                        timeout: veramoRequestTimeoutMs,
                         params: {
                             keywords: term,
                             temperature: gptCfg.temperature,
@@ -1619,7 +2745,7 @@ const enrichUpperLevel = async (keywords, options = {}) => {
             const responses = await Promise.all(
                 keywords.map((term) =>
                     axios.get(`${yagoServiceEndpoint}/queryUpperHierarchy`, {
-                        timeout: 65000,
+                        timeout: veramoRequestTimeoutMs,
                         params: { element: term }
                     })
                 )
@@ -1635,7 +2761,7 @@ const enrichUpperLevel = async (keywords, options = {}) => {
             const responses = await Promise.all(
                 keywords.map((term) =>
                     axios.get(`${keyLLMServiceEndpoint}/upper_level_keywords`, {
-                        timeout: 65000,
+                        timeout: veramoRequestTimeoutMs,
                         params: {
                             keywords: term,
                             temperature: gptCfg.temperature,
@@ -1694,6 +2820,7 @@ const extractSkills = async (keywords, options = {}) => {
             options.skill_match_thresh !== undefined && options.skill_match_thresh !== null && options.skill_match_thresh !== ""
                 ? Number(options.skill_match_thresh)
                 : undefined;
+        const timeoutMs = timeoutMsFromSeconds(options.timeout_s ?? pipelineConfig.skillMapping?.timeout_s, 30000);
 
         // ojd_daps_skills expects keywords as a JSON object (dictionary) string.
         const jsonObject = {};
@@ -1706,8 +2833,11 @@ const extractSkills = async (keywords, options = {}) => {
         if (skillMatchThresh !== undefined && !Number.isNaN(skillMatchThresh)) {
             params.skill_match_thresh = skillMatchThresh;
         }
+        if (options.request_id) {
+            params.request_id = options.request_id;
+        }
         const response = await axios.get(`${ojdDapsSkillsEndpoint}/keyword_to_skills`, {
-            timeout: 25000000,
+            timeout: timeoutMs,
             params
         });
         return { status: 200, skills: response.data.skills, model: response.data.model, config: response.data.config };
@@ -1745,6 +2875,9 @@ const extractSkillsFromText = async (document, options = {}) => {
         const body = { text: document };
         if (skillMatchThresh !== undefined && !Number.isNaN(skillMatchThresh)) {
             body.skill_match_thresh = skillMatchThresh;
+        }
+        if (options.request_id) {
+            body.request_id = options.request_id;
         }
         const response = await axios.post(
             `${ojdDapsSkillsEndpoint}/extract`,
@@ -1815,7 +2948,7 @@ function resolveCompetenceSkillMappingMode(rawMode) {
     return DEFAULT_PIPELINE_CONFIG.competence.skill_mapping_mode;
 }
 
-const mapPhrasesToSkills = async (phrases) => {
+const mapPhrasesToSkills = async (phrases, requestId = "") => {
     if (!Array.isArray(phrases) || phrases.length === 0) {
         return { status: 200, skills: [] };
     }
@@ -1823,7 +2956,7 @@ const mapPhrasesToSkills = async (phrases) => {
     try {
         const response = await axios.post(
             `${ojdDapsSkillsEndpoint}/map_phrases`,
-            { phrases },
+            requestId ? { phrases, request_id: requestId } : { phrases },
             {
                 timeout: 25000000,
                 headers: { 'Content-Type': 'application/json' },
@@ -1844,36 +2977,36 @@ const mapPhrasesToSkills = async (phrases) => {
     }
 };
 
-const extractSkillsForNestaCompetence = async (document) => {
+const extractSkillsForNestaCompetence = async (document, requestId = "") => {
     const skillMappingMode = resolveCompetenceSkillMappingMode(
         pipelineConfig.competence?.skill_mapping_mode ??
         pipelineConfig.skillMapping?.mode
     );
 
     if (skillMappingMode === "extract") {
-        return extractSkillsFromText(document, pipelineConfig.skillMapping);
+        return extractSkillsFromText(document, { ...pipelineConfig.skillMapping, request_id: requestId });
     }
 
-    const keywordsResp = await extractRoBERTaKeywords(document, pipelineConfig.keywordExtraction?.roberta);
+    const keywordsResp = await extractRoBERTaKeywords(document, { ...(pipelineConfig.keywordExtraction?.roberta || {}), request_id: requestId });
     if (keywordsResp.status !== 200) {
         return keywordsResp;
     }
 
     if (skillMappingMode === "keywords") {
-        return extractSkills(keywordsResp.keywords, pipelineConfig.skillMapping);
+        return extractSkills(keywordsResp.keywords, { ...pipelineConfig.skillMapping, request_id: requestId });
     }
 
     if (skillMappingMode === "roberta_map") {
-        return mapPhrasesToSkills(keywordsResp.keywords);
+        return mapPhrasesToSkills(keywordsResp.keywords, requestId);
     }
 
     if (skillMappingMode === "extract_union_roberta_map") {
-        const directSkillsResp = await extractSkillsFromText(document, pipelineConfig.skillMapping);
+        const directSkillsResp = await extractSkillsFromText(document, { ...pipelineConfig.skillMapping, request_id: requestId });
         if (directSkillsResp.status !== 200) {
             return directSkillsResp;
         }
 
-        const mappedSkillsResp = await mapPhrasesToSkills(keywordsResp.keywords);
+        const mappedSkillsResp = await mapPhrasesToSkills(keywordsResp.keywords, requestId);
         if (mappedSkillsResp.status !== 200) {
             return mappedSkillsResp;
         }
@@ -1894,7 +3027,7 @@ const extractSkillsForNestaCompetence = async (document) => {
         };
     }
 
-    return extractSkills(keywordsResp.keywords, pipelineConfig.skillMapping);
+    return extractSkills(keywordsResp.keywords, { ...pipelineConfig.skillMapping, request_id: requestId });
 };
 
 
@@ -1910,7 +3043,7 @@ function checkSkillAgainstKeywords(skill, skillsKeywords) {
 }
 
 // Dispatch competence evaluation by selected extractor.
-async function findCompetent(text, authorSkills = [], competenceModeInput = undefined) {
+async function findCompetent(text, authorSkills = [], competenceModeInput = undefined, requestId = "") {
     if (!text || typeof text !== 'string' || !text.trim()) {
         return { status: 400, body: { error: "Missing 'text' in request body" } };
     }
@@ -1923,29 +3056,63 @@ async function findCompetent(text, authorSkills = [], competenceModeInput = unde
     }
 
     if (competenceMode === "gpt") {
-        return await gpt_skill_extraction_find_competent(text, authorSkills);
+        return await gpt_skill_extraction_find_competent(text, authorSkills, requestId);
+    }
+    if (competenceMode === "azure-openai") {
+        return await llm_skill_extraction_find_competent(
+            "azure-openai",
+            azureOpenAICompetenceEndpoint,
+            text,
+            authorSkills,
+            requestId,
+        );
+    }
+    if (competenceMode === "qwen") {
+        return await llm_skill_extraction_find_competent("qwen", qwenCompetenceEndpoint, text, authorSkills, requestId);
+    }
+    if (competenceMode === "deepseek") {
+        return await llm_skill_extraction_find_competent("deepseek", deepseekCompetenceEndpoint, text, authorSkills, requestId);
+    }
+    if (competenceMode === "llama") {
+        return await llm_skill_extraction_find_competent("llama", llamaCompetenceEndpoint, text, authorSkills, requestId);
+    }
+    if (competenceMode === "gemma") {
+        return await llm_skill_extraction_find_competent("gemma", gemmaCompetenceEndpoint, text, authorSkills, requestId);
     }
 
     if (selectedSkillExtractorEngine === "OJD_DAPS") {
-        return await nesta_skill_extraction_find_competent(text, authorSkills);
+        return await nesta_skill_extraction_find_competent(text, authorSkills, requestId);
     }
     return { status: 500, body: { error: `Unsupported skill extractor engine ${selectedSkillExtractorEngine}` } };
 }
 
 // Compute competence/confidence/reason using GPT competence checker.
-async function gpt_skill_extraction_find_competent(text, authorSkills = []) {
+async function gpt_skill_extraction_find_competent(text, authorSkills = [], requestId = "") {
+    return await llm_skill_extraction_find_competent(
+        "gpt",
+        gptCompetenceEndpoint,
+        text,
+        authorSkills,
+        requestId,
+        buildOpenAIOverridePayload(),
+    );
+}
+
+async function llm_skill_extraction_find_competent(backend, endpoint, text, authorSkills = [], requestId = "", overrides = {}) {
     const safeAuthorSkills = normalizeAuthorSkillsForCompetence(authorSkills);
+    const label = `${backend} competence checker`;
 
     try {
         const response = await axios.post(
-            `${gptCompetenceEndpoint}/extract`,
+            `${endpoint}/extract`,
             {
                 statement: text,
                 skills: safeAuthorSkills,
-                ...buildOpenAIOverridePayload(),
+                ...(requestId ? { request_id: requestId } : {}),
+                ...overrides,
             },
             {
-                timeout: 120000,
+                timeout: competenceCheckerRequestTimeoutMs,
                 headers: { 'Content-Type': 'application/json' },
             },
         );
@@ -1959,7 +3126,7 @@ async function gpt_skill_extraction_find_competent(text, authorSkills = []) {
         const reasonRaw = payload.reason ?? payload.competent_reason_skill_gpt;
         const reason = typeof reasonRaw === 'string' && reasonRaw.trim()
             ? reasonRaw.trim()
-            : "No reason provided by GPT competence checker";
+            : `No reason provided by ${label}`;
 
         return {
             status: 200,
@@ -1967,11 +3134,13 @@ async function gpt_skill_extraction_find_competent(text, authorSkills = []) {
                 competent,
                 confidence,
                 reason,
+                competence_backend: payload.competence_backend || backend,
+                competence_model: payload.competence_model || payload.model || "",
             },
         };
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
-            return { status: 502, body: { error: 'GPT competence checker timed out' } };
+            return { status: 502, body: { error: `${label} timed out` } };
         }
 
         if (err.response) {
@@ -1979,7 +3148,7 @@ async function gpt_skill_extraction_find_competent(text, authorSkills = []) {
             return {
                 status: err.response.status || 502,
                 body: {
-                    error: 'GPT competence checker request failed',
+                    error: `${label} request failed`,
                     detail,
                 },
             };
@@ -1988,7 +3157,7 @@ async function gpt_skill_extraction_find_competent(text, authorSkills = []) {
         return {
             status: 500,
             body: {
-                error: 'Unknown error in GPT competence checker request',
+                error: `Unknown error in ${label} request`,
                 detail: err.message,
             },
         };
@@ -1996,18 +3165,26 @@ async function gpt_skill_extraction_find_competent(text, authorSkills = []) {
 }
 
 // Compute competence/confidence/reason using OJD-DAPS skill extraction.
-async function nesta_skill_extraction_find_competent(text, authorSkills = []) {
-    const skillsResp = await extractSkillsForNestaCompetence(text);
+async function nesta_skill_extraction_find_competent(text, authorSkills = [], requestId = "") {
+    const skillsResp = await extractSkillsForNestaCompetence(text, requestId);
     if (skillsResp.status !== 200) {
         return { status: skillsResp.status, body: skillsResp };
     }
 
     const canonicalSkills = parseSkills(skillsResp.skills);
     const denom = canonicalSkills.length;
-    const authorSet = buildAuthorSkillTokenSet(authorSkills);
 
     if (denom === 0) {
-        return { status: 200, body: { competent: false, confidence: 1, reason: "Not competent: no skills extracted" } };
+        return {
+            status: 200,
+            body: {
+                competent: false,
+                confidence: 1,
+                reason: "Not competent: no skills extracted",
+                competence_backend: "nesta",
+                competence_model: skillsResp.model || null,
+            },
+        };
     }
 
     let escoIndex = null;
@@ -2026,23 +3203,26 @@ async function nesta_skill_extraction_find_competent(text, authorSkills = []) {
     const hierarchyMatchesByDistance = new Map();
 
     if (escoIndex) {
-        const authorUris = resolveSkillTokensToUris(authorSkills, escoIndex.labelToUris);
+        const authorUris = resolveValidAuthorSkillUris(authorSkills, escoIndex);
+        if (authorUris.size === 0) {
+            return {
+                status: 200,
+                body: {
+                    competent: false,
+                    confidence: 1,
+                    reason: "No valid ESCO (label, uri) skills available for this author.",
+                    competence_backend: "nesta",
+                    competence_model: skillsResp.model || null,
+                },
+            };
+        }
 
         for (const [label, uri] of canonicalSkills) {
             const labelNorm = normalizeStr(label);
-            const uriNorm = normalizeStr(uri);
-
-            // Exact name/URI match remains a full match.
-            if ((labelNorm && authorSet.has(labelNorm)) || (uriNorm && authorSet.has(uriNorm))) {
-                weightedCoverage += 1;
-                coveredSkills += 1;
-                exactMatches += 1;
-                continue;
-            }
 
             // Resolve extracted skill to one or more ESCO URIs.
             const extractedUris = new Set();
-            if (typeof uri === 'string' && uri.startsWith('http://data.europa.eu/esco/skill/')) {
+            if (typeof uri === 'string' && uri.startsWith('http://data.europa.eu/esco/skill/') && escoIndex.graph.has(uri)) {
                 extractedUris.add(uri);
             }
             if (labelNorm) {
@@ -2078,6 +3258,7 @@ async function nesta_skill_extraction_find_competent(text, authorSkills = []) {
         }
     } else {
         // Fallback: exact matching only (still with corrected confidence semantics).
+        const authorSet = buildAuthorSkillTokenSet(authorSkills);
         for (const [label, uri] of canonicalSkills) {
             const l = normalizeStr(label);
             const u = normalizeStr(uri);
@@ -2100,29 +3281,39 @@ async function nesta_skill_extraction_find_competent(text, authorSkills = []) {
         comp.coverage,
     );
 
-    return { status: 200, body: { competent: comp.competent, confidence: comp.confidence, reason } };
+    return {
+        status: 200,
+        body: {
+            competent: comp.competent,
+            confidence: comp.confidence,
+            reason,
+            competence_backend: "nesta",
+            competence_model: skillsResp.model || null,
+        },
+    };
 }
 
 
-app.post('/api/issuer_trust', bodyParser.json(), async (req, res) => {
+app.post('/api/issuer_trust', bodyParser.json(), (req, res) => {
     const { did, rank } = req.body;
 
-    if(!did){
-        res.status(500).send({ error: 'DID is missing' });
-
+    if (typeof did !== 'string' || !did.trim()) {
+        return res.status(400).send({ error: 'DID is missing' });
     }
-    if(!rank || rank >5 || rank <0){
-        res.status(500).send({ error: 'rank must be between 0 and 5' });
+    const normalizedRank = Number(rank);
+    if (!Number.isFinite(normalizedRank) || normalizedRank > 5 || normalizedRank < 0) {
+        return res.status(400).send({ error: 'rank must be between 0 and 5' });
     }
 
-    // Append the new object to the array
-    trustedissuers.push({ did:did, rank:rank });
-
-    // Save the updated array back to the JSON file
-    const filePath = path.resolve('./trustedissuers.json');
-    fs.writeFileSync(filePath, JSON.stringify(trustedissuers, null, 2));
-
-    res.send("ok");
+    try {
+        trustedissuers.push({ did: did.trim(), rank: normalizedRank });
+        writeJsonFileAtomic(path.resolve('./trustedissuers.json'), trustedissuers);
+        res.send("ok");
+    } catch (error) {
+        trustedissuers.pop();
+        console.error('Error saving trusted issuer:', error?.message || error);
+        res.status(500).send({ error: 'failed to save trusted issuer' });
+    }
 });
 
 //route that extracts from statement Keywords, conditionally also synonymous concepts and higher level ones
@@ -2302,7 +3493,7 @@ app.post('/api/vc', bodyParser.json(), async (req, res) => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                timeout: 65000
+                timeout: veramoRequestTimeoutMs
             }
         );
 
@@ -2345,7 +3536,7 @@ const verify_VC = async (vc) => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            timeout: 65000
+            timeout: veramoRequestTimeoutMs
         }
     );
     return response.data.res
@@ -2436,7 +3627,13 @@ configureApp().then(() => {
     // Start the server
     loadPipelineConfig();
     console.log("attention Setup completed with selected engines: " + selectedExtractorEngine + " " + selectedEnricherEngine + " " + selectedSkillExtractorEngine + " " + selectedDID);
-    app.listen(outPort, () => {
+    const server = app.listen(outPort, () => {
         console.log(`Server is running on port ${outPort}`);
     });
+    server.keepAliveTimeout = cavsHttpKeepAliveTimeoutMs;
+    server.headersTimeout = cavsHttpHeadersTimeoutMs;
+    console.log(
+        `HTTP keep-alive policy: keepAliveTimeout=${server.keepAliveTimeout}ms `
+        + `headersTimeout=${server.headersTimeout}ms`,
+    );
 });
