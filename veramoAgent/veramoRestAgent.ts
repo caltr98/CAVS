@@ -30,7 +30,6 @@ import {
     MinimalImportableKey, W3CVerifiableCredential
 } from "@veramo/core";
 
-import {ICredentialIssuerLD} from "@veramo/credential-ld"
 import decode from 'jsqr'
 // Create an app instance
 import {PNG} from 'pngjs'

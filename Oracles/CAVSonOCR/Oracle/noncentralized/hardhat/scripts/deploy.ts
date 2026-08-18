@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { network } from "hardhat";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -16,6 +16,7 @@ function parsePositiveUint8Env(name: string, fallback: string): bigint {
 }
 
 async function main() {
+  const { ethers } = await network.create();
   const [deployer] = await ethers.getSigners();
   const numOracles = parsePositiveUint8Env("NUM_ORACLES", "4");
 

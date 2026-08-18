@@ -4,13 +4,13 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@helia/ipns": "^8.0.1",
-    "@helia/unixfs": "^4.0.1",
-    "axios": "^1.7.9",
-    "blockstore-fs": "^2.0.2",
-    "body-parser": "^1.20.3",
+    "@helia/ipns": "^10.0.8",
+    "@helia/unixfs": "^8.0.5",
+    "axios": "^1.19.0",
+    "blockstore-fs": "^4.0.1",
+    "body-parser": "^2.3.0",
     "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "helia": "^5.1.1"
+    "express": "^5.2.1",
+    "helia": "^7.1.5"
   }
 }

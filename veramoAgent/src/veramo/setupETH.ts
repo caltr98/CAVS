@@ -9,8 +9,6 @@ import {
     ICredentialPlugin,
 } from '@veramo/core'
 
-import {ICredentialIssuerLD} from "@veramo/credential-ld";
-
 // Core identity manager plugin
 import { DIDManager } from '@veramo/did-manager'
 
@@ -25,6 +23,7 @@ import { KeyManagementSystem, SecretBox } from '@veramo/kms-local'
 
 // W3C Verifiable Credential plugin
 import { CredentialPlugin } from '@veramo/credential-w3c'
+import { CredentialProviderJWT } from '@veramo/credential-jwt'
 
 // Custom resolvers
 import { DIDResolverPlugin } from '@veramo/did-resolver'
@@ -75,7 +74,7 @@ const ethrDidProvider = new EthrDIDProvider({
 
 /*
 export const agentETH = createAgent<
-    IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & ICredentialIssuerLD
+    IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin
 >({
     context: {
         // authenticatedDid: 'did:example:3456'
@@ -112,7 +111,7 @@ const INFURA_PROJECT_ID = '77b6397329f849c0b5746b7da777c7dd'
 const KMS_SECRET_KEY = 'eb4aaf0408d8af22cdb8e63913a6ce49d898451fb949490b4a82d0018d9bf9d4'
 
 export const agentETH = createAgent<
-    IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & ICredentialIssuerLD
+    IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin
 >({
     plugins: [
         new KeyManager({
@@ -138,7 +137,7 @@ export const agentETH = createAgent<
                 ...webDidResolver(),
             }),
         }),
-        new CredentialPlugin(),
+        new CredentialPlugin([new CredentialProviderJWT()]),
         new DataStore(dbConnection),
         new DataStoreORM(dbConnection),
 

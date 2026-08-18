@@ -3,29 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@helia/unixfs": "^3.0.6",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.6.8",
-    "blockstore-fs": "^1.1.10",
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "fs": "^0.0.1-security",
-    "helia": "^4.2.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-drag-drop-files": "^2.3.10",
-    "react-router-dom": "^6.30.3",
-    "react-scripts": "5.0.1",
-    "sjcl": "^1.0.8",
-    "web-vitals": "^2.1.4"
+    "axios": "^1.19.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-drag-drop-files": "^3.1.0",
+    "react-router-dom": "^7.18.2",
+    "web-vitals": "^6.1.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "dev": "vite",
+    "test:watch": "vitest"
   },
   "eslintConfig": {
     "extends": [
@@ -44,5 +34,14 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.5",
+    "@vitejs/plugin-react": "^6.0.5",
+    "jsdom": "^30.0.1",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.11"
   }
 }

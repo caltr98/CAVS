@@ -3,18 +3,28 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "compile": "npx hardhat compile",
-    "test": "npx hardhat test",
-    "test:no-gas": "REPORT_GAS=false npx hardhat test",
+    "compile": "hardhat build",
+    "test": "hardhat test",
+    "test:no-gas": "hardhat test",
     "deploy:sepolia": "npx hardhat run --network sepolia scripts/deploy.ts",
     "register:oracle": "npx hardhat run --network sepolia scripts/registerOracle.ts",
     "list:oracles": "npx hardhat run --network sepolia scripts/listOracles.ts",
     "submit:request": "npx hardhat run --network sepolia scripts/submitRequest.ts"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "dotenv": "^16.4.7",
-    "hardhat": "^2.22.17",
-    "typescript": "^5.8.2"
+    "@nomicfoundation/hardhat-ethers": "^4.0.15",
+    "@nomicfoundation/hardhat-ethers-chai-matchers": "^3.0.11",
+    "@nomicfoundation/hardhat-mocha": "^3.1.0",
+    "chai": "^6.2.2",
+    "dotenv": "^17.4.2",
+    "ethers": "^6.17.0",
+    "hardhat": "^3.13.0",
+    "mocha": "^11.8.0",
+    "typescript": "^5.9.3"
+  },
+  "type": "module",
+  "overrides": {
+    "diff": "8.0.3",
+    "serialize-javascript": "7.1.0"
   }
 }

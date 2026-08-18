@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { network } from "hardhat";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -56,6 +56,7 @@ async function main() {
   if (!address || !requesterEndpoint || !statement || !holderDid) {
     throw new Error("Set CONTRACT_ADDRESS, REQUESTER_ENDPOINT, STATEMENT, HOLDER_DID");
   }
+  const { ethers } = await network.create();
 
   const authorSkills = parseJsonEnv<string[]>("AUTHOR_SKILLS_JSON", []);
   const targetOracleIds = normalizeTargetOracleIds(

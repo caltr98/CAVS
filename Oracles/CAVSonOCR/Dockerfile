@@ -1,15 +1,11 @@
 # syntax=docker/dockerfile:1.4
 
-FROM debian:bookworm-slim AS build
+FROM golang:1.26.6-bookworm AS build
 
 WORKDIR /src
-ENV PATH=/usr/local/go/bin:${PATH}
 ENV GOTOOLCHAIN=local
 ENV GOPROXY=file:///go/pkg/mod/cache/download
 ENV GOSUMDB=off
-
-# Use the repo-bundled Go toolchain so the build does not try to fetch one.
-COPY Oracles/_toolchain/go/ /usr/local/go/
 
 # Seed the module proxy from the host's local cache for offline builds.
 COPY --from=go_mod_download_cache / /go/pkg/mod/cache/download/

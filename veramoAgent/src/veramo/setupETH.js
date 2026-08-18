@@ -10,6 +10,7 @@ import { KeyManager } from '@veramo/key-manager';
 import { KeyManagementSystem, SecretBox } from '@veramo/kms-local';
 // W3C Verifiable Credential plugin
 import { CredentialPlugin } from '@veramo/credential-w3c';
+import { CredentialProviderJWT } from '@veramo/credential-jwt';
 // Custom resolvers
 import { DIDResolverPlugin } from '@veramo/did-resolver';
 import { Resolver } from 'did-resolver';
@@ -109,7 +110,7 @@ export const agentETH = createAgent({
                 ...webDidResolver(),
             }),
         }),
-        new CredentialPlugin(),
+        new CredentialPlugin([new CredentialProviderJWT()]),
         new DataStore(dbConnection),
         new DataStoreORM(dbConnection),
     ],

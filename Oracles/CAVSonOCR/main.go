@@ -39,6 +39,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/binary"
@@ -75,7 +76,6 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/smartcontractkit/libocr/quorumhelper"
 	ragetypes "github.com/smartcontractkit/libocr/ragep2p/types"
-	"golang.org/x/crypto/curve25519"
 )
 
 const (
@@ -180,7 +180,7 @@ func (t staticTracker) LatestConfig(context.Context, uint64) (types.ContractConf
 }
 func (t staticTracker) LatestBlockHeight(context.Context) (uint64, error) { return 1, nil }
 
-//minimal requirement to identify a DID in the DON
+// minimal requirement to identify a DID in the DON
 type didRegistryEntry struct {
 	OracleID int    `json:"oracle_id"`
 	DID      string `json:"did"`
@@ -388,12 +388,12 @@ func newOffchainKeyringGeneration(oracleSeed int64, oracleID int) (*offchainKeyr
 	var cfgPriv [32]byte
 	copy(cfgPriv[:], cfgSeed[:])
 
-	cfgPub, err := curve25519.X25519(cfgPriv[:], curve25519.Basepoint)
+	privateKey, err := ecdh.X25519().NewPrivateKey(cfgPriv[:])
 	if err != nil {
 		return nil, err
 	}
 	var cfgPubArr [32]byte
-	copy(cfgPubArr[:], cfgPub)
+	copy(cfgPubArr[:], privateKey.PublicKey().Bytes())
 	return &offchainKeyring{offPriv: offPriv, cfgPriv: cfgPriv, cfgPub: cfgPubArr}, nil
 }
 
@@ -406,8 +406,16 @@ func (k *offchainKeyring) OffchainSign(msg []byte) ([]byte, error) {
 // ConfigDiffieHellman derives a shared secret used to encrypt offchain config
 // values between oracles (X25519).
 func (k *offchainKeyring) ConfigDiffieHellman(point [32]byte) ([32]byte, error) {
-	out, err := curve25519.X25519(k.cfgPriv[:], point[:])
 	var r [32]byte
+	privateKey, err := ecdh.X25519().NewPrivateKey(k.cfgPriv[:])
+	if err != nil {
+		return r, err
+	}
+	peerKey, err := ecdh.X25519().NewPublicKey(point[:])
+	if err != nil {
+		return r, err
+	}
+	out, err := privateKey.ECDH(peerKey)
 	copy(r[:], out)
 	return r, err
 }

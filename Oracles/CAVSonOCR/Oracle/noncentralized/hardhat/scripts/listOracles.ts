@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { network } from "hardhat";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -8,6 +8,7 @@ async function main() {
   if (!address) {
     throw new Error("Set CONTRACT_ADDRESS");
   }
+  const { ethers } = await network.create();
 
   const contract = await ethers.getContractAt("CAVSOracleCoordinator", address);
   const oracleCount = await contract.oracleCount();

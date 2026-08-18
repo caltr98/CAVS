@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { network } from "hardhat";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -30,6 +30,7 @@ async function main() {
   if (!address || !oracleEndpoint) {
     throw new Error("Set CONTRACT_ADDRESS, ORACLE_ID, ORACLE_ENDPOINT");
   }
+  const { ethers } = await network.create();
 
   const [signer] = await ethers.getSigners();
   const { chainId } = await ethers.provider.getNetwork();
