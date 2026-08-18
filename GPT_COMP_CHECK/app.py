@@ -1,11 +1,12 @@
 import json
 import os
 import re
+import hashlib
 import threading
 from typing import List, Optional, Set, Tuple
 
-from fastapi import FastAPI, HTTPException
-from openai import APIConnectionError, APITimeoutError, OpenAI
+from fastapi import FastAPI, HTTPException, Request
+from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI, OpenAIError, RateLimitError
 from pydantic import BaseModel, Field
 
 
@@ -46,11 +47,15 @@ SKILL_PAIR_RE = re.compile(
 ESCO_ONTOLOGY_PATH_DEFAULT = "/app/esco-v1.2.1.jsonl"
 _esco_uri_index_lock = threading.Lock()
 _esco_skill_uri_index: Optional[Set[str]] = None
+_response_cache_lock = threading.Lock()
+_response_cache: dict[str, "CompetenceResponse"] = {}
+_response_inflight: dict[str, dict] = {}
 
 
 class CompetenceRequest(BaseModel):
     statement: str = Field(..., description="Claim text")
     skills: List[str] = Field(default_factory=list, description="Skill strings from VC")
+    request_id: Optional[str] = Field(default=None, description="OCR request id used to scope cache entries")
     model: Optional[str] = Field(default=None, description="Override model name")
     temperature: Optional[float] = Field(default=None, ge=0, le=1)
     api_key: Optional[str] = Field(default=None, description="Override API key")
@@ -61,6 +66,8 @@ class CompetenceResponse(BaseModel):
     competent_skill_gpt: bool
     competent_confidence_skill_gpt: float
     competent_reason_skill_gpt: str
+    competence_backend: str
+    competence_model: str
     raw: dict
 
 
@@ -105,6 +112,63 @@ def _get_esco_skill_uri_index() -> Set[str]:
             ontology_path = os.getenv("ESCO_ONTOLOGY_PATH", ESCO_ONTOLOGY_PATH_DEFAULT)
             _esco_skill_uri_index = _load_esco_skill_uri_index(ontology_path)
     return _esco_skill_uri_index
+
+
+def _request_body_for_cache(req: BaseModel) -> dict:
+    if hasattr(req, "model_dump"):
+        return req.model_dump(mode="json")
+    return req.dict()
+
+
+def _copy_response(resp: "CompetenceResponse") -> "CompetenceResponse":
+    if hasattr(resp, "model_copy"):
+        return resp.model_copy(deep=True)
+    return resp.copy(deep=True)
+
+
+def _cache_key(endpoint: str, query: tuple, req: BaseModel) -> str:
+    payload = {
+        "method": "POST",
+        "endpoint": endpoint,
+        "query": list(query),
+        "body": _request_body_for_cache(req),
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _cached_competence(endpoint: str, query: tuple, req: "CompetenceRequest", compute) -> "CompetenceResponse":
+    key = _cache_key(endpoint, query, req)
+    while True:
+        with _response_cache_lock:
+            cached = _response_cache.get(key)
+            if cached is not None:
+                return _copy_response(cached)
+            entry = _response_inflight.get(key)
+            if entry is None:
+                entry = {"event": threading.Event(), "result": None, "error": None}
+                _response_inflight[key] = entry
+                break
+        entry["event"].wait()
+        if entry.get("error") is not None:
+            raise entry["error"]
+        result = entry.get("result")
+        if result is not None:
+            return _copy_response(result)
+
+    try:
+        result = compute()
+        entry["result"] = _copy_response(result)
+        with _response_cache_lock:
+            _response_cache[key] = _copy_response(result)
+        return result
+    except Exception as exc:
+        entry["error"] = exc
+        raise
+    finally:
+        with _response_cache_lock:
+            _response_inflight.pop(key, None)
+            entry["event"].set()
 
 
 def _cleanup_label(value: str) -> str:
@@ -174,6 +238,16 @@ def _safe_float_env(name: str, default_value: float) -> float:
         return default_value
 
 
+def _safe_int_env(name: str, default_value: int) -> int:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default_value
+    try:
+        return int(raw)
+    except ValueError:
+        return default_value
+
+
 def _build_client(req: CompetenceRequest) -> OpenAI:
     key_file = os.getenv("OPENAI_API_KEY_FILE")
     api_key = (
@@ -195,12 +269,40 @@ def _build_client(req: CompetenceRequest) -> OpenAI:
         or "https://api.openai.com/v1"
     )
     timeout_s = max(5.0, _safe_float_env("OPENAI_TIMEOUT_S", 60.0))
-    return OpenAI(api_key=api_key, base_url=base_url, timeout=timeout_s)
+    # Keep retries inside this service so that a transient provider response is
+    # measured as latency instead of being converted into an oracle vote.  The
+    # enclosing CAVS request timeout remains the hard campaign-level bound.
+    max_retries = max(0, _safe_int_env("OPENAI_MAX_RETRIES", 2))
+    return OpenAI(
+        api_key=api_key,
+        base_url=base_url,
+        timeout=timeout_s,
+        max_retries=max_retries,
+    )
 
 
 def _render_prompt(req: CompetenceRequest) -> str:
     skills = ", ".join(req.skills) if req.skills else "None."
     return PROMPT_TEMPLATE.format(skills=skills, claim=req.statement)
+
+
+def _is_provider_content_filter_error(exc: Exception) -> bool:
+    """Recognize explicit provider safety-filter rejections only.
+
+    Do not turn authentication, quota, transport, timeout, or arbitrary HTTP
+    failures into competence decisions. Azure Foundry currently exposes this
+    condition as HTTP 400 with ``finish_reason=content_filter`` and/or an
+    error code named ``content_filter``.
+    """
+    text = str(getattr(exc, "message", "") or exc).lower()
+    return any(
+        marker in text
+        for marker in (
+            "content_filter",
+            "content filter",
+            "content blocked by label",
+        )
+    )
 
 
 def _call_model(req: CompetenceRequest) -> dict:
@@ -211,19 +313,53 @@ def _call_model(req: CompetenceRequest) -> dict:
     else:
         temperature = float(os.getenv("OPENAI_COMPETENCE_TEMPERATURE") or os.getenv("OPENAI_TEMPERATURE", "0"))
     prompt = _render_prompt(req)
+    request_kwargs = {
+        "model": model,
+        "temperature": temperature,
+        "messages": [
+            {"role": "system", "content": "You output strict JSON only."},
+            {"role": "user", "content": prompt},
+        ],
+        "response_format": {"type": "json_object"},
+    }
     try:
-        resp = client.chat.completions.create(
-            model=model,
-            temperature=temperature,
-            messages=[
-                {"role": "system", "content": "You output strict JSON only."},
-                {"role": "user", "content": prompt},
-            ],
-            response_format={"type": "json_object"},
-        )
+        try:
+            resp = client.chat.completions.create(**request_kwargs)
+        except APIStatusError as exc:
+            # Foundry's OpenAI-compatible endpoint hosts several publishers.
+            # A few deployments reject one of these optional OpenAI knobs even
+            # though they support chat completions. Retry only the rejected
+            # optional fields; the prompt and model remain exactly unchanged.
+            message = str(exc.message or "").lower()
+            retry_kwargs = dict(request_kwargs)
+            changed = False
+            if "temperature" in message and any(word in message for word in ("unsupported", "not support", "invalid")):
+                retry_kwargs.pop("temperature", None)
+                changed = True
+            if any(word in message for word in ("response_format", "json_object")) and any(
+                word in message for word in ("unsupported", "not support", "invalid")
+            ):
+                retry_kwargs.pop("response_format", None)
+                changed = True
+            if not changed:
+                raise
+            resp = client.chat.completions.create(**retry_kwargs)
         content = resp.choices[0].message.content if resp.choices else "{}"
-    except (APIConnectionError, APITimeoutError) as exc:
+    except (APIConnectionError, APITimeoutError, RateLimitError) as exc:
         raise HTTPException(status_code=503, detail=f"OpenAI connection error: {exc}") from exc
+    except APIStatusError as exc:
+        if _is_provider_content_filter_error(exc):
+            return {
+                "competent": False,
+                "confidence": 0.0,
+                "reason": "cannot process",
+                "provider_finish_reason": "content_filter",
+            }
+        # Preserve the upstream class without leaking credentials or a traceback.
+        status = 503 if exc.status_code in (408, 409, 429) or exc.status_code >= 500 else 502
+        raise HTTPException(status_code=status, detail=f"OpenAI API HTTP {exc.status_code}: {exc.message}") from exc
+    except OpenAIError as exc:
+        raise HTTPException(status_code=502, detail=f"OpenAI API error: {exc}") from exc
 
     try:
         return json.loads(content or "{}")
@@ -234,18 +370,30 @@ def _call_model(req: CompetenceRequest) -> dict:
 def _normalize_result(raw: dict) -> CompetenceResponse:
     if not isinstance(raw, dict):
         raise HTTPException(status_code=502, detail="Model returned non-object")
-    competent = bool(raw.get("competent"))
-    confidence = float(raw.get("confidence") or 0.0)
+    competent_raw = raw.get("competent")
+    competent = competent_raw if isinstance(competent_raw, bool) else str(competent_raw).strip().lower() in {"true", "1", "yes"}
+    try:
+        confidence = float(raw.get("confidence") or 0.0)
+    except (TypeError, ValueError):
+        confidence = 0.0
+    confidence = max(0.0, min(1.0, confidence))
     reason = str(raw.get("reason") or "").strip()
     return CompetenceResponse(
         competent_skill_gpt=competent,
         competent_confidence_skill_gpt=confidence,
         competent_reason_skill_gpt=reason or "No reason returned by model.",
+        competence_backend=os.getenv("COMPETENCE_BACKEND", "gpt").strip() or "gpt",
+        competence_model=(
+            os.getenv("COMPETENCE_MODEL_ID")
+            or os.getenv("OPENAI_COMPETENCE_MODEL")
+            or os.getenv("OPENAI_MODEL")
+            or "gpt-4.1"
+        ).strip(),
         raw=raw,
     )
 
 
-app = FastAPI(title="GPT Competence Checker", version="0.1.0")
+app = FastAPI(title=os.getenv("COMPETENCE_SERVICE_TITLE", "GPT Competence Checker"), version="0.2.0")
 
 
 @app.get("/healthz")
@@ -255,7 +403,12 @@ def health():
 
 @app.post("/competence", response_model=CompetenceResponse)
 @app.post("/extract", response_model=CompetenceResponse)
-def competence(req: CompetenceRequest):
+def competence(req: CompetenceRequest, request: Request):
+    query = tuple(sorted(request.query_params.multi_items()))
+    return _cached_competence(request.url.path, query, req, lambda: _competence_uncached(req))
+
+
+def _competence_uncached(req: CompetenceRequest):
     valid_skill_labels, invalid_skill_count = _validated_skill_labels(req.skills)
     if not valid_skill_labels:
         raw = {

@@ -81,7 +81,9 @@ default (`42,43,44,45,46`) and reports mean `±` standard deviation for the
 post-training saved-model validation and test metrics. This matches the
 original LIAR2 pattern of training, saving the model, reloading it, and then
 printing the final evaluation. Pass `--seed <n>` to force a single run. The
-binary target is defined as `label >= 2` for true and `label < 2` for false.
+binary target is defined as `label >= 3` for true-news and `label < 3` for
+false-news (barely-true is grouped with false-news, matching the paper's
+Table 1 base rates; results produced before 2026-07-08 used `label >= 2`).
 Binary scripts report `F1`; multiclass scripts report `F1 Macro` and `F1 Micro`.
 
 See `ablation_experiments/README.md` for the detailed numbering map.

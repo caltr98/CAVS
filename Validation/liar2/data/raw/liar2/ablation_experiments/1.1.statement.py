@@ -1,5 +1,11 @@
 import pandas as pd
 import numpy as np
+import os
+import random
+import re
+import statistics
+import subprocess
+import sys
 import time
 import tqdm
 import torch
@@ -11,13 +17,123 @@ from torch.utils.data import DataLoader
 from transformers import BertTokenizer, BertForSequenceClassification
 from pathlib import Path
 
+SEED_VALUES = [42, 43, 44, 45, 46]
+FINAL_METRIC_RE = re.compile(
+    r"^Final (?P<split>Val|Test) Loss: (?P<loss>[0-9.eE+-]+), "
+    r"Final (?P=split) Acc: (?P<acc>[0-9.eE+-]+), "
+    r"Final (?P=split) F1 Macro: (?P<f1_macro>[0-9.eE+-]+), "
+    r"Final (?P=split) F1 Micro: (?P<f1_micro>[0-9.eE+-]+), "
+    r"Final (?P=split) RMSE: (?P<rmse>[0-9.eE+-]+)"
+)
+
+
+def locate_validation_liar2_root() -> Path:
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "data" / "final" / "ablation").exists() and (parent / "data" / "raw" / "liar2").exists():
+            return parent
+    raise RuntimeError("Could not locate Validation/liar2 root from 1.1.statement.py.")
+
+
+def _parse_seed_arg(argv):
+    if "--seed" not in argv:
+        return None
+    seed_index = argv.index("--seed")
+    if seed_index + 1 >= len(argv):
+        raise SystemExit("--seed requires an integer value")
+    return int(argv[seed_index + 1])
+
+
+def _parse_final_metrics(output_text):
+    metrics = {}
+    for line in output_text.splitlines():
+        match = FINAL_METRIC_RE.match(line.strip())
+        if not match:
+            continue
+        split = match.group("split").lower()
+        metrics[split] = {
+            "loss": float(match.group("loss")),
+            "acc": float(match.group("acc")),
+            "f1_macro": float(match.group("f1_macro")),
+            "f1_micro": float(match.group("f1_micro")),
+            "rmse": float(match.group("rmse")),
+        }
+    return metrics
+
+
+def _summarize_runs(run_metrics):
+    def summarize(split, key):
+        values = [run[split][key] for run in run_metrics]
+        mean = statistics.fmean(values)
+        std = statistics.stdev(values) if len(values) > 1 else 0.0
+        return mean, std
+
+    print("\n===== 5-seed summary =====")
+    for split in ("val", "test"):
+        print(f"{split.title()} metrics:")
+        for key, label in (
+            ("loss", "Loss"),
+            ("acc", "Acc"),
+            ("f1_macro", "F1 Macro"),
+            ("f1_micro", "F1 Micro"),
+            ("rmse", "RMSE"),
+        ):
+            mean, std = summarize(split, key)
+            print(f"  {label}: {mean:.4f} ± {std:.4f}")
+
+
+def _run_seeded_child(seed):
+    env = os.environ.copy()
+    env["LIAR2_CHILD_RUN"] = "1"
+    env["LIAR2_SEED"] = str(seed)
+    process = subprocess.Popen(
+        [sys.executable, __file__],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        env=env,
+    )
+
+    output_lines = []
+    assert process.stdout is not None
+    for line in process.stdout:
+        print(line, end="")
+        output_lines.append(line)
+
+    return_code = process.wait()
+    if return_code != 0:
+        raise SystemExit(return_code)
+
+    metrics = _parse_final_metrics("".join(output_lines))
+    if "val" not in metrics or "test" not in metrics:
+        raise RuntimeError(f"Could not parse final metrics for seed {seed}")
+    return metrics
+
+
+if os.environ.get("LIAR2_CHILD_RUN") != "1":
+    cli_seed = _parse_seed_arg(sys.argv)
+    if cli_seed is None:
+        run_metrics = []
+        print("Running 5-seed average for LIAR2 1.1.statement: 42, 43, 44, 45, 46")
+        for seed in SEED_VALUES:
+            print(f"\n===== Seed {seed} =====")
+            run_metrics.append(_run_seeded_child(seed))
+        _summarize_runs(run_metrics)
+        raise SystemExit(0)
+
+    os.environ["LIAR2_CHILD_RUN"] = "1"
+    os.environ["LIAR2_SEED"] = str(cli_seed)
+
 # Fixing the randomness of CUDA.
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 # Fixing random state.
-np.random.seed(42)
-torch.manual_seed(42)
+SEED = int(os.environ.get("LIAR2_SEED", "42"))
+np.random.seed(SEED)
+random.seed(SEED)
+torch.manual_seed(SEED)
 
 # Checking if CUDA is available.
 DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -25,10 +141,10 @@ print("PyTorch Version : {}".format(torch.__version__))
 print(DEVICE)
 
 # Set workspace and model name.
-# worksapce: directory containing train.csv, valid.csv, and test.csv
-worksapce = str(Path(__file__).resolve().parents[1]) + '/'
+# worksapce: GPT augmented bundle directory containing train/valid/test_augmented.csv
+worksapce = str(locate_validation_liar2_root() / 'data' / 'final' / 'ablation' / 'gpt_competent_classifier') + '/'
 model_name = '1.1.statement'
-model_save = str(Path(__file__).resolve().with_suffix('.pt'))
+model_save = str(Path(__file__).resolve().with_name(f"{Path(__file__).stem}.seed{SEED}.pt"))
 
 print(model_save)
 
@@ -75,9 +191,9 @@ col = ["id", "label", "statement", "date", "subject", "speaker", "speaker_descri
 label_map = {0: 'pants-fire', 1: 'false', 2: 'barely-true', 3: 'half-true', 4: 'mostly-true', 5: 'true'}
 label_convert = {'pants-fire': 0, 'false': 1, 'barely-true': 2, 'half-true': 3, 'mostly-true': 4, 'true':5}
 
-train_data = pd.read_csv(worksapce + 'train.csv')
-test_data = pd.read_csv(worksapce + 'test.csv')
-val_data = pd.read_csv(worksapce + 'valid.csv')
+train_data = pd.read_csv(worksapce + 'train_augmented.csv')
+test_data = pd.read_csv(worksapce + 'test_augmented.csv')
+val_data = pd.read_csv(worksapce + 'valid_augmented.csv')
 
 # Replace NaN values with 'NaN'
 train_data[["true_counts", "mostly_true_counts", "half_true_counts", "mostly_false_counts", "false_counts", "pants_on_fire_counts"]] = train_data[["true_counts", "mostly_true_counts", "half_true_counts", "mostly_false_counts", "false_counts", "pants_on_fire_counts"]].fillna(0)
@@ -490,19 +606,19 @@ train(num_epochs, model, train_loader, val_loader, optimizer, criterion, model_s
 
 
 # Evaluate the model on new data
-def test(model, test_loader, model_save):
+def evaluate(model, loader, model_save, split_name):
     model.load_state_dict(torch.load(model_save))
     model.eval()
 
-    test_label_all = []
-    test_label_onehot_all = []
-    test_predict_all = []
-    test_predict_onehot_all = []
+    label_all = []
+    label_onehot_all = []
+    predict_all = []
+    predict_onehot_all = []
     
-    test_loss = 0.0
-    test_accuracy = 0.0
+    split_loss = 0.0
+    split_accuracy = 0.0
     with torch.no_grad():
-        for statements, label_onehot, label, metadata_text, metadata_number, justification in test_loader:
+        for statements, label_onehot, label, metadata_text, metadata_number, justification in loader:
             statements = statements.to(DEVICE)
             label_onehot = label_onehot.to(DEVICE)
             label = label.to(DEVICE)
@@ -510,23 +626,29 @@ def test(model, test_loader, model_save):
             metadata_number = metadata_number.to(DEVICE)
             justification = justification.to(DEVICE)
 
-            test_outputs = model(statements, metadata_text, metadata_number, justification)
-            test_loss += criterion(test_outputs, label_onehot).item()
-            _, test_predicted = torch.max(test_outputs, 1)
+            outputs = model(statements, metadata_text, metadata_number, justification)
+            split_loss += criterion(outputs, label_onehot).item()
+            _, predicted = torch.max(outputs, 1)
             
-            test_accuracy += sum(test_predicted == label)
-            test_predict_all += test_predicted.tolist()
-            test_predict_onehot_all += test_outputs.tolist()
-            test_label_all += label.tolist()
-            test_label_onehot_all += label_onehot.tolist()
+            split_accuracy += sum(predicted == label)
+            predict_all += predicted.tolist()
+            predict_onehot_all += outputs.tolist()
+            label_all += label.tolist()
+            label_onehot_all += label_onehot.tolist()
 
-    test_loss /= len(test_loader)
-    test_accuracy /= len(test_loader.dataset)
-    test_macro_f1 = f1_score(test_label_all, test_predict_all, average='macro')
-    test_micro_f1 = f1_score(test_label_all, test_predict_all, average='micro')
-    test_mse = mean_squared_error(test_label_all, test_predict_all)
-    test_rmse = np.sqrt(test_mse)
+    split_loss /= len(loader)
+    split_accuracy /= len(loader.dataset)
+    split_macro_f1 = f1_score(label_all, predict_all, average='macro')
+    split_micro_f1 = f1_score(label_all, predict_all, average='micro')
+    split_mse = mean_squared_error(label_all, predict_all)
+    split_rmse = np.sqrt(split_mse)
 
-    print(f'\nTest Loss: {test_loss:.4f}, Test Acc: {test_accuracy:.4f}, Test F1 Macro: {test_macro_f1:.4f}, Test F1 Micro: {test_micro_f1:.4f}, Test RMSE: {test_rmse:.4f}')
+    print(
+        f'\nFinal {split_name} Loss: {split_loss:.4f}, Final {split_name} Acc: {split_accuracy:.4f}, '
+        f'Final {split_name} F1 Macro: {split_macro_f1:.4f}, Final {split_name} F1 Micro: {split_micro_f1:.4f}, '
+        f'Final {split_name} RMSE: {split_rmse:.4f}'
+    )
+    return split_loss, split_accuracy, split_macro_f1, split_micro_f1, split_rmse
 
-test(model, test_loader, model_save)
+evaluate(model, val_loader, model_save, "Val")
+evaluate(model, test_loader, model_save, "Test")

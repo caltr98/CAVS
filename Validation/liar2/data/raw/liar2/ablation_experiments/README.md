@@ -56,15 +56,25 @@ Feature combinations:
 
 - `5.1`
   Statement-only binary baseline.
-- `5.2` to `5.8`
-  GPT competence family.
-- `5.9` to `5.15`
-  RoBERTa+Nesta competence family.
+- `5.8`
+  GPT competence family, used for the full `statement + iscompetent + confidence + reason` binary ablation.
+- `5.15`
+  RoBERTa+Nesta competence family, used for the full `statement + iscompetent + confidence + reason` binary ablation.
 
-The binary target follows the existing project convention:
+The packaged binary sweep is intentionally reduced to three cases:
 
-- `label >= 2` -> `1`
-- `label < 2` -> `0`
+- `5.1` statement-only baseline
+- `5.8` GPT `statement + iscompetent + confidence + reason`
+- `5.15` RoBERTa+Nesta `statement + iscompetent + confidence + reason`
+
+The binary target matches the paper's true-news/false-news definition
+(barely-true grouped with false-news):
+
+- `label >= 3` -> `1`
+- `label < 3` -> `0`
+
+Results produced before 2026-07-08 used the older `label >= 2` convention and
+must be regenerated before being compared with new runs.
 
 By default, the CAVS scripts run five seeds (`42,43,44,45,46`) and print mean
 `±` standard deviation for validation and test metrics from the post-training

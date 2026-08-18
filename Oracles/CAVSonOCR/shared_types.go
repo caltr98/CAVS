@@ -1,6 +1,9 @@
 package main
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // shared_types.go contains data structures used by both:
 // - the queue node (HTTP API)
@@ -18,30 +21,54 @@ type simSkill struct {
 // queryPayload is the "job" distributed by the queue:
 // the oracles should extract skills from Statement and agree on an Outcome.
 type queryPayload struct {
-	RequestID         string   `json:"requestId,omitempty"`
-	RequesterEndpoint string   `json:"requesterEndpoint,omitempty"`
-	Statement         string   `json:"statement,omitempty"`
-	HolderDID         string   `json:"holderDid,omitempty"`
-	SeedUnused        int64    `json:"seed,omitempty"`            // optional; reserved for future modes
-	AuthorSkills      []string `json:"authorSkills,omitempty"`    // canonical "(label, uri)" strings
-	TargetOracleIDs   []int    `json:"targetOracleIds,omitempty"` // if empty, all DON oracles participate
+	RequestID         string          `json:"requestId,omitempty"`
+	OracleSetID       string          `json:"oracleSetID,omitempty"`
+	RequesterEndpoint string          `json:"requesterEndpoint,omitempty"`
+	Statement         string          `json:"statement,omitempty"`
+	StatementHash     string          `json:"statementHash,omitempty"`
+	HolderDID         string          `json:"holderDid,omitempty"`
+	SeedUnused        int64           `json:"seed,omitempty"`         // optional; reserved for future modes
+	AuthorSkills      []string        `json:"authorSkills,omitempty"` // canonical "(label, uri)" strings
+	Presentation      json.RawMessage `json:"presentation,omitempty"`
+
+	// queueImportedAt/admissionNotBefore/admissionDelay are deliberately local
+	// and are never serialized into OCR query bytes. They instrument and gate
+	// the interval between successful per-oracle queue import and the leader's
+	// admission of that real request into an OCR round.
+	queueImportedAt    time.Time
+	admissionNotBefore time.Time
+	admissionDelay     time.Duration
 }
 
 // observationPayload is what an oracle sends as its Observation() output.
 // In OCR3 this is opaque bytes to the protocol.
 type observationPayload struct {
-	Skills        []simSkill `json:"skills"`
-	AuthorSkills  []string   `json:"authorSkills,omitempty"`
-	Participating bool       `json:"participating"`
-	Competent     bool       `json:"competent"`
-	Confidence    float64    `json:"confidence"`
-	Reason        string     `json:"reason,omitempty"`
+	RequestID     string `json:"requestId,omitempty"`
+	OracleSetID   string `json:"oracleSetID,omitempty"`
+	StatementHash string `json:"statementHash,omitempty"`
+	// Available is nil/true for a successful external observation. An explicit
+	// false is a signed availability envelope: it lets a leader whose own
+	// backend failed continue coordinating the round, while quorum and Outcome
+	// exclude that failed external observation.
+	Available    *bool      `json:"available,omitempty"`
+	Skills       []simSkill `json:"skills"`
+	AuthorSkills []string   `json:"authorSkills,omitempty"`
+	Competent    bool       `json:"competent"`
+	Confidence   float64    `json:"confidence"`
+	Reason       string     `json:"reason,omitempty"`
 }
 
 // outcomePayload is the agreed, deterministic aggregation of all observations.
 // We reuse this JSON blob as the Report bytes as well (see Reports()).
+//
+// Fields prefixed `Attested*` are populated by the transmitter AFTER libocr
+// finishes report attestation; they are NOT part of the deterministic bytes
+// produced by Outcome()/Reports() (each is `omitempty` so a zero/empty value
+// disappears from the JSON, leaving the consensus-signed blob untouched), and
+// they MUST NOT be set inside any reporting-plugin method.
 type outcomePayload struct {
 	RequestID         string          `json:"requestId,omitempty"`
+	OracleSetID       string          `json:"oracleSetID,omitempty"`
 	RequesterEndpoint string          `json:"requesterEndpoint,omitempty"`
 	Statement         string          `json:"statement,omitempty"`
 	StatementHash     string          `json:"statementHash,omitempty"`
@@ -52,6 +79,15 @@ type outcomePayload struct {
 	Competent         bool            `json:"competent"`
 	Confidence        float64         `json:"confidence"`
 	Reason            string          `json:"reason,omitempty"`
+
+	// Off-chain attestation envelope. Lets the requester pick any subset of the
+	// listed oracle IDs (of size >= AttestedThreshold) when triggering the
+	// downstream BLS multi-issuer VC flow, instead of being pinned to a brittle
+	// F+1 set.
+	AttestedSignerOracleIDs []uint8 `json:"attestedSignerOracleIds,omitempty"`
+	AttestedThreshold       uint8   `json:"attestedThreshold,omitempty"`
+	AttestedSeqNr           uint64  `json:"attestedSeqNr,omitempty"`
+	AttestedConfigDigest    string  `json:"attestedConfigDigest,omitempty"`
 }
 
 // trustOpinionBps encodes a subjective-logic opinion (b,d,u) on the trust
@@ -93,12 +129,11 @@ type trustPayload struct {
 // storedObservation is how we persist per-oracle observations in the queue, so
 // we can later query "what did each oracle see?" for a given requestId.
 type storedObservation struct {
-	OracleID      int        `json:"oracleId"`
-	SeqNr         uint64     `json:"seqNr"`
-	Skills        []simSkill `json:"skills"`
-	AuthorSkills  []string   `json:"authorSkills,omitempty"`
-	Participating bool       `json:"participating"`
-	Competent     bool       `json:"competent"`
-	Confidence    float64    `json:"confidence"`
-	Reason        string     `json:"reason,omitempty"`
+	OracleID     int        `json:"oracleId"`
+	SeqNr        uint64     `json:"seqNr"`
+	Skills       []simSkill `json:"skills"`
+	AuthorSkills []string   `json:"authorSkills,omitempty"`
+	Competent    bool       `json:"competent"`
+	Confidence   float64    `json:"confidence"`
+	Reason       string     `json:"reason,omitempty"`
 }

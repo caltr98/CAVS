@@ -21,6 +21,7 @@ func hashDirectRequest(requesterEndpoint string, statement string, holderDid str
 		Statement         string   `json:"statement"`
 		HolderDID         string   `json:"holderDid"`
 		AuthorSkills      []string `json:"authorSkills"`
+		Presentation      string   `json:"presentation,omitempty"`
 	}{
 		Version:           "cavsonocr-direct-request-v1",
 		RequesterEndpoint: strings.TrimSpace(requesterEndpoint),
@@ -31,6 +32,40 @@ func hashDirectRequest(requesterEndpoint string, statement string, holderDid str
 	b, _ := json.Marshal(payload)
 	sum := sha256.Sum256(b)
 	return fmt.Sprintf("%x", sum[:])
+}
+
+func hashDirectRequestWithPresentation(requesterEndpoint string, statement string, holderDid string, presentation json.RawMessage) string {
+	payload := struct {
+		Version           string          `json:"version"`
+		RequesterEndpoint string          `json:"requesterEndpoint"`
+		Statement         string          `json:"statement"`
+		HolderDID         string          `json:"holderDid"`
+		Presentation      json.RawMessage `json:"presentation,omitempty"`
+	}{
+		Version:           "cavsonocr-direct-request-v2",
+		RequesterEndpoint: strings.TrimSpace(requesterEndpoint),
+		Statement:         strings.TrimSpace(statement),
+		HolderDID:         strings.TrimSpace(holderDid),
+		Presentation:      compactRawJSON(presentation),
+	}
+	b, _ := json.Marshal(payload)
+	sum := sha256.Sum256(b)
+	return fmt.Sprintf("%x", sum[:])
+}
+
+func compactRawJSON(raw json.RawMessage) json.RawMessage {
+	if len(raw) == 0 {
+		return nil
+	}
+	var v any
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return raw
+	}
+	b, err := json.Marshal(v)
+	if err != nil {
+		return raw
+	}
+	return json.RawMessage(b)
 }
 
 func stringFromAny(v any) string {

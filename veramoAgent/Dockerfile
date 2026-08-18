@@ -1,4 +1,7 @@
-FROM node:20-bullseye
+ARG CAVS_SOURCE_SHA256=unversioned
+FROM node:20-bullseye@sha256:c0122351f25f04facee976f9db7214789eabadb489f4e4aea9cd00a0d6af77c4
+ARG CAVS_SOURCE_SHA256
+LABEL org.opencontainers.image.cavs-source-sha256="${CAVS_SOURCE_SHA256}"
 
 WORKDIR /usr/src/app
 

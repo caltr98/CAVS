@@ -272,7 +272,9 @@ def parse_bool(value: object) -> float:
 
 
 def label_to_binary(label: object) -> int:
-    return 1 if int(label) >= 2 else 0
+    # True-news = half-true or better; barely-true is grouped with false-news,
+    # matching the paper's Table 1 base rates.
+    return 1 if int(label) >= 3 else 0
 
 
 def parse_seeds(seed: int | None, raw_seeds: str | None) -> list[int]:

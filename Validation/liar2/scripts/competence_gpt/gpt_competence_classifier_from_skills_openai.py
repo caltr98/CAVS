@@ -214,8 +214,11 @@ class StreamingJSONListWriter:
 
 
 def _article_text(article: Dict[str, Any]) -> str:
+    # Only fields available at submission time may be used. The fact-checker's
+    # gold explanation (liar2_justification) is the target rationale and must
+    # NOT be fed to the competence model, as it leaks the label.
     parts: List[str] = []
-    for k in ("title", "liar2_statement", "liar2_context", "liar2_justification", "content"):
+    for k in ("title", "liar2_statement", "liar2_context", "content"):
         v = article.get(k)
         if isinstance(v, str) and v.strip():
             parts.append(v.strip())

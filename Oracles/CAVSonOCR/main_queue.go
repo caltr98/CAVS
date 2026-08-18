@@ -15,13 +15,11 @@ import (
 // This is built with `-tags queue` and is intended to run ONLY the HTTP queue node.
 func main() {
 	var queueAddr string
-	var queueMode string
 	flag.StringVar(&queueAddr, "queue_addr", "0.0.0.0:20000", "queue listen address")
-	flag.StringVar(&queueMode, "queue_mode", requestQueueModeCentralized, "queue mode: centralized|direct")
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	must(runQueue(ctx, queueAddr, queueMode))
+	must(runQueue(ctx, queueAddr))
 }

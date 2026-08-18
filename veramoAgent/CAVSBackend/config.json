@@ -6,5 +6,7 @@
   "ojdDapsSkillsEndpoint": "http://Ojd_service1:5005",
   "veramoAgentEndpoint": "http://VeramoAgent:3001",
   "gptCompServiceEndpoint": "http://gptcomp:3030",
+  "qwenCompServiceEndpoint": "http://qwencomp:3030",
+  "deepseekCompServiceEndpoint": "http://deepseekcomp:3030",
   "competenceMode": "nesta"
 }

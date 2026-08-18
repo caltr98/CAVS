@@ -30,7 +30,6 @@ import {
     MinimalImportableKey, W3CVerifiableCredential
 } from "@veramo/core";
 
-import {ICredentialIssuerLD} from "@veramo/credential-ld"
 import decode from 'jsqr'
 // Create an app instance
 import {PNG} from 'pngjs'
@@ -41,6 +40,7 @@ import {Presentation} from "@veramo/data-store";
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { keccak_256 } from "@noble/hashes/sha3";
 import { bytesToHex, hexToBytes } from "@veramo/utils";
+import { JsonRpcProvider, Wallet, parseEther } from "ethers";
 
 import {createVCPayload, createVPPayload, verifyVPSelectiveDisclousureCorrectness} from "./src/hash/main.js";
 import {} from "./src/hash/hashAttributes.js"
@@ -118,6 +118,393 @@ function normalizeEthereumAddress(value: string): string {
     return `0x${hex}`;
 }
 
+function rpcErrorText(error: unknown): string {
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+    if (typeof error === 'object' && error !== null) {
+        const record = error as Record<string, unknown>;
+        const nested = record.shortMessage || record.message || (record.error as Record<string, unknown> | undefined)?.message;
+        if (nested) {
+            return String(nested);
+        }
+    }
+    return String(error || '');
+}
+
+function isTransientRpcError(error: unknown): boolean {
+    const text = rpcErrorText(error).toLowerCase();
+    return text.includes('429') ||
+        text.includes('compute units per second capacity') ||
+        text.includes('rate limit') ||
+        text.includes('too many requests') ||
+        text.includes('socket hang up') ||
+        text.includes('econnreset') ||
+        text.includes('timeout');
+}
+
+async function withRpcRetry<T>(label: string, operation: () => Promise<T>, attempts = 5, delayMs = 750): Promise<T> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        try {
+            return await operation();
+        } catch (error) {
+            lastError = error;
+            if (!isTransientRpcError(error) || attempt >= attempts) {
+                throw error;
+            }
+            const waitMs = delayMs * (2 ** (attempt - 1));
+            console.warn(`${label} retry ${attempt}/${attempts} after transient RPC error: ${rpcErrorText(error)}`);
+            await new Promise((resolve) => setTimeout(resolve, waitMs));
+        }
+    }
+    throw lastError;
+}
+
+function normalizePrivateKeyHex(value: string): string {
+    const hex = strip0x(String(value || ''));
+    if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+        throw new Error('Expected a 32-byte secp256k1 private key');
+    }
+    return hex.toLowerCase();
+}
+
+async function ensureConfiguredSepoliaDid(): Promise<IIdentifier | null> {
+    const configuredPrivateKey =
+        process.env.VERAMO_SUBMITTER_PRIVATE_KEY ||
+        process.env.SUBMITTER_PRIVATE_KEY ||
+        process.env.HOLDER_PRIVATE_KEY ||
+        "";
+    if (!configuredPrivateKey.trim()) {
+        return null;
+    }
+
+    const privateKeyHex = normalizePrivateKeyHex(configuredPrivateKey);
+    const wallet = new Wallet(`0x${privateKeyHex}`);
+    const walletAddr = wallet.address;
+    const alias = (process.env.VERAMO_SUBMITTER_ALIAS || walletAddr).trim() || walletAddr;
+    const did = `did:ethr:sepolia:${walletAddr}`;
+
+    try {
+        return await agent.didManagerGet({ did });
+    } catch (_err) {
+    }
+
+    try {
+        return await agent.didManagerGetByAlias({ alias });
+    } catch (_err) {
+    }
+
+    return await agent.didManagerImport({
+        did,
+        alias,
+        provider: 'did:ethr:sepolia',
+        keys: [
+            {
+                type: 'Secp256k1',
+                kms: 'local',
+                kid: `key-1-${walletAddr.toLowerCase()}`,
+                privateKeyHex,
+            } as MinimalImportableKey,
+        ],
+        services: [],
+    });
+}
+
+const RUNTIME_ENV_FILE = process.env.VERAMO_RUNTIME_ENV_FILE || '/usr/src/app/runtime-config.env';
+type OracleFundingResult = {
+    funded: boolean;
+    action: 'none' | 'top-up' | 'skipped';
+    txHash?: string;
+    currentBalanceWei?: string;
+    targetBalanceWei?: string;
+    finalBalanceWei?: string;
+    reason?: string;
+};
+const fundingInFlight = new Map<string, Promise<OracleFundingResult>>();
+let fundingQueue: Promise<void> = Promise.resolve();
+const FUNDING_LOCK_DIR = process.env.OCR_FUNDING_LOCK_DIR || '/registry/oracle-funding.lock';
+const FUNDING_LOCK_STALE_MS = Number(process.env.OCR_FUNDING_LOCK_STALE_MS || 90 * 1000);
+const FUNDING_LOCK_WAIT_MS = Number(process.env.OCR_FUNDING_LOCK_WAIT_MS || 500);
+const FUNDING_TX_WAIT_MS = Number(process.env.OCR_FUNDING_TX_WAIT_MS || 120 * 1000);
+
+async function sleepMs(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withTimeout<T>(label: string, promise: Promise<T>, timeoutMs: number): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+        return await Promise.race([
+            promise,
+            new Promise<T>((_resolve, reject) => {
+                timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+            }),
+        ]);
+    } finally {
+        if (timer) clearTimeout(timer);
+    }
+}
+
+function isReplacementFeeError(error: unknown): boolean {
+    const text = rpcErrorText(error).toLowerCase();
+    return text.includes('replacement fee too low') ||
+        text.includes('replacement transaction underpriced') ||
+        text.includes('replacement_underpriced');
+}
+
+function parseInsufficientFundsRequirement(error: unknown): { haveWei: bigint; wantWei: bigint } | null {
+    const match = rpcErrorText(error).match(/have\s+(\d+)\s+want\s+(\d+)/i);
+    if (!match) {
+        return null;
+    }
+    return {
+        haveWei: BigInt(match[1]),
+        wantWei: BigInt(match[2]),
+    };
+}
+
+function dynamicFundingBufferWei(): bigint {
+    const configured =
+        readRuntimeSetting('ORACLE_DYNAMIC_TOP_UP_BUFFER_ETH') ||
+        readRuntimeSetting('DYNAMIC_TOP_UP_BUFFER_ETH') ||
+        '0.002';
+    return Number(configured) > 0 ? parseEther(configured) : 0n;
+}
+
+function minBigInt(a: bigint, b: bigint): bigint {
+    return a < b ? a : b;
+}
+
+async function acquireFundingLock(label: string): Promise<() => Promise<void>> {
+    if (!FUNDING_LOCK_DIR) {
+        return async () => {};
+    }
+
+    const ownerFile = path.join(FUNDING_LOCK_DIR, 'owner');
+    while (true) {
+        try {
+            await fs.promises.mkdir(FUNDING_LOCK_DIR);
+            await fs.promises.writeFile(ownerFile, `${process.pid} ${label} ${new Date().toISOString()}\n`, 'utf8');
+            console.log(`funding lock acquired by ${label}`);
+            return async () => {
+                await fs.promises.rm(FUNDING_LOCK_DIR, {recursive: true, force: true});
+                console.log(`funding lock released by ${label}`);
+            };
+        } catch (error: any) {
+            if (error?.code !== 'EEXIST') {
+                console.warn(`funding lock disabled at ${FUNDING_LOCK_DIR}: ${rpcErrorText(error)}`);
+                return async () => {};
+            }
+            try {
+                const stat = await fs.promises.stat(FUNDING_LOCK_DIR);
+                if (Date.now() - stat.mtimeMs > FUNDING_LOCK_STALE_MS) {
+                    console.warn(`removing stale funding lock at ${FUNDING_LOCK_DIR}`);
+                    await fs.promises.rm(FUNDING_LOCK_DIR, {recursive: true, force: true});
+                    continue;
+                }
+            } catch (_err) {
+            }
+            await sleepMs(FUNDING_LOCK_WAIT_MS);
+        }
+    }
+}
+
+function readRuntimeSetting(name: string): string {
+    const envValue = String(process.env[name] || '').trim();
+    if (envValue) {
+        return envValue;
+    }
+    try {
+        const raw = fs.readFileSync(RUNTIME_ENV_FILE, 'utf8');
+        for (const line of raw.split(/\r?\n/)) {
+            if (!line.startsWith(`${name}=`)) continue;
+            const value = line.slice(name.length + 1).trim();
+            if (value) {
+                return value;
+            }
+        }
+    } catch (_err) {
+    }
+    return '';
+}
+
+function runtimeSettingIsTrue(name: string): boolean {
+    const value = readRuntimeSetting(name).toLowerCase();
+    return value === '1' || value === 'true' || value === 'yes' || value === 'on';
+}
+
+async function ensureFundingForOracleAddress(address: string, targetBalanceEth?: string): Promise<OracleFundingResult> {
+    const normalizedAddress = normalizeEthereumAddress(address);
+    const existingTask = fundingInFlight.get(normalizedAddress);
+    if (existingTask) {
+        return await existingTask;
+    }
+
+    const task = (async (): Promise<OracleFundingResult> => {
+        if (runtimeSettingIsTrue('OCR_DISABLE_ORACLE_FUNDING')) {
+            return { funded: false, action: 'skipped', reason: 'OCR_DISABLE_ORACLE_FUNDING enabled' };
+        }
+        const rpcUrl = readRuntimeSetting('OCR_CONTRACT_RPC_URL');
+        const funderKey = readRuntimeSetting('PRIVATE_KEY');
+        if (!rpcUrl || !funderKey) {
+            return { funded: false, action: 'skipped', reason: 'missing OCR_CONTRACT_RPC_URL or PRIVATE_KEY' };
+        }
+
+        const provider = new JsonRpcProvider(rpcUrl);
+        const funder = new Wallet(normalizeHex0x(normalizePrivateKeyHex(funderKey)), provider);
+        if (funder.address.toLowerCase() === normalizedAddress.toLowerCase()) {
+            return { funded: false, action: 'skipped', reason: 'oracle address matches funder' };
+        }
+
+        const targetBalanceWei = parseEther(
+            targetBalanceEth ||
+            readRuntimeSetting('CAVS_ORACLE_TARGET_BALANCE_ETH') ||
+            readRuntimeSetting('AUTHOR_TARGET_BALANCE_ETH') ||
+            '0.03',
+        );
+        const reserveWei = parseEther(readRuntimeSetting('AUTHOR_FUNDER_GAS_RESERVE_ETH') || '0.005');
+        const [currentBalanceWei, funderBalanceWei] = await Promise.all([
+            withRpcRetry('provider.getBalance(target)', () => provider.getBalance(normalizedAddress)),
+            withRpcRetry('provider.getBalance(funder)', () => provider.getBalance(funder.address)),
+        ]);
+        if (currentBalanceWei >= targetBalanceWei) {
+            return {
+                funded: false,
+                action: 'none',
+                currentBalanceWei: currentBalanceWei.toString(),
+                targetBalanceWei: targetBalanceWei.toString(),
+                finalBalanceWei: currentBalanceWei.toString(),
+            };
+        }
+        if (funderBalanceWei <= reserveWei) {
+            return {
+                funded: false,
+                action: 'skipped',
+                currentBalanceWei: currentBalanceWei.toString(),
+                targetBalanceWei: targetBalanceWei.toString(),
+                reason: `funder balance ${funderBalanceWei.toString()} below reserve ${reserveWei.toString()}`,
+            };
+        }
+
+        await fundingQueue;
+        let releaseQueue: () => void = () => {};
+        fundingQueue = new Promise<void>((resolve) => {
+            releaseQueue = resolve;
+        });
+        const releaseDistributedFundingLock = await acquireFundingLock(normalizedAddress);
+        try {
+            const refreshedBalanceWei = await withRpcRetry('provider.getBalance(refresh)', () => provider.getBalance(normalizedAddress));
+            if (refreshedBalanceWei >= targetBalanceWei) {
+                return {
+                    funded: false,
+                    action: 'none',
+                    currentBalanceWei: currentBalanceWei.toString(),
+                    targetBalanceWei: targetBalanceWei.toString(),
+                    finalBalanceWei: refreshedBalanceWei.toString(),
+                };
+            }
+
+            const desiredTopUpWei = targetBalanceWei - refreshedBalanceWei;
+            const funderBalanceAfterRefreshWei = await withRpcRetry('provider.getBalance(funder refresh)', () => provider.getBalance(funder.address));
+            const availableFundingWei = funderBalanceAfterRefreshWei > reserveWei ? funderBalanceAfterRefreshWei - reserveWei : 0n;
+            if (availableFundingWei <= 0n) {
+                return {
+                    funded: false,
+                    action: 'skipped',
+                    currentBalanceWei: currentBalanceWei.toString(),
+                    targetBalanceWei: targetBalanceWei.toString(),
+                    finalBalanceWei: refreshedBalanceWei.toString(),
+                    reason: `funder balance ${funderBalanceAfterRefreshWei.toString()} leaves no spendable balance above reserve ${reserveWei.toString()}`,
+                };
+            }
+            const topUpWei = minBigInt(desiredTopUpWei, availableFundingWei);
+            let tx: Awaited<ReturnType<Wallet['sendTransaction']>> | undefined;
+            for (let attempt = 1; attempt <= 5; attempt += 1) {
+                try {
+                    tx = await funder.sendTransaction({ to: normalizedAddress, value: topUpWei });
+                    break;
+                } catch (error) {
+                    const requirement = parseInsufficientFundsRequirement(error);
+                    if (requirement && attempt < 5) {
+                        const adjustedAvailableWei = requirement.haveWei > reserveWei ? requirement.haveWei - reserveWei : 0n;
+                        if (adjustedAvailableWei > 0n && adjustedAvailableWei < topUpWei) {
+                            console.warn(`funder balance cannot reach full target; retrying partial top-up ${adjustedAvailableWei.toString()} wei after insufficient-funds error: ${rpcErrorText(error)}`);
+                            tx = await funder.sendTransaction({ to: normalizedAddress, value: adjustedAvailableWei });
+                            break;
+                        }
+                    }
+                    if (!isReplacementFeeError(error) || attempt >= 5) {
+                        throw error;
+                    }
+                    console.warn(`funder.sendTransaction replacement-fee retry ${attempt}/5: ${rpcErrorText(error)}`);
+                    await sleepMs(1000 * attempt);
+                    const afterErrorBalanceWei = await withRpcRetry('provider.getBalance(after replacement error)', () => provider.getBalance(normalizedAddress));
+                    if (afterErrorBalanceWei >= targetBalanceWei) {
+                        return {
+                            funded: false,
+                            action: 'none',
+                            currentBalanceWei: currentBalanceWei.toString(),
+                            targetBalanceWei: targetBalanceWei.toString(),
+                            finalBalanceWei: afterErrorBalanceWei.toString(),
+                            reason: 'target reached after concurrent funding transaction',
+                        };
+                    }
+                }
+            }
+            if (!tx) {
+                throw new Error('oracle funding tx was not submitted');
+            }
+            console.log(`oracle funding tx submitted to ${normalizedAddress}: ${tx.hash}`);
+            const receipt = await withRpcRetry('tx.wait', () => withTimeout('oracle funding tx.wait', tx.wait(), FUNDING_TX_WAIT_MS));
+            if (!receipt || receipt.status !== 1) {
+                throw new Error(`oracle funding tx ${tx.hash} reverted`);
+            }
+            const finalBalanceWei = await withRpcRetry('provider.getBalance(final)', () => provider.getBalance(normalizedAddress));
+            return {
+                funded: true,
+                action: 'top-up',
+                txHash: tx.hash,
+                currentBalanceWei: currentBalanceWei.toString(),
+                targetBalanceWei: targetBalanceWei.toString(),
+                finalBalanceWei: finalBalanceWei.toString(),
+            };
+        } finally {
+            await releaseDistributedFundingLock();
+            releaseQueue();
+        }
+    })();
+
+    fundingInFlight.set(normalizedAddress, task);
+    try {
+        return await task;
+    } finally {
+        fundingInFlight.delete(normalizedAddress);
+    }
+}
+
+function fundingAllowedForAlias(alias: string): boolean {
+    const raw = readRuntimeSetting('OCR_FUND_ORACLE_ALIASES').trim();
+    if (!raw) {
+        return true;
+    }
+    const normalizedAlias = alias.toLowerCase();
+    return raw
+        .split(',')
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean)
+        .includes(normalizedAlias);
+}
+
+async function ensureFundingForOracleAlias(alias: string, address: string): Promise<OracleFundingResult> {
+    if (!fundingAllowedForAlias(alias)) {
+        return { funded: false, action: 'skipped', reason: `oracle funding disabled for alias ${alias}` };
+    }
+    const bootstrapTarget = readRuntimeSetting('OCR_BOOTSTRAP_TARGET_BALANCE_ETH');
+    const targetOverride = alias.trim().toLowerCase() === 'oracle0' && bootstrapTarget ? bootstrapTarget : undefined;
+    return await ensureFundingForOracleAddress(address, targetOverride);
+}
+
 function normalizeRecoveryBit(v: number): number {
     if (v >= 27) {
         v -= 27;
@@ -187,8 +574,38 @@ function ethereumAddressFromVerificationMethod(vm: any): string | null {
     return null;
 }
 
+const didEthResolutionCache = new Map<string, { expectedAddress: string; verificationMethodId: string }>();
+
+function tryResolveDidEthAddressLocally(did: string, verificationMethodId?: string): { expectedAddress: string; verificationMethodId: string } | null {
+    const normalizedDid = String(did || '').trim();
+    const match = normalizedDid.match(/^did:ethr(?::[^:]+)?:0x[0-9a-fA-F]{40}$/);
+    if (!match) {
+        return null;
+    }
+    const expectedAddress = ethAddressFromDid(normalizedDid);
+    return {
+        expectedAddress,
+        verificationMethodId: String(verificationMethodId || `${normalizedDid}#controllerKey`),
+    };
+}
+
 async function resolveDidEthVerificationMethodAddress(did: string, verificationMethodId?: string): Promise<{ expectedAddress: string; verificationMethodId: string }> {
-    const resolved = await agent.resolveDid({ didUrl: did });
+    const cacheKey = `${String(did || '').trim()}|${String(verificationMethodId || '').trim()}`;
+    const cached = didEthResolutionCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    const local = tryResolveDidEthAddressLocally(did, verificationMethodId);
+    if (local) {
+        didEthResolutionCache.set(cacheKey, local);
+        return local;
+    }
+
+    const resolved = await withRpcRetry(
+        `agent.resolveDid(${did})`,
+        () => agent.resolveDid({ didUrl: did }),
+    );
     const didDocument = resolved?.didDocument;
     if (!didDocument) {
         throw new Error(`Could not resolve DID document for ${did}`);
@@ -212,10 +629,12 @@ async function resolveDidEthVerificationMethodAddress(did: string, verificationM
         throw new Error(`Verification method ${selected.id || '(unknown)'} does not expose an Ethereum address/public key`);
     }
 
-    return {
+    const result = {
         expectedAddress,
         verificationMethodId: String(selected.id || verificationMethodId || ''),
     };
+    didEthResolutionCache.set(cacheKey, result);
+    return result;
 }
 
 function ethAddressFromDid(did: string): string {
@@ -233,13 +652,27 @@ async function getManagedOcrIdentityByAlias(alias: string) {
     const kid_eth =
         identifier.controllerKeyId ||
         identifier.keys.find((k: any) => k.type === 'Secp256k1')?.kid;
-    const kid_bls = identifier.keys.find((k: any) => k.type === 'Bls12381G1' || k.meta?.alg === 'BLS_SIGNATURE')?.kid;
+    let kid_bls = identifier.keys.find((k: any) => k.type === 'Bls12381G1' || k.meta?.alg === 'BLS_SIGNATURE')?.kid;
     if (!kid_eth) {
         throw new Error(`No managed Secp256k1 key found for alias ${alias}`);
     }
     let bls_pub_key: string | undefined;
     if (kid_bls) {
         const blsKey = await agent.keyManagerGet({kid: kid_bls});
+        bls_pub_key = blsKey.publicKeyHex;
+    } else {
+        const blsKey = await agent.keyManagerCreate({
+            kms: 'local',
+            type: 'Bls12381G1',
+        });
+        await agent.didManagerAddKey({
+            did: identifier.did,
+            key: blsKey,
+            key_type: 'Bls12381G1',
+            key_ref: blsKey.kid,
+            NoPublish: true,
+        } as any);
+        kid_bls = blsKey.kid;
         bls_pub_key = blsKey.publicKeyHex;
     }
     return {
@@ -251,26 +684,61 @@ async function getManagedOcrIdentityByAlias(alias: string) {
     };
 }
 
+const managedOcrIdentityInFlight = new Map<string, Promise<any>>();
+
+async function ensureManagedOcrIdentity(name: string) {
+    const normalizedName = String(name || '').trim();
+    if (!normalizedName) {
+        throw new Error('Missing required field: name');
+    }
+    const existingTask = managedOcrIdentityInFlight.get(normalizedName);
+    if (existingTask) {
+        return await existingTask;
+    }
+
+    const task = (async () => {
+        try {
+            const existing = await getManagedOcrIdentityByAlias(normalizedName);
+            const funding = await ensureFundingForOracleAlias(normalizedName, existing.address);
+            return {ok: true, source: 'existing', ...existing, alias: normalizedName, funding};
+        } catch (_err) {
+        }
+
+        try {
+            const actorInfo = await singleActorSetup(normalizedName);
+            const address = ethAddressFromDid(actorInfo.did);
+            const funding = await ensureFundingForOracleAlias(normalizedName, address);
+            return {
+                ok: true,
+                source: 'created',
+                ...actorInfo,
+                address,
+                alias: normalizedName,
+                funding,
+            };
+        } catch (err: any) {
+            const msg = String(err?.message || err);
+            if (msg.includes('UNIQUE constraint failed: identifier.alias') || msg.includes('already exists')) {
+                const existing = await getManagedOcrIdentityByAlias(normalizedName);
+                const funding = await ensureFundingForOracleAlias(normalizedName, existing.address);
+                return {ok: true, source: 'existing_after_race', ...existing, alias: normalizedName, funding};
+            }
+            throw err;
+        }
+    })();
+
+    managedOcrIdentityInFlight.set(normalizedName, task);
+    try {
+        return await task;
+    } finally {
+        managedOcrIdentityInFlight.delete(normalizedName);
+    }
+}
+
 app.post('/setup', async (req: Request, res: Response) => {
     try {
-        let baseName = (req.body as any)?.name || 'actor1';
-        let lastErr: any = null;
-        for (let attempt = 0; attempt < 5; attempt++) {
-            const name = attempt === 0 ? baseName : `${baseName}-${attempt}`;
-            try {
-                const actorInfo = await singleActorSetup(name);
-                return res.json({ok: true, ...actorInfo, alias: name});
-            } catch (err: any) {
-                lastErr = err;
-                const msg = String(err?.message || err);
-                // Retry with a different alias if the alias/provider is already present.
-                if (msg.includes('UNIQUE constraint failed: identifier.alias') || msg.includes('already exists')) {
-                    continue;
-                }
-                break;
-            }
-        }
-        res.status(500).json({ok: false, error: String(lastErr?.message || lastErr)});
+        const name = String((req.body as any)?.name || 'actor1').trim() || 'actor1';
+        return res.json(await ensureManagedOcrIdentity(name));
     } catch (e: any) {
         res.status(500).json({ok: false, error: String(e?.message || e)});
     }
@@ -282,18 +750,7 @@ app.post('/ocr/identity/setup', async (req: Request, res: Response) => {
         if (!name) {
             return res.status(400).json({ok: false, error: 'Missing required field: name'});
         }
-        try {
-            const existing = await getManagedOcrIdentityByAlias(name);
-            return res.json({ok: true, source: 'existing', ...existing});
-        } catch (_err) {
-            const created = await singleActorSetup(name);
-            return res.json({
-                ok: true,
-                source: 'created',
-                ...created,
-                address: ethAddressFromDid(created.did),
-            });
-        }
+        return res.json(await ensureManagedOcrIdentity(name));
     } catch (e: any) {
         res.status(500).json({ok: false, error: String(e?.message || e)});
     }
@@ -687,13 +1144,32 @@ app.get("/api/v0/check/", async (req: Request, res: Response) => {
     }
 });
 
-// Endpoint to get DID ETHR by private key
-app.get("/api/v0/setup/", async (req: Request, res: Response) => {
-    const privateKey: string = <string>req.query.privatekey;
-    const walletAddr: string = <string>req.query.walletaddr;
+// Import a DID ETHR identity. POST keeps private key material out of request
+// URLs and access logs; GET remains as a backwards-compatible legacy route.
+async function setupEthDid(req: Request, res: Response) {
+    const input = req.method === 'POST' ? req.body : req.query;
+    const privateKey = typeof input?.privatekey === 'string'
+        ? input.privatekey.trim()
+        : '';
+    const walletAddr = typeof input?.walletaddr === 'string'
+        ? input.walletaddr.trim()
+        : '';
+    const privateKeyHex = privateKey.replace(/^0x/i, '');
+    if (!/^[0-9a-fA-F]{64}$/.test(privateKeyHex) || !/^0x[0-9a-fA-F]{40}$/.test(walletAddr)) {
+        return res.status(400).send({error: 'A valid privatekey and walletaddr are required.'});
+    }
+    let derivedAddress: string;
+    try {
+        derivedAddress = new Wallet(`0x${privateKeyHex}`).address;
+    } catch (_error) {
+        return res.status(400).send({error: 'A valid privatekey and walletaddr are required.'});
+    }
+    if (derivedAddress.toLowerCase() !== walletAddr.toLowerCase()) {
+        return res.status(400).send({error: 'walletaddr does not match privatekey.'});
+    }
 
     try {
-        console.log(`Setting up DID for wallet address: ${walletAddr} with private key: ${privateKey}`);
+        console.log(`Setting up DID for wallet address: ${walletAddr}`);
         let identifier = await agentETH.didManagerGetByAlias({alias: walletAddr});
         console.log(`Identifier found: ${JSON.stringify(identifier)}`);
         res.send(identifier);
@@ -713,7 +1189,7 @@ app.get("/api/v0/setup/", async (req: Request, res: Response) => {
                     type: "Secp256k1",
                     kms: "local",
                     kid: "key-1" + walletAddr,
-                    privateKeyHex: privateKey,
+                    privateKeyHex,
                 } as MinimalImportableKey,
             ],
             services: [],
@@ -724,7 +1200,10 @@ app.get("/api/v0/setup/", async (req: Request, res: Response) => {
         console.error(`Error creating identifier for wallet address ${walletAddr}:`, error);
         res.status(500).send({error: 'An error occurred while creating the identifier.'});
     }
-});
+}
+
+app.post("/api/v0/setup/", setupEthDid);
+app.get("/api/v0/setup/", setupEthDid);
 
 app.get("/api/v0/confirm/", async (req: Request, res: Response) => {
     let privateKey: string = <string>req.query.privatekey;
@@ -733,7 +1212,7 @@ app.get("/api/v0/confirm/", async (req: Request, res: Response) => {
 
     let identifier;
     // Use the private key directly without converting it
-    console.log(privateKey + " " + walletAddr)
+    console.log(`Confirming DID for wallet address: ${walletAddr}`)
     try {
         identifier = await agentETH.didManagerGetByAlias({alias: walletAddr});
         console.log(identifier)
@@ -779,8 +1258,19 @@ app.get("/create_did_by_alias", async (req: Request, res: Response) => {
 });
 
 app.get("/create_did", async (req: Request, res: Response) => {
-    const identifier = await agent.didManagerCreate({})
-    res.send(identifier);
+    try {
+        const configuredIdentifier = await ensureConfiguredSepoliaDid();
+        if (configuredIdentifier) {
+            res.send(configuredIdentifier);
+            return;
+        }
+
+        const identifier = await agent.didManagerCreate({})
+        res.send(identifier);
+    } catch (error) {
+        console.error('Error creating/importing DID:', error);
+        res.status(500).send({ error: 'Failed to create or import DID' });
+    }
 });
 
 
@@ -1702,27 +2192,40 @@ app.post('/get_qr_code/jwt', async (req: Request, res: Response) => {
 
 
 //route to convert a jwt to VP or VC (or any other text)
-app.get("/decode_jwt", async (req: Request, res: Response) => {
-    let jwt: string = <string>req.query.jwt
+//
+// Shared decoder used by both GET (legacy) and POST (added for large VCs).
+// Large authors carry up to 200 ESCO skills which produce ~30 KB JWTs;
+// most HTTP servers refuse query strings that big, so GET fails the moment
+// the dataset includes those authors. POST avoids the URL length limit
+// entirely by carrying the JWT in the JSON body.
+async function handleDecodeJwt(jwt: string | undefined, res: Response) {
+    if (!jwt) {
+        res.status(400).send("missing jwt");
+        return;
+    }
     try {
         let decoded = jwtDecode(jwt);
-        let result = decoded; //result can be any json if not in the following two categories
         if (decoded.hasOwnProperty('vc')) {
-            //if a veriable credential
-            let result: VerifiableCredential = format_jwt_decoded_to_VC(jwt, decoded)
+            let result: VerifiableCredential = format_jwt_decoded_to_VC(jwt, decoded);
             res.send(result);
             return;
         } else if (decoded.hasOwnProperty('vp')) {
-            let result: VerifiablePresentation = format_jwt_decoded_to_VP(jwt, decoded)
-
+            let result: VerifiablePresentation = format_jwt_decoded_to_VP(jwt, decoded);
             res.send(result);
-
             return;
         }
+        res.send(decoded);
     } catch (error) {
         res.status(500).send("error decoding");
-
     }
+}
+
+app.get("/decode_jwt", async (req: Request, res: Response) => {
+    return handleDecodeJwt(<string>req.query.jwt, res);
+});
+
+app.post("/decode_jwt", async (req: Request, res: Response) => {
+    return handleDecodeJwt((req.body || {}).jwt, res);
 });
 
 function convertTimestampToIssuanceDate(timestampInSeconds: number): string {

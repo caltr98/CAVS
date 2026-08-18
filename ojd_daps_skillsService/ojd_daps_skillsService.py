@@ -1,6 +1,7 @@
 import os
 import threading
 import json
+import hashlib
 import inspect
 import traceback
 
@@ -27,6 +28,68 @@ app = Flask(__name__)
 
 _extractor_lock = threading.Lock()
 _es = None
+_response_cache = {}
+_response_inflight = {}
+_response_cache_lock = threading.Lock()
+
+
+def _request_cache_key(scope):
+    body = request.get_data(cache=True) or b""
+    json_body = request.get_json(silent=True) if body else None
+    body_value = json_body if json_body is not None else body.decode("utf-8", errors="replace")
+    payload = {
+        "scope": scope,
+        "method": request.method,
+        "path": request.path,
+        "query": sorted((key, value) for key in request.args for value in request.args.getlist(key)),
+        "body": body_value,
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _cached_response(scope, compute):
+    key = _request_cache_key(scope)
+    while True:
+        with _response_cache_lock:
+            cached = _response_cache.get(key)
+            if cached is not None:
+                body, status, content_type = cached
+                resp = app.response_class(response=body, status=status, content_type=content_type)
+                resp.headers["X-CAVS-Cache"] = "hit"
+                return resp
+            entry = _response_inflight.get(key)
+            if entry is None:
+                entry = {"event": threading.Event(), "result": None, "error": None}
+                _response_inflight[key] = entry
+                break
+        entry["event"].wait()
+        if entry.get("error") is not None:
+            raise entry["error"]
+        result = entry.get("result")
+        if result is not None:
+            body, status, content_type = result
+            resp = app.response_class(response=body, status=status, content_type=content_type)
+            resp.headers["X-CAVS-Cache"] = "shared"
+            return resp
+
+    try:
+        resp = app.make_response(compute())
+        result = (resp.get_data(), resp.status_code, resp.content_type)
+        if 200 <= resp.status_code < 300:
+            resp.direct_passthrough = False
+            with _response_cache_lock:
+                _response_cache[key] = result
+            resp.headers["X-CAVS-Cache"] = "miss"
+        entry["result"] = result
+        return resp
+    except Exception as exc:
+        entry["error"] = exc
+        raise
+    finally:
+        with _response_cache_lock:
+            _response_inflight.pop(key, None)
+            entry["event"].set()
 
 
 def _get_es():
@@ -444,6 +507,10 @@ def health():
 
 @app.get("/keyword_to_skills")
 def keyword_to_skills():
+    return _cached_response("keyword_to_skills", _keyword_to_skills_uncached)
+
+
+def _keyword_to_skills_uncached():
     keywords = _parse_keywords_from_request()
     if keywords is None:
         return jsonify(error="Keywords not provided; pass `keywords` (JSON dict/array)"), 400
@@ -471,6 +538,10 @@ def keyword_to_skill():
 
 @app.post("/map_phrases")
 def map_phrases():
+    return _cached_response("map_phrases", _map_phrases_uncached)
+
+
+def _map_phrases_uncached():
     body = request.get_json(silent=True) or {}
     phrase_groups = body.get("phrase_groups")
     if phrase_groups is None and "phrases" in body:
@@ -494,6 +565,10 @@ def map_phrases():
 
 @app.post("/extract")
 def extract():
+    return _cached_response("extract", _extract_uncached)
+
+
+def _extract_uncached():
     body = request.get_json(silent=True) or {}
     job_ads = body.get("job_ads")
     text = body.get("text")

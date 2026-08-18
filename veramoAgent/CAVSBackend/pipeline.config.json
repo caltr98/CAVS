@@ -1,20 +1,22 @@
 {
   "keywordExtraction": {
     "roberta": {
-      "top_n": 120,
+      "top_n": 30,
       "nr_candidates": 300,
-      "ngram_max": 3,
+      "ngram_max": 2,
       "use_mmr": true,
       "diversity": 0.7,
-      "score_threshold": 0.1
+      "score_threshold": 0.3,
+      "timeout_s": 60
     },
     "keybert": {
-      "top_n": 120,
+      "top_n": 30,
       "nr_candidates": 300,
-      "ngram_max": 3,
+      "ngram_max": 2,
       "use_mmr": true,
       "diversity": 0.7,
-      "score_threshold": 0.1
+      "score_threshold": 0.3,
+      "timeout_s": 60
     },
     "keyllm": {
       "top_n": 30,
@@ -33,10 +35,13 @@
   },
   "competence": {
     "support_threshold": 0,
-    "skill_mapping_mode": "extract_union_roberta_map"
+    "skill_mapping_mode": "keywords"
   },
   "skillMapping": {
     "mode": "keywords",
-    "skill_match_thresh": 0.4
+    "skill_match_thresh": null,
+    "per_keyword": false,
+    "fallback_extract": false,
+    "timeout_s": 90
   }
 }

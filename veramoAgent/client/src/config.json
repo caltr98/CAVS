@@ -4,5 +4,6 @@
   "cavsendpoint": "http://localhost:4200",
   "cavsendpoint2": "http://localhost:4202",
   "cavsendpoint3": "http://localhost:4203",
+  "cavsendpoint4": "http://localhost:4204",
   "ipfsagent": "http://localhost:4201"
 }

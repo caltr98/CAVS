@@ -1,13 +1,20 @@
-FROM node:20-bullseye
+ARG CAVS_SOURCE_SHA256=unversioned
+FROM node:20-bullseye@sha256:c0122351f25f04facee976f9db7214789eabadb489f4e4aea9cd00a0d6af77c4 AS runtime-base
+
+ARG CAVS_SOURCE_SHA256
+LABEL org.opencontainers.image.cavs-source-sha256="${CAVS_SOURCE_SHA256}"
 
 WORKDIR /usr/src/app
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends cmake build-essential python3 pkg-config \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY veramoAgent/package.json veramoAgent/yarn.lock veramoAgent/tsconfig.json veramoAgent/veramoRestAgent.js veramoAgent/veramoRestAgent.ts ./
 COPY veramoAgent/src ./src
 COPY veramoAgent/MultiSignatureVeramo ./MultiSignatureVeramo
 COPY veramoAgent/CAVSBackend ./CAVSBackend
 COPY veramoAgent/start.sh .
-COPY esco-v1.2.1.jsonl ./esco-v1.2.1.jsonl
 
 RUN yarn install --frozen-lockfile
 
@@ -17,3 +24,12 @@ EXPOSE 3001
 EXPOSE 4200
 
 ENTRYPOINT ["/usr/src/app/start.sh"]
+
+# Phase-isolation simulations use precomputed request fixtures and explicitly
+# skip ESCO indexing in CAVSService.js.
+FROM runtime-base AS simulation
+
+# Default target for normal deployments, where the service must remain
+# self-contained.
+FROM runtime-base AS production
+COPY esco-v1.2.1.jsonl ./esco-v1.2.1.jsonl
