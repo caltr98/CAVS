@@ -1033,8 +1033,8 @@ func TestOutcomeZeroWeightOraclesDoNotInfluenceConfidenceAggregation(t *testing.
 		Epoch:    1,
 		Running: []trustOpinionBps{
 			{B: 0, D: 100, U: 0},
-			{B: 0, D: 98, U: 2},
-			{B: 0, D: 98, U: 2},
+			{B: 100, D: 0, U: 0},
+			{B: 0, D: 0, U: 100},
 			{B: 0, D: 98, U: 2},
 		},
 		Pending: initTrustEvidence(4),
@@ -1058,8 +1058,8 @@ func TestOutcomeZeroWeightOraclesDoNotInfluenceConfidenceAggregation(t *testing.
 	if !got.Competent {
 		t.Fatalf("expected aggregate competence=true, got false")
 	}
-	if math.Abs(got.Confidence-0.5) > 1e-9 {
-		t.Fatalf("expected zero-weight oracle to be excluded from weighted median, got confidence=%v", got.Confidence)
+	if math.Abs(got.Confidence-0.4) > 1e-9 {
+		t.Fatalf("expected zero-weight oracle to be excluded from weighted mean, got confidence=%v", got.Confidence)
 	}
 }
 
@@ -1089,9 +1089,9 @@ func TestOutcomeConfidenceAndReasonUseAggregateCompetenceSubset(t *testing.T) {
 	}
 }
 
-func TestOutcomeConfidenceUsesMedianNotAverage(t *testing.T) {
+func TestOutcomeConfidenceUsesArithmeticMean(t *testing.T) {
 	p := newTestPlugin()
-	query := mustMarshalQuery(t, "req-median-confidence")
+	query := mustMarshalQuery(t, "req-mean-confidence")
 	obs := []types.AttributedObservation{
 		mustMarshalObservationWithReason(t, 0, true, 0.1, "low"),
 		mustMarshalObservationWithReason(t, 1, true, 0.1, "low-again"),
@@ -1107,8 +1107,8 @@ func TestOutcomeConfidenceUsesMedianNotAverage(t *testing.T) {
 	if !got.Competent {
 		t.Fatalf("expected aggregate competence=true, got false")
 	}
-	if math.Abs(got.Confidence-0.1) > 1e-9 {
-		t.Fatalf("expected confidence median 0.1, got %v", got.Confidence)
+	if math.Abs(got.Confidence-0.4) > 1e-9 {
+		t.Fatalf("expected confidence mean 0.4, got %v", got.Confidence)
 	}
 }
 
@@ -1160,7 +1160,7 @@ func TestOutcomeReasonEmbeddingTieBreaksByOracleID(t *testing.T) {
 	}
 }
 
-func TestOutcomeReasonEmbeddingErrorFallsBackToConfidenceMedianReason(t *testing.T) {
+func TestOutcomeReasonEmbeddingErrorFallsBackToConfidenceMeanReason(t *testing.T) {
 	p := newTestPlugin()
 	p.reasonEmbedder = fakeReasonEmbedder{err: errors.New("embedder down")}
 	query := mustMarshalQuery(t, "req-reason-error")
@@ -1175,7 +1175,7 @@ func TestOutcomeReasonEmbeddingErrorFallsBackToConfidenceMedianReason(t *testing
 	}
 	got := decodeOutcomeForTest(t, out)
 	if got.Reason != "first" {
-		t.Fatalf("expected fallback reason to pick lowest-oracle confidence-median reason, got %q", got.Reason)
+		t.Fatalf("expected fallback reason to pick lowest-oracle confidence-mean reason, got %q", got.Reason)
 	}
 }
 
@@ -1273,7 +1273,7 @@ func TestOutcomeUsesEveryValidObservation(t *testing.T) {
 	if !got.Competent {
 		t.Fatalf("expected aggregate competence=true, got false")
 	}
-	if math.Abs(got.Confidence-0.7) > 1e-9 {
+	if math.Abs(got.Confidence-(2.0/3.0)) > 1e-9 {
 		t.Fatalf("expected every valid observation to be included, got confidence=%v", got.Confidence)
 	}
 }

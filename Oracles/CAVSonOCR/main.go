@@ -18,7 +18,7 @@
 //
 //  3. "Outcome" phase (all oracles, deterministic):
 //     cavsPlugin.Outcome() aggregates the attributed observations into a single
-//     ocr3types.Outcome (here: median confidence with 2f+1 support).
+//     ocr3types.Outcome (here: mean confidence with 2f+1 support).
 //     Every oracle must compute the SAME bytes, or signatures will not verify.
 //
 //  4. "Reports" phase (all oracles, deterministic):
@@ -1288,12 +1288,10 @@ type obsResult struct {
 	weight   uint32
 }
 
-// weightedMedian returns the median score while preserving trust weights.
-// The confidence consensus is a median because each oracle contributes one
-// scalar confidence estimate and the median is robust to outlier confidence
-// values without inventing a non-oracle confidence.
-// If all weights are zero, it falls back to the unweighted median.
-func weightedMedian(in []weightedScore) float64 {
+// weightedMean returns the trust-weighted arithmetic mean of the scores.
+// If all weights are zero, as in the evaluated configuration where optional
+// trust weighting is disabled, it returns the unweighted arithmetic mean.
+func weightedMean(in []weightedScore) float64 {
 	if len(in) == 0 {
 		return 0
 	}
@@ -1304,37 +1302,20 @@ func weightedMedian(in []weightedScore) float64 {
 		}
 		return values[i].Score < values[j].Score
 	})
-	total := uint32(0)
+	var weightedSum float64
+	var totalWeight uint64
 	for _, x := range values {
-		total += x.Weight
+		weightedSum += x.Score * float64(x.Weight)
+		totalWeight += uint64(x.Weight)
 	}
-	if total == 0 {
-		mid := len(values) / 2
-		if len(values)%2 == 1 {
-			return values[mid].Score
+	if totalWeight == 0 {
+		var sum float64
+		for _, x := range values {
+			sum += x.Score
 		}
-		return (values[mid-1].Score + values[mid].Score) / 2
+		return sum / float64(len(values))
 	}
-
-	leftHalf := total / 2
-	cum := uint32(0)
-	for i, x := range values {
-		cum += x.Weight
-		if total%2 == 0 && cum == leftHalf {
-			next := i + 1
-			for next < len(values) && values[next].Weight == 0 {
-				next++
-			}
-			if next < len(values) {
-				return (x.Score + values[next].Score) / 2
-			}
-			return x.Score
-		}
-		if cum > leftHalf {
-			return x.Score
-		}
-	}
-	return values[len(values)-1].Score
+	return weightedSum / float64(totalWeight)
 }
 
 type reasonEmbedder interface {
@@ -2860,12 +2841,12 @@ func (p *cavsPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContex
 		alignedResults = results
 	}
 
-	// Median confidence over observations aligned with the aggregate competence.
+	// Mean confidence over observations aligned with the aggregate competence.
 	confVals := make([]weightedScore, 0, len(alignedResults))
 	for _, r := range alignedResults {
 		confVals = append(confVals, weightedScore{Score: r.conf, Weight: r.weight, Oracle: r.observer})
 	}
-	aggConf := weightedMedian(confVals)
+	aggConf := weightedMean(confVals)
 
 	if p.pc.TrustEnabled && trust != nil {
 		// Update trust based on agreement with aggregate competence/confidence.
